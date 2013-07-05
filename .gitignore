@@ -2,6 +2,26 @@
 [Bb]in/
 [Oo]bj/
 
+## MonoDevelop
+# User Specific
+*.userprefs
+*.usertasks
+
+# Mono Project Files
+*.pidb
+*.resources
+test-results/
+
+## OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
 # mstest test results
 TestResults
 
