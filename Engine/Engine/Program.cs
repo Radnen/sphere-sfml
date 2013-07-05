@@ -14,6 +14,7 @@ namespace Engine
 
         static void Main()
         {
+            Console.WriteLine("Working Directory:" + System.IO.Directory.GetCurrentDirectory());
             _window = new RenderWindow(new VideoMode(640, 480, 32), "Game", Styles.Titlebar | Styles.Close, new ContextSettings(32, 0));
 			_window.SetVerticalSyncEnabled(true);
 
@@ -22,6 +23,7 @@ namespace Engine
 			_ctxt.SetParameter("RequireScript", new Action<string>(RequireScript));
 			_ctxt.SetParameter("Print", new Action<string>(Print));
 			_ctxt.SetParameter("Exit", new Action(Exit));
+			_ctxt.SetParameter("CreateColor", new Func<int, int, int, int, object>(CreateColor));
 			_ctxt.SetParameter("LoadImage", new Func<string, object>(LoadImage));
 
             string code = ReadCodeFile("test.js"); // TODO: read this in from a .sgm
@@ -67,6 +69,17 @@ namespace Engine
         {
             Console.WriteLine(obj);
         }
+
+		// TODO: make 'a' an optional param
+		static object CreateColor(int r, int g, int b, int a)
+		{
+			byte red   = (byte)(Math.Abs(r) % 255);
+			byte green = (byte)(Math.Abs(g) % 255);
+			byte blue  = (byte)(Math.Abs(b) % 255);
+			byte alpha = (byte)(Math.Abs(a) % 255);
+
+			return new Color(red, green, blue, alpha);
+		}
 
         static void FlipScreen()
         {
