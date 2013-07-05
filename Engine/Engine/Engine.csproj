@@ -35,7 +35,7 @@
     <Content Include="Startup\scripts\require.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="Startup\App.config" />
+    <None Include="App.config" />
     <None Include="msvcp100.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
