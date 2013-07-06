@@ -33,7 +33,7 @@ namespace Engine
             this["alpha"] = 0;
         }
 
-        public ColorInstance(ObjectInstance proto, int r, int g, int b, int a = 255)
+        public ColorInstance(ObjectInstance proto, int r, int g, int b, int a)
             : base(proto)
         {
             PopulateFunctions();

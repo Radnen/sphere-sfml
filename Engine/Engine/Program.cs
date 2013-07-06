@@ -22,17 +22,25 @@ namespace Engine
             _window = new RenderWindow(new VideoMode(320, 240, 32), "Game", Styles.Titlebar | Styles.Close, new ContextSettings(32, 0));
             //_window.SetVerticalSyncEnabled(true);
             _window.Closed += window_Closed;
+            GlobalPrimitives.window = _window;
 
             _engine = new ScriptEngine();
 
             _engine.SetGlobalFunction("FlipScreen", new Action(FlipScreen));
+            _engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
+            _engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             _engine.SetGlobalFunction("RequireScript", new Action<string>(RequireScript));
             _engine.SetGlobalFunction("Print", new Action<string>(Print));
             _engine.SetGlobalFunction("Exit", new Action(Exit));
             _engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             _engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
             _engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(Rectangle));
+            _engine.SetGlobalFunction("Triangle", new Action<double, double, double, double, double, double, ColorInstance>(Triangle));
+            _engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(OutlinedRectangle));
+            _engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GradientRectangle));
             _engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(FilledCircle));
+            _engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(Line));
+            _engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GradientLine));
 
             string code = ReadCodeFile("test.js"); // TODO: read this in from a .sgm
 
@@ -81,7 +89,6 @@ namespace Engine
             Console.WriteLine(obj);
         }
 
-		// TODO: make 'a' an optional param
 		static ColorInstance CreateColor(int r, int g, int b, int a = 255)
 		{
             return new ColorInstance(_engine.Object.InstancePrototype, r, g, b, a);
@@ -94,6 +101,7 @@ namespace Engine
             _window.DispatchEvents();
             _window.Display();
             _window.Clear();
+
             _fps++;
             if ((DateTime.Now - _start).Seconds >= 1)
             {
@@ -103,14 +111,50 @@ namespace Engine
             }
         }
 
+        static int GetScreenWidth()
+        {
+            return (int)_window.Size.X;
+        }
+
+        static int GetScreenHeight()
+        {
+            return (int)_window.Size.Y;
+        }
+
         static void Rectangle(double x, double y, double w, double h, ColorInstance color)
         {
-            GlobalPrimitives.Rectangle(_window, (float)x, (float)y, (float)w, (float)h, color.GetColor());
+            GlobalPrimitives.Rectangle((float)x, (float)y, (float)w, (float)h, color.GetColor());
+        }
+
+        static void Line(double x1, double y1, double x2, double y2, ColorInstance color)
+        {
+            GlobalPrimitives.Line((float)x1, (float)y1, (float)x2, (float)y2, color.GetColor());
+        }
+
+        static void GradientLine(double x1, double y1, double x2, double y2, ColorInstance color1, ColorInstance color2)
+        {
+            GlobalPrimitives.GradientLine((float)x1, (float)y1, (float)x2, (float)y2, color1.GetColor(), color2.GetColor());
+        }
+
+        static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ColorInstance color)
+        {
+            GlobalPrimitives.Triangle((float)x1, (float)y1, (float)x2, (float)y2, (float)x3, (float)y3, color.GetColor());
+        }
+
+        static void OutlinedRectangle(double x, double y, double w, double h, ColorInstance color, double thickness = 1.0f)
+        {
+            GlobalPrimitives.OutlinedRectangle((float)x, (float)y, (float)w, (float)h, color.GetColor(), (float)thickness);
+        }
+
+        static void GradientRectangle(double x, double y, double width, double height, ColorInstance color1, ColorInstance color2, ColorInstance color3, ColorInstance color4)
+        {
+            GlobalPrimitives.GradientRectangle((float)x, (float)y, (float)width, (float)height, color1.GetColor(),
+                                               color2.GetColor(), color3.GetColor(), color4.GetColor());
         }
 
         static void FilledCircle(double x, double y, double radius, ColorInstance color)
         {
-            GlobalPrimitives.FilledCircle(_window, (float)x, (float)y, (float)radius, color.GetColor());
+            GlobalPrimitives.FilledCircle((float)x, (float)y, (float)radius, color.GetColor());
         }
 
         static ImageInstance LoadImage(string filename)

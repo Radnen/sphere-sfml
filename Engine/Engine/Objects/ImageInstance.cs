@@ -37,10 +37,12 @@ namespace Engine.Objects
 		public ImageInstance(ObjectInstance proto, string filename, RenderWindow parent)
             : base(proto)
 		{
-            PopulateFunctions();
-			_image = new Texture(GlobalProps.BasePath + "\\images\\" + filename);
+            _image = new Texture(GlobalProps.BasePath + "\\images\\" + filename);
             _sprite = new Sprite(_image);
-			_parent_window = parent;
+            _parent_window = parent;
+            PopulateFunctions();
+            DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
+            DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
 		}
 
         [JSFunction(Name = "toString")]
