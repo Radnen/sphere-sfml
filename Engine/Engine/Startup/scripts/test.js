@@ -5,6 +5,12 @@ function game() {
 	test();
 	
 	var image = LoadImage("blockman.png");
+	var red = CreateColor(255, 0, 0);
 	
-	while (true) { image.blit(0, 0); FlipScreen(); }
+	Print(red);
+	
+	while (true) {
+		image.blit(0, 0);
+		FlipScreen();
+	}
 }
