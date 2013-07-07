@@ -4,7 +4,7 @@ namespace Engine
 {
 	public static class GlobalProps
 	{
-		public static string BasePath = "Startup";
+		public static string BasePath = "startup";
 	}
 }
 

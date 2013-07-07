@@ -74,12 +74,6 @@ namespace Engine.Objects
             _parent_window.Draw(_sprite);
         }
 
-        // TODO: implement in GL
-        [JSFunction(Name = "transformBlit")]
-        public void TransformBlit(double x1, double y1, double x2, double y2)
-        {
-            //_sprite.Transform.(new FloatRect(x1, x2, (x2 - x1), (y2 - y1)));
-            _parent_window.Draw(_sprite);
-        }
+        // TODO: implement other blits
     }
 }

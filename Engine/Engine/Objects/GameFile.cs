@@ -8,18 +8,19 @@ namespace Engine
     {
         private Dictionary<string, string> _data;
 
+        public string FileName { get; private set; }
+
         public GameFile()
         {
             _data = new Dictionary<string, string>();
         }
 
-        public bool ReadFile()
+        public bool ReadFile(string filename)
         {
-            string filename = GlobalProps.BasePath + "/game.sgm";
-
             if (!File.Exists(filename))
                 return false;
 
+            FileName = filename;
             using (StreamReader reader = new StreamReader(filename))
             {
                 while (!reader.EndOfStream)
@@ -36,12 +37,9 @@ namespace Engine
 
         public bool TryGetData(string key, out bool result)
         {
-            string data = "";
-            bool failed = _data.TryGetValue(key, out data);
-            if (!failed)
-                return bool.TryParse(data, out result);
-            else
-            {
+            if (_data.ContainsKey(key))
+                return bool.TryParse(_data[key], out result);
+            else {
                 result = false;
                 return false;
             }
@@ -49,15 +47,11 @@ namespace Engine
 
         public bool TryGetData(string key, out int result)
         {
-            string data = "";
-            bool failed = _data.TryGetValue(key, out data);
-            if (!failed)
-                return int.TryParse(data, out result);
+            if (_data.ContainsKey(key))
+                return int.TryParse(_data[key], out result);
             else
-            {
                 result = 0;
                 return false;
-            }
         }
 
         public bool TryGetData(string key, out string result)

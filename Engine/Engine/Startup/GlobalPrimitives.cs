@@ -7,6 +7,7 @@ namespace Engine
     public static class GlobalPrimitives
     {
         private static RectangleShape _rect = new RectangleShape();
+        private static RectangleShape _orect = new RectangleShape();
         private static CircleShape _circle = new CircleShape();
 
         public static RenderWindow window;
@@ -15,9 +16,19 @@ namespace Engine
         {
             _rect.Position = new Vector2f(x, y);
             _rect.FillColor = color;
+            _rect.Texture = null;
             _rect.Size = new Vector2f(width, height);
             window.Draw(_rect);
         }
+
+        /*public static void Rectangle(float x, float y, float width, float height, Color color)
+        {
+            _rect.Position = new Vector2f(x, y);
+            _rect.FillColor = color;
+            _rect.Texture = null;
+            _rect.Size = new Vector2f(width, height);
+            window.Draw(_rect);
+        }*/
 
         public static void GradientRectangle(float x, float y, float width, float height, Color color1, Color color2, Color color3, Color color4)
         {
@@ -28,19 +39,25 @@ namespace Engine
 
         public static void OutlinedRectangle(float x, float y, float width, float height, Color color, float thickness)
         {
-            _rect.Position = new Vector2f(x, y);
-            _rect.Size = new Vector2f(width, height);
-            _rect.FillColor = new Color(0, 0, 0, 0);
-            _rect.OutlineColor = color;
-            _rect.OutlineThickness = thickness;
+            _orect.Position = new Vector2f(x, y);
+            _orect.Size = new Vector2f(width, height);
+            _orect.FillColor = new Color(0, 0, 0, 0);
+            _orect.OutlineColor = color;
+            _orect.OutlineThickness = thickness;
 
-            window.Draw(_rect);
+            window.Draw(_orect);
         }
 
         public static void Triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color)
         {
             Vertex[] v = { new Vertex(new Vector2f(x1, y1), color), new Vertex(new Vector2f(x2, y2), color), new Vertex(new Vector2f(x3, y3), color) };
             window.Draw(v, PrimitiveType.Triangles);
+        }
+
+        public static void Point(float x, float y, Color color)
+        {
+            Vertex[] v = { new Vertex(new Vector2f(x, y), color) };
+            window.Draw(v, PrimitiveType.Points);
         }
 
         public static void Line(float x1, float y1, float x2, float y2, Color color)

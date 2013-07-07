@@ -33,17 +33,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Startup\scripts\require.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Include="App.config" />
-    <Content Include="Startup\game.sgm">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Startup\images\blockman.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Include="Docs\License.txt" />
+    <Content Include="startup\scripts\require.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="startup\game.sgm">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="startup\images\blockman.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="startup\scripts\test.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -76,27 +79,27 @@
     <Reference Include="Jurassic">
       <HintPath>..\Jurassic.dll</HintPath>
     </Reference>
+    <Reference Include="nunit.framework" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="GlobalProps.cs" />
-    <Compile Include="Startup\GlobalPrimitives.cs" />
     <Compile Include="Objects\GameFile.cs" />
     <Compile Include="Objects\ColorInstance.cs" />
     <Compile Include="Objects\ImageInstance.cs" />
+    <Compile Include="startup\GlobalPrimitives.cs" />
+    <Compile Include="Tests\ImageTest.cs" />
+    <Compile Include="Tests\ColorTest.cs" />
+    <Compile Include="Tests\PrimitiveTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Startup\fonts\" />
-    <Folder Include="Startup\images\" />
-    <Folder Include="Startup\maps\" />
-    <Folder Include="Startup\spritesets\" />
-    <Folder Include="Startup\windowstyles\" />
     <Folder Include="Docs\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Startup\scripts\test.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Folder Include="startup\fonts\" />
+    <Folder Include="startup\images\" />
+    <Folder Include="startup\maps\" />
+    <Folder Include="startup\spritesets\" />
+    <Folder Include="startup\windowstyles\" />
+    <Folder Include="Tests\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

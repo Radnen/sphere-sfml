@@ -10,6 +10,9 @@ function game() {
 	var SH = GetScreenHeight();
 	var x = 0, xv = 1;
 	
+	image.width = 20;
+	Print(image.width);
+	
 	while (true) {
 		GradientRectangle(0, 0, SW, SH, white, white, gray, gray);
 		Rectangle(0, 0, SW, 16, tblack);

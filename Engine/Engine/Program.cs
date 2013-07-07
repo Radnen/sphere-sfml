@@ -13,43 +13,143 @@ namespace Engine
     static class Program
     {
         static RenderWindow _window = null;
-        static ScriptEngine _engine = null;
+        public static ScriptEngine _engine = null;
 
-        static void Main()
+        static GameFile _game = new GameFile();
+
+        static void Main(string[] args)
         {
-            Console.WriteLine("Working Directory:" + System.IO.Directory.GetCurrentDirectory());
+            if (args.Length == 1)
+            {
+                if (args[0] == "-compliance")
+                {
+                    Console.WriteLine("Sphere v1.5 subset compliance.");
+                    return;
+                }
+                else if (args[0] == "-games")
+                {
+                    Console.WriteLine("List of games");
+                    ListGames();
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("Useage: ");
+                    Console.WriteLine("    -game <directory>  | Loads the game running at that directory.");
+                    Console.WriteLine("    -compliance        | See what Sphere version this build conforms to.");
+                    Console.WriteLine("    -games             | Lists games local to this executable.");
+                    return;
+                }
+            }
+            if (args.Length == 2)
+            {
+                if (args[0] != "-game" || !_game.ReadFile(args[1]))
+                {
+                    Console.WriteLine("Failed to load game: " + args[1]);
+                    return;
+                }
+            }
+            else
+            {
+                if (!_game.ReadFile("startup/game.sgm"))
+                {
+                    Console.WriteLine("Faliled to find game.sgm in startup/");
+                    return;
+                }
+            }
 
-            _window = new RenderWindow(new VideoMode(320, 240, 32), "Game", Styles.Titlebar | Styles.Close, new ContextSettings(32, 0));
+            if (!InitEngine())
+                return;
+
+            string filename;
+            if (_game.TryGetData("script", out filename))
+            {
+                string code = ReadCodeFile(filename);
+                RunCode(code);
+                RunCode("game();");
+            }
+            else
+            {
+                Console.WriteLine("Invalid script file in game.sgm");
+            }
+        }
+
+        static bool InitEngine()
+        {
+            int width, height;
+            if (!_game.TryGetData("screen_width", out width))
+            {
+                Console.WriteLine("No screen width set in game.sgm.");
+                return false;
+            }
+            if (!_game.TryGetData("screen_height", out height))
+            {
+                Console.WriteLine("No screen height set in game.sgm.");
+                return false;
+            }
+
+            if (width <= 0 || height <= 0)
+            {
+                Console.WriteLine("Invalid width and height in game.sgm.");
+                return false;
+            }
+
+            GlobalProps.BasePath = Path.GetDirectoryName(_game.FileName);
+
+            _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), "Game", Styles.Titlebar | Styles.Close, new ContextSettings(32, 0));
             //_window.SetVerticalSyncEnabled(true);
             _window.Closed += window_Closed;
             GlobalPrimitives.window = _window;
 
-            _engine = new ScriptEngine();
+            _engine = GetSphereEngine();
 
-            _engine.SetGlobalFunction("FlipScreen", new Action(FlipScreen));
-            _engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
-            _engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
-            _engine.SetGlobalFunction("RequireScript", new Action<string>(RequireScript));
-            _engine.SetGlobalFunction("Print", new Action<string>(Print));
-            _engine.SetGlobalFunction("Exit", new Action(Exit));
-            _engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
-            _engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
-            _engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(Rectangle));
-            _engine.SetGlobalFunction("Triangle", new Action<double, double, double, double, double, double, ColorInstance>(Triangle));
-            _engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(OutlinedRectangle));
-            _engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GradientRectangle));
-            _engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(FilledCircle));
-            _engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(Line));
-            _engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GradientLine));
-
-            string code = ReadCodeFile("test.js"); // TODO: read this in from a .sgm
-
-            RunCode(code);
-
-            RunCode("game();");
+            return true;
         }
 
-        // TODO: engine should change GlobalProps.BasePath to loaded gamepath.
+        public static ScriptEngine GetSphereEngine()
+        {
+            ScriptEngine engine = new ScriptEngine();
+
+            // The glorious Sphere game API :)
+            engine.SetGlobalFunction("FlipScreen", new Action(FlipScreen));
+            engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
+            engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
+            engine.SetGlobalFunction("RequireScript", new Action<string>(RequireScript));
+            engine.SetGlobalFunction("Print", new Action<string>(Print));
+            engine.SetGlobalFunction("Exit", new Action(Exit));
+            engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
+            engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
+            engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(Rectangle));
+            engine.SetGlobalFunction("Triangle", new Action<double, double, double, double, double, double, ColorInstance>(Triangle));
+            engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(OutlinedRectangle));
+            engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GradientRectangle));
+            engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(FilledCircle));
+            engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(Line));
+            engine.SetGlobalFunction("Point", new Action<double, double, ColorInstance>(Point));
+            engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GradientLine));
+
+            return engine;
+        }
+
+        static void ListGames()
+        {
+            if (Directory.Exists("games"))
+            {
+                string[] files = Directory.GetFileSystemEntries("games");
+                foreach (string s in files)
+                {
+                    GameFile file = new GameFile();
+                    if (file.ReadFile(s + "/game.sgm")) {
+                        string name, author, desc;
+                        file.TryGetData("name", out name);
+                        file.TryGetData("author", out author);
+                        file.TryGetData("description", out desc);
+                        Console.WriteLine(string.Format("{0} by {1}, \"{2}\"", name, author, desc));
+                    }
+                }
+            }
+        }
+
         static string ReadCodeFile(string filename)
 		{
 			StreamReader reader = null;
@@ -129,6 +229,11 @@ namespace Engine
         static void Line(double x1, double y1, double x2, double y2, ColorInstance color)
         {
             GlobalPrimitives.Line((float)x1, (float)y1, (float)x2, (float)y2, color.GetColor());
+        }
+
+        static void Point(double x, double y, ColorInstance color)
+        {
+            GlobalPrimitives.Point((float)x, (float)y, color.GetColor());
         }
 
         static void GradientLine(double x1, double y1, double x2, double y2, ColorInstance color1, ColorInstance color2)
