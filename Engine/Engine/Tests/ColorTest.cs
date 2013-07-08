@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System;
+using Engine.Objects;
 
 namespace Engine
 {

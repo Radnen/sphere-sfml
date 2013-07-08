@@ -10,20 +10,21 @@ function game() {
 	var SH = GetScreenHeight();
 	var x = 0, xv = 1;
 	
-	image.width = 20;
-	Print(image.width);
+	var points = [{x: 0, y: 0}, {x: 50, y: 0}, {x: 50, y: 50}, {x: 0, y: 50}];
+	
+	var canvas1 = CreateSurface(50, 50, white);
+	canvas1.setPixel(25, 25, red);
+	
+	var canvas2 = canvas1.clone();
+	canvas2.setPixel(26, 25, green);
 	
 	while (true) {
-		GradientRectangle(0, 0, SW, SH, white, white, gray, gray);
-		Rectangle(0, 0, SW, 16, tblack);
-		Triangle(SW / 2, 0, 0, SH, SW, SH, green);
-		
-		GradientLine(x, 0, SW-x, SH, green, red);
-		x += xv;
-		if (x == SW || x == 0) xv *= -1;
-		
-		OutlinedRectangle(SW - image.width, 16, image.width, image.height, green);
-		image.blit(SW - image.width, 16);
+		canvas1.blit(50, 0);
+		canvas2.blit(50, 50);
+		Rectangle(0, 50, 50, 50, white);
+		image.blitMask(0, 50, tblack);
+		PointSeries(points, red);
+		LineSeries(points, green);
 		
 		FlipScreen();
 	}

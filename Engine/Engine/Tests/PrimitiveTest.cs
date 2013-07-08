@@ -10,8 +10,8 @@ namespace Engine
         [SetUp()]
         public void Init()
         {
-            if (Program._engine == null)
-                Program._engine = Program.GetSphereEngine();
+            Program.SetupTest();
+            GlobalPrimitives.window = Program._window;
         }
 
         [Test()]
@@ -26,6 +26,8 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("LineSeries;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            Program._engine.Evaluate("LineSeries([{x: 0, y: 0}, {x: 1, y: 1}], CreateColor(0, 0, 0));");
         }
 
         [Test()]

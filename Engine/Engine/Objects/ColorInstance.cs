@@ -3,22 +3,8 @@ using SFML.Graphics;
 using Jurassic;
 using Jurassic.Library;
 
-namespace Engine
+namespace Engine.Objects
 {
-    public class ColorConstructor : ClrFunction
-    {
-        public ColorConstructor(ScriptEngine engine)
-            : base(engine.Function.InstancePrototype, "Color", new ColorInstance(engine.Object.InstancePrototype))
-        {
-        }
-
-        [JSConstructorFunction]
-        public ColorInstance Construct(int r, int g, int b, int a)
-        {
-            return new ColorInstance(InstancePrototype, r, g, b, a);
-        }
-    }
-
     public class ColorInstance : ObjectInstance
     {
         private Color _color;
@@ -41,6 +27,16 @@ namespace Engine
             this["green"] = g;
             this["blue"] = b;
             this["alpha"] = a;
+        }
+
+        public ColorInstance(ObjectInstance proto, Color color)
+            : base(proto)
+        {
+            PopulateFunctions();
+            this["red"] = (int)color.R;
+            this["green"] = (int)color.G;
+            this["blue"] = (int)color.B;
+            this["alpha"] = (int)color.A;
         }
 
         public Color GetColor()

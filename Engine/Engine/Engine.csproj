@@ -87,10 +87,14 @@
     <Compile Include="Objects\GameFile.cs" />
     <Compile Include="Objects\ColorInstance.cs" />
     <Compile Include="Objects\ImageInstance.cs" />
-    <Compile Include="startup\GlobalPrimitives.cs" />
     <Compile Include="Tests\ImageTest.cs" />
     <Compile Include="Tests\ColorTest.cs" />
     <Compile Include="Tests\PrimitiveTest.cs" />
+    <Compile Include="Objects\WindowStyleInstance.cs" />
+    <Compile Include="Tests\WindowstyleTest.cs" />
+    <Compile Include="Objects\SurfaceInstance.cs" />
+    <Compile Include="Tests\SurfaceTest.cs" />
+    <Compile Include="GlobalPrimitives.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />

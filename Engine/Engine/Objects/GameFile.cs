@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Engine
+namespace Engine.Objects
 {
     public class GameFile
     {
