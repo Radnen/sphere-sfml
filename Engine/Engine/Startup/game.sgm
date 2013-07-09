@@ -1,6 +1,6 @@
 author=Andrew Helenius
 description=Testbed for sfml-sphere
 name=startup
-screen_height=240
-screen_width=320
+screen_height=480
+screen_width=640
 script=test.js

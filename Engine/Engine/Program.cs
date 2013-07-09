@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Threading;
 using SFML;
 using SFML.Graphics;
@@ -13,8 +14,11 @@ namespace Engine
     static class Program
     {
         public static RenderWindow _window = null;
-        public static RenderStates _states;
         public static ScriptEngine _engine = null;
+        private static Dictionary<int, bool> _keyCache = new Dictionary<int, bool>();
+
+        private static bool _fullscreen;
+        private static int _internal_fps = 60;
 
         static GameFile _game = new GameFile();
 
@@ -65,9 +69,7 @@ namespace Engine
             string filename;
             if (_game.TryGetData("script", out filename))
             {
-                string code = ReadCodeFile(filename);
-                RunCode(code);
-                RunCode("game();");
+                RequireScript(filename);
             }
             else
             {
@@ -76,6 +78,13 @@ namespace Engine
         }
 
         static bool InitEngine()
+        {
+            bool ret = InitWindow(Styles.Default);
+            _engine = GetSphereEngine();
+            return ret;
+        }
+
+        static bool InitWindow(Styles style)
         {
             int width, height;
             if (!_game.TryGetData("screen_width", out width))
@@ -97,16 +106,46 @@ namespace Engine
 
             GlobalProps.BasePath = Path.GetDirectoryName(_game.FileName);
 
-            ContextSettings settings = new ContextSettings(32, 0, 0);
-            _window = new RenderWindow(new VideoMode((uint)320, (uint)240, 32), "Game", Styles.Titlebar | Styles.Close, settings);
-            //_window.SetVerticalSyncEnabled(true);
+            if (!_game.TryGetData("name", out GlobalProps.GameName))
+            {
+                Console.WriteLine("No name set in game.sgm.");
+                return false;
+            }
 
+            _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), "", style);
             _window.Closed += window_Closed;
+            _window.KeyPressed += window_KeyPressed;
+            _window.KeyReleased += window_KeyReleased;
+
             GlobalPrimitives.window = _window;
-
-            _engine = GetSphereEngine();
-
             return true;
+        }
+
+        public static void ToggleFullScreen()
+        {
+            if (_window != null) {
+                _window.Closed -= window_Closed;
+                _window.KeyPressed -= window_KeyPressed;
+                _window.KeyReleased -= window_KeyReleased;
+                _window.Close();
+            }
+
+            _fullscreen = !_fullscreen;
+            var style = (_fullscreen) ? Styles.Fullscreen : Styles.Default;
+
+            InitWindow(style);
+            _window.SetFramerateLimit((uint)_internal_fps);
+        }
+
+        public static void window_KeyPressed(object sender, KeyEventArgs e) {
+            _keyCache[(int)e.Code] = true;
+
+            if (e.Code == Keyboard.Key.F10)
+                ToggleFullScreen();
+        }
+
+        public static void window_KeyReleased(object sender, KeyEventArgs e) {
+            _keyCache[(int)e.Code] = false;
         }
 
         public static ScriptEngine GetSphereEngine()
@@ -124,6 +163,7 @@ namespace Engine
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
             engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Rectangle));
             engine.SetGlobalFunction("Triangle", new Action<double, double, double, double, double, double, ColorInstance>(GlobalPrimitives.Triangle));
+            engine.SetGlobalFunction("GradientTriangle", new Action<ObjectInstance, ObjectInstance, ObjectInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientTriangle));
             engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedRectangle));
             engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientRectangle));
             engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.FilledCircle));
@@ -131,8 +171,21 @@ namespace Engine
             engine.SetGlobalFunction("LineSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.LineSeries));
             engine.SetGlobalFunction("Point", new Action<double, double, ColorInstance>(GlobalPrimitives.Point));
             engine.SetGlobalFunction("PointSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.PointSeries));
+            engine.SetGlobalFunction("Polygon", new Action<ArrayInstance, ColorInstance, bool>(GlobalPrimitives.Polygon));
             engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GlobalPrimitives.GradientLine));
             engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, SurfaceInstance>(CreateSurface)); 
+            engine.SetGlobalFunction("GrabImage", new Func<ImageInstance>(GrabImage));
+            engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(IsKeyPressed));
+            engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
+            engine.SetGlobalFunction("GetFrameRate", new Func<int>(GetFrameRate));
+            engine.SetGlobalFunction("GetRealFrameRate", new Func<int>(GetRealFrameRate));
+
+            // keys:
+            Array a = Enum.GetValues(typeof(Keyboard.Key));
+            string[] n = Enum.GetNames(typeof(Keyboard.Key));
+            for (var i = 0; i < a.Length; ++i) {
+                engine.SetGlobalValue("KEY_" + n[i].ToUpper(), (int)a.GetValue(i));
+            }
 
             return engine;
         }
@@ -199,15 +252,42 @@ namespace Engine
             proc.Kill();
 		}
 
+        static void SetFrameRate(int fps)
+        {
+            _window.SetFramerateLimit((uint)fps);
+            _internal_fps = fps;
+        }
+
+        static int GetFrameRate()
+        {
+            return _internal_fps;
+        }
+
+        static int GetRealFrameRate()
+        {
+            return _fps;
+        }
+
         static void Print(object obj)
         {
             Console.WriteLine(obj);
+        }
+
+        static bool IsKeyPressed(int code)
+        {
+            return (_keyCache.ContainsKey(code)) ? _keyCache[code] : false;
         }
 
 		static ColorInstance CreateColor(int r, int g, int b, int a = 255)
 		{
             return new ColorInstance(_engine.Object.InstancePrototype, r, g, b, a);
 		}
+
+        static ImageInstance GrabImage()
+        {
+            Image window = _window.Capture();
+            return new ImageInstance(_engine.Object.InstancePrototype, new Texture(window));
+        }
 
         static DateTime _start = DateTime.Now;
         static int _fps = 0;
@@ -238,12 +318,12 @@ namespace Engine
 
         static ImageInstance LoadImage(string filename)
         {
-            return new ImageInstance(_engine.Object.InstancePrototype, filename, _window);
+            return new ImageInstance(_engine.Object.InstancePrototype, filename);
         }
 
         static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
-            return new SurfaceInstance(_engine.Object.InstancePrototype, w, h, color.GetColor(), _window);
+            return new SurfaceInstance(_engine.Object.InstancePrototype, w, h, color.GetColor());
         }
 
         static void RunCode(string code)
@@ -254,14 +334,20 @@ namespace Engine
 			}
 			catch (JavaScriptException ex)
 			{
-				Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
 			}
 		}
 
         static void RequireScript(string filename)
         {
-            string code = ReadCodeFile(filename);
-            RunCode(code);
+            try
+            {
+                _engine.ExecuteFile(GlobalProps.BasePath + "/scripts/" + filename);
+            }
+            catch (JavaScriptException ex)
+            {
+                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
+            }
         }
 
         static void window_Closed(object sender, EventArgs e)

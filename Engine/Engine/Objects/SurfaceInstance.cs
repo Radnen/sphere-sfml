@@ -7,13 +7,12 @@ namespace Engine.Objects
 {
     public class SurfaceInstance : ObjectInstance
     {
-        private RenderWindow _window;
         private Image _image;
         private Texture _tex;
         private bool _changed = false;
         private Sprite _sprite;
 
-        public SurfaceInstance(ObjectInstance proto, int width, int height, Color bg_color, RenderWindow window)
+        public SurfaceInstance(ObjectInstance proto, int width, int height, Color bg_color)
             : base(proto)
         {
             PopulateFunctions();
@@ -27,13 +26,12 @@ namespace Engine.Objects
             _image = new Image((uint)width, (uint)height, bg_color);
             _tex = new Texture(_image);
             _sprite = new Sprite(_tex);
-            _window = window;
 
             DefineProperty("width", new PropertyDescriptor(width, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(height, PropertyAttributes.Sealed), true);
         }
 
-        public SurfaceInstance(ObjectInstance proto, Image copy, RenderWindow window)
+        public SurfaceInstance(ObjectInstance proto, Image copy)
             : base(proto)
         {
             PopulateFunctions();
@@ -41,7 +39,6 @@ namespace Engine.Objects
             _image = new Image(copy);
             _tex = new Texture(_image);
             _sprite = new Sprite(_tex);
-            _window = window;
 
             DefineProperty("width", new PropertyDescriptor((int)_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor((int)_image.Size.Y, PropertyAttributes.Sealed), true);
@@ -54,7 +51,7 @@ namespace Engine.Objects
                 _tex.Update(_image);
 
             _sprite.Position = new Vector2f((float)x, (float)y);
-            _window.Draw(_sprite);
+            Program._window.Draw(_sprite);
         }
 
         [JSFunction(Name = "setPixel")]
@@ -77,13 +74,13 @@ namespace Engine.Objects
             if (_changed)
                 _tex.Update(_image);
 
-            return new ImageInstance(Program._engine.Object.InstancePrototype, _tex, _window);
+            return new ImageInstance(Program._engine.Object.InstancePrototype, _tex);
         }
 
         [JSFunction(Name = "clone")]
         public SurfaceInstance Clone()
         {
-            return new SurfaceInstance(Program._engine.Object.InstancePrototype, _image, _window);
+            return new SurfaceInstance(Program._engine.Object.InstancePrototype, _image);
         }
 
         [JSFunction(Name = "toString")]

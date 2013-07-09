@@ -14,6 +14,16 @@ namespace Engine
 
         public static RenderWindow window;
 
+        public static Vector2f GetVector(ObjectInstance obj)
+        {
+            Vector2f vect = new Vector2f(0, 0);
+            if (obj.HasProperty("x"))
+                vect.X = (int)obj.GetPropertyValue("x");
+            if (obj.HasProperty("y"))
+                vect.Y = (int)obj.GetPropertyValue("y");
+            return vect;
+        }
+
         public static void Rectangle(double x, double y, double width, double height, ColorInstance color)
         {
             _rect.Position = new Vector2f((float)x, (float)y);
@@ -52,6 +62,33 @@ namespace Engine
             window.Draw(v, PrimitiveType.Triangles);
         }
 
+        public static void GradientTriangle(ObjectInstance A, ObjectInstance B, ObjectInstance C, ColorInstance color1, ColorInstance color2, ColorInstance color3)
+        {
+            Vertex[] v = { new Vertex(GetVector(A), color1.GetColor()),
+                           new Vertex(GetVector(B), color2.GetColor()),
+                           new Vertex(GetVector(C), color3.GetColor()) };
+            window.Draw(v, PrimitiveType.Triangles);
+        }
+
+        public static void Polygon(ArrayInstance points, ColorInstance color, bool inverse = false)
+        {
+            if (points == null || color == null)
+                throw new NullReferenceException();
+
+            Color sfml_color = color.GetColor();
+
+            Vertex[] v = new Vertex[points.Length];
+            for (var i = 0; i < points.Length; ++i)
+            {
+                ObjectInstance obj = points[i.ToString()] as ObjectInstance;
+                if (obj == null)
+                    throw new NullReferenceException();
+                v[i] = new Vertex(GetVector(obj), sfml_color);
+            }
+
+            window.Draw(v, PrimitiveType.TrianglesFan);
+        }
+
         public static void Point(double x, double y, ColorInstance color)
         {
             Vertex[] v = { new Vertex(new Vector2f((float)x, (float)y), color.GetColor()) };
@@ -68,6 +105,9 @@ namespace Engine
 
         public static void LineSeries(ArrayInstance points, ColorInstance color)
         {
+            if (points == null || color == null)
+                throw new NullReferenceException();
+
             Color sfml_col = color.GetColor();
 
             Vertex[] v = new Vertex[points.Length];
@@ -75,12 +115,9 @@ namespace Engine
             {
                 ObjectInstance obj = points[i.ToString()] as ObjectInstance;
                 if (obj != null)
-                {
-                    Vector2f vect = new Vector2f();
-                    vect.X = (int)obj.GetPropertyValue("x");
-                    vect.Y = (int)obj.GetPropertyValue("y");
-                    v[i] = new Vertex(vect, sfml_col);
-                }
+                    v[i] = new Vertex(GetVector(obj), sfml_col);
+                else
+                    throw new Jurassic.JavaScriptException(Program._engine, "Invalid object", "Not a JS object in array.");
             }
 
             window.Draw(v, PrimitiveType.Lines);
@@ -88,6 +125,9 @@ namespace Engine
 
         public static void PointSeries(ArrayInstance points, ColorInstance color)
         {
+            if (points == null || color == null)
+                throw new NullReferenceException();
+
             Color sfml_col = color.GetColor();
 
             Vertex[] v = new Vertex[points.Length];
@@ -95,12 +135,9 @@ namespace Engine
             {
                 ObjectInstance obj = points[i.ToString()] as ObjectInstance;
                 if (obj != null)
-                {
-                    Vector2f vect = new Vector2f();
-                    vect.X = ((int)obj.GetPropertyValue("x")-1);
-                    vect.Y = ((int)obj.GetPropertyValue("y")+1);
-                    v[i] = new Vertex(vect, sfml_col);
-                }
+                    v[i] = new Vertex(GetVector(obj), sfml_col);
+                else
+                    throw new NullReferenceException();
             }
 
             window.Draw(v, PrimitiveType.Points);

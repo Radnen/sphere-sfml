@@ -13,9 +13,7 @@ namespace Engine
         [SetUp()]
         public void Init()
         {
-            if (Program._engine == null)
-                Program._engine = Program.GetSphereEngine();
-
+            Program.SetupTest();
             Program._engine.Evaluate("var img = LoadImage(\"blockman.png\");");
         }
 
