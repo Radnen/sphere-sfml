@@ -8,7 +8,7 @@ namespace Engine
     [TestFixture()]
     public class WindowstyleTest
     {
-        [SetUp()]
+        [TestFixtureSetUp()]
         public void Init()
         {
             if (Program._engine == null)

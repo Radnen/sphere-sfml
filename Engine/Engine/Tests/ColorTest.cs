@@ -7,12 +7,10 @@ namespace Engine
     [TestFixture()]
     public class ColorTest
     {
-        [SetUp()]
+        [TestFixtureSetUp()]
         public void Init()
         {
-            if (Program._engine == null)
-                Program._engine = Program.GetSphereEngine();
-
+            Program.SetupTest();
             Program._engine.Evaluate("var col = CreateColor(0, 0, 0, 255);");
             Program._engine.Evaluate("var col_op = CreateColor(0, 0, 0);");
         }

@@ -14,6 +14,9 @@ namespace Engine
 
         public static RenderWindow window;
 
+        /// <summary>
+        /// Attempts to translate a JS object: {x: 0, y: 0} into a Vector2f point.
+        /// </summary>
         public static Vector2f GetVector(ObjectInstance obj)
         {
             Vector2f vect = new Vector2f(0, 0);

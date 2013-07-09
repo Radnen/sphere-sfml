@@ -9,7 +9,7 @@ namespace Engine
     [TestFixture()]
     public class SurfaceTest
     {
-        [SetUp()]
+        [TestFixtureSetUp()]
         public void Init()
         {
             if (Program._engine == null)

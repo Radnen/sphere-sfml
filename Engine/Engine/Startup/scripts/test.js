@@ -40,7 +40,6 @@ function game()
 	var ox = SW/2;
 	var oy = SH/2;
 	var s = new ship();
-	SetFrameRate(60);
 	
 	var red = CreateColor(255, 0, 0);
 	var green = CreateColor(0, 255, 0);
@@ -57,7 +56,7 @@ function game()
 		
 		s.draw();
 		s.update();
-		image.transformBlit(0, 0, 50, 0, 50, 50, 0, 50);
+		image.transformBlit(0, 0, 50, 0, 100, 100, 0, 50);
 		
 		FlipScreen();
 	}

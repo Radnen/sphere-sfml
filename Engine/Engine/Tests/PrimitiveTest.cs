@@ -7,7 +7,7 @@ namespace Engine
     [TestFixture()]
     public class PrimitiveTest
     {
-        [SetUp()]
+        [TestFixtureSetUp()]
         public void Init()
         {
             Program.SetupTest();

@@ -9,20 +9,24 @@ namespace Engine.Objects
     public class ImageInstance : ObjectInstance
     {
         private Texture _image;
-		private Sprite _sprite;
+        private Sprite _sprite;
         private RectangleShape _shape = new RectangleShape();
-        private RenderStates state = new RenderStates();
+        private RenderStates _state = new RenderStates();
 
 		public ImageInstance(ObjectInstance proto, string filename)
             : base(proto)
-		{
+        {
             _image = new Texture(GlobalProps.BasePath + "\\images\\" + filename);
             _sprite = new Sprite(_image);
             PopulateFunctions();
-            state.Texture = _image;
+            
+            _state.Texture = _image;
+            _state.BlendMode = BlendMode.Alpha;
+            _state.Transform = Transform.Identity;
+
             DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
-		}
+        }
 
         public ImageInstance(ObjectInstance proto, Texture copy)
             : base(proto)
@@ -30,7 +34,11 @@ namespace Engine.Objects
             _image = new Texture(copy);
             _sprite = new Sprite(_image);
             PopulateFunctions();
-            state.Texture = _image;
+            
+            _state.Texture = _image;
+            _state.BlendMode = BlendMode.Alpha;
+            _state.Transform = Transform.Identity;
+            
             DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
         }
@@ -97,14 +105,27 @@ namespace Engine.Objects
         public void TransformBlit(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
         {
             Vertex[] array = new Vertex[4];
-            Color c = new Color(255, 255, 255);
 
-            array[0] = new Vertex(new Vector2f((float)x1, (float)y1), c, new Vector2f(0, 0));
-            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), c, new Vector2f((float)_image.Size.X, 0));
-            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), c, new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
-            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), c, new Vector2f(0, (float)_image.Size.Y));
+            array[0] = new Vertex(new Vector2f((float)x1, (float)y1), new Vector2f(0, 0));
+            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), new Vector2f((float)_image.Size.X, 0));
+            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
+            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), new Vector2f(0, (float)_image.Size.Y));
 
-            Program._window.Draw(array, PrimitiveType.Quads, state);
+            Program._window.Draw(array, PrimitiveType.Quads, _state);
+        }
+
+        [JSFunction(Name = "transformBlitMask")]
+        public void TransformBlitMask(ObjectInstance ul, ObjectInstance ur, ObjectInstance lr, ObjectInstance ll, ColorInstance color)
+        {
+            Vertex[] array = new Vertex[4];
+            Color c = color.GetColor();
+
+            array[0] = new Vertex(GlobalPrimitives.GetVector(ul), c, new Vector2f(0, 0));
+            array[1] = new Vertex(GlobalPrimitives.GetVector(ur), c, new Vector2f((float)_image.Size.X, 0));
+            array[2] = new Vertex(GlobalPrimitives.GetVector(lr), c, new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
+            array[3] = new Vertex(GlobalPrimitives.GetVector(ll), c, new Vector2f(0, (float)_image.Size.Y));
+
+            Program._window.Draw(array, PrimitiveType.Quads, _state);
         }
 
         [JSFunction(Name = "createSurface")]

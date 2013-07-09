@@ -10,7 +10,7 @@ namespace Engine
     [TestFixture()]
     public class ImageTest
     {
-        [SetUp()]
+        [TestFixtureSetUp()]
         public void Init()
         {
             Program.SetupTest();
@@ -129,6 +129,13 @@ namespace Engine
         public void TestImageTransformBlit()
         {
             object func = Program._engine.Evaluate("img.transformBlit;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestImageTransformBlitMask()
+        {
+            object func = Program._engine.Evaluate("img.transformBlitMask;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
