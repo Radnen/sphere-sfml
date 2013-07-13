@@ -11,8 +11,14 @@ namespace Engine
         private static RectangleShape _rect = new RectangleShape();
         private static RectangleShape _orect = new RectangleShape();
         private static CircleShape _circle = new CircleShape();
+        private static Vertex[] _verts = new Vertex[4];
 
         public static RenderWindow window;
+
+        static GlobalPrimitives()
+        {
+            _orect.FillColor = new Color(0, 0, 0, 0);
+        }
 
         /// <summary>
         /// Attempts to translate a JS object: {x: 0, y: 0} into a Vector2f point.
@@ -36,23 +42,30 @@ namespace Engine
             window.Draw(_rect);
         }
 
+        public static void ApplyColorMask(ColorInstance color)
+        {
+            Rectangle(0, 0, GlobalProps.Width, GlobalProps.Height, color);
+        }
+
         public static void GradientRectangle(double x, double y, double width, double height, ColorInstance color1, ColorInstance color2, ColorInstance color3, ColorInstance color4)
         {
-            Vertex[] v = { new Vertex(new Vector2f((float)x, (float)y), color1.GetColor()),
-                new Vertex(new Vector2f((float)(x + width), (float)y), color2.GetColor()),
-                new Vertex(new Vector2f((float)(x + width), (float)(y + height)), color3.GetColor()),
-                new Vertex(new Vector2f((float)x, (float)(y + height)), color4.GetColor()) };
-            window.Draw(v, PrimitiveType.Quads);
+            _verts[0].Position = new Vector2f((float)x, (float)y);
+            _verts[0].Color = color1.GetColor();
+            _verts[1].Position = new Vector2f((float)(x + width), (float)y);
+            _verts[1].Color = color2.GetColor();
+            _verts[2].Position = new Vector2f((float)(x + width), (float)(y + height));
+            _verts[2].Color = color3.GetColor();
+            _verts[3].Position = new Vector2f((float)x, (float)(y + height));
+            _verts[3].Color = color4.GetColor();
+            window.Draw(_verts, PrimitiveType.Quads);
         }
 
         public static void OutlinedRectangle(double x, double y, double width, double height, ColorInstance color, double thickness = 1.0f)
         {
-            _orect.Position = new Vector2f((float)x, (float)y);
-            _orect.Size = new Vector2f((float)width, (float)height);
-            _orect.FillColor = new Color(0, 0, 0, 0);
+            _orect.Position = new Vector2f((float)x+1, (float)y+1);
             _orect.OutlineColor = color.GetColor();
+            _orect.Size = new Vector2f((float)width-2, (float)height-2);
             _orect.OutlineThickness = (float)thickness;
-
             window.Draw(_orect);
         }
 

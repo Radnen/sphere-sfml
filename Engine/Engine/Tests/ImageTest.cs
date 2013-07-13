@@ -13,7 +13,7 @@ namespace Engine
         [TestFixtureSetUp()]
         public void Init()
         {
-            Program.SetupTest();
+            Program.SetupTestEnvironment();
             Program._engine.Evaluate("var img = LoadImage(\"blockman.png\");");
         }
 
@@ -58,7 +58,7 @@ namespace Engine
             Assert.IsInstanceOf<FunctionInstance>(func);
 
             object image = Program._engine.Evaluate("GetSystemArrow();");
-            Assert.IsInstanceOf<SurfaceInstance>(image);
+            Assert.IsInstanceOf<ImageInstance>(image);
         }
 
         [Test()]
@@ -68,7 +68,7 @@ namespace Engine
             Assert.IsInstanceOf<FunctionInstance>(func);
 
             object image = Program._engine.Evaluate("GetSystemUpArrow();");
-            Assert.IsInstanceOf<SurfaceInstance>(image);
+            Assert.IsInstanceOf<ImageInstance>(image);
         }
 
         [Test()]
@@ -78,7 +78,7 @@ namespace Engine
             Assert.IsInstanceOf<FunctionInstance>(func);
 
             object image = Program._engine.Evaluate("GetSystemDownArrow();");
-            Assert.IsInstanceOf<SurfaceInstance>(image);
+            Assert.IsInstanceOf<ImageInstance>(image);
         }
 
         [Test()]

@@ -16,7 +16,7 @@ namespace Engine.Objects
 		public ImageInstance(ObjectInstance proto, string filename)
             : base(proto)
         {
-            _image = new Texture(GlobalProps.BasePath + "\\images\\" + filename);
+            _image = new Texture(filename);
             _sprite = new Sprite(_image);
             PopulateFunctions();
             
@@ -56,7 +56,7 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "blit")]
-        public void Blit(double x, double y)
+        public void Blit(double x, double y, int mode)
         {
 			_sprite.Position = new Vector2f((float)x, (float)y);
             _sprite.Color = Color.White;
@@ -64,7 +64,22 @@ namespace Engine.Objects
             _sprite.Rotation = 0;
             _sprite.Origin = new Vector2f(0, 0);
 
-            Program._window.Draw(_sprite);
+            BlendMode before = _state.BlendMode;
+            switch (mode)
+            {
+                case 0:
+                    _state.BlendMode = BlendMode.Alpha;
+                    break;
+                case 4:
+                    _state.BlendMode = BlendMode.Add;
+                    break;
+                case 6:
+                    _state.BlendMode = BlendMode.Multiply;
+                    break;
+            }
+
+            Program._window.Draw(_sprite, _state);
+            _state.BlendMode = before;
         }
 
         [JSFunction(Name = "blitMask")]

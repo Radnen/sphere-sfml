@@ -35,9 +35,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Docs\License.txt" />
-    <Content Include="startup\scripts\require.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="startup\game.sgm">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -50,6 +47,39 @@
     <Content Include="startup\images\ship.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="startup\windowstyles\main.rws">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="system\system.rfn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="system\down_arrow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="system\pointer.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="system\system.rws">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="system\up_arrow.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\imagetest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\fonttest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\fonts\test.rfn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\windowtest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\mousetest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -98,6 +128,10 @@
     <Compile Include="Objects\SurfaceInstance.cs" />
     <Compile Include="Tests\SurfaceTest.cs" />
     <Compile Include="GlobalPrimitives.cs" />
+    <Compile Include="Tests\OtherTest.cs" />
+    <Compile Include="Objects\FontInstance.cs" />
+    <Compile Include="Tests\FontTest.cs" />
+    <Compile Include="Tests\InputTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />
@@ -107,6 +141,7 @@
     <Folder Include="startup\spritesets\" />
     <Folder Include="startup\windowstyles\" />
     <Folder Include="Tests\" />
+    <Folder Include="system\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

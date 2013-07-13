@@ -12,9 +12,7 @@ namespace Engine
         [TestFixtureSetUp()]
         public void Init()
         {
-            if (Program._engine == null)
-                Program._engine = Program.GetSphereEngine();
-
+            Program.SetupTestEnvironment();
             Program._engine.Evaluate("var surf = CreateSurface(50, 50, CreateColor(255, 255, 255));");
             Program._engine.Evaluate("var r_surf = CreateSurface(50, 50, CreateColor(255, 255, 255));");
         }

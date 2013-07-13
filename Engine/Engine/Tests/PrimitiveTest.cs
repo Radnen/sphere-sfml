@@ -10,7 +10,7 @@ namespace Engine
         [TestFixtureSetUp()]
         public void Init()
         {
-            Program.SetupTest();
+            Program.SetupTestEnvironment();
             GlobalPrimitives.window = Program._window;
         }
 

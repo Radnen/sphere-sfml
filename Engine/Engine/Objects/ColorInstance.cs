@@ -10,13 +10,8 @@ namespace Engine.Objects
         private Color _color;
 
         public ColorInstance(ObjectInstance proto)
-            : base(proto)
+            : this(proto, 0, 0, 0, 0)
         {
-            PopulateFunctions();
-            this["red"] = 0;
-            this["green"] = 0;
-            this["blue"] = 0;
-            this["alpha"] = 0;
         }
 
         public ColorInstance(ObjectInstance proto, int r, int g, int b, int a)
@@ -30,15 +25,23 @@ namespace Engine.Objects
         }
 
         public ColorInstance(ObjectInstance proto, Color color)
-            : base(proto)
+            : this(proto, (int)color.R, (int)color.G, (int)color.B, (int)color.A)
         {
-            PopulateFunctions();
-            this["red"] = (int)color.R;
-            this["green"] = (int)color.G;
-            this["blue"] = (int)color.B;
-            this["alpha"] = (int)color.A;
         }
 
+        public ColorInstance(ObjectInstance proto, ColorInstance color)
+            : base (proto)
+        {
+            Color c = color.GetColor();
+            this["red"] = (int)c.R;
+            this["green"] = (int)c.G;
+            this["blue"] = (int)c.B;
+            this["alpha"] = (int)c.A;
+        }
+
+        /// <summary>
+        /// Gets the underlying SFML color.
+        /// </summary>
         public Color GetColor()
         {
             _color.R = (byte)((int)this["red"]);

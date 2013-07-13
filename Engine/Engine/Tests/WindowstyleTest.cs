@@ -11,10 +11,8 @@ namespace Engine
         [TestFixtureSetUp()]
         public void Init()
         {
-            if (Program._engine == null)
-                Program._engine = Program.GetSphereEngine();
-
-            Program._engine.Evaluate("var wnd = LoadWindowStyle(\"test.rws\");");
+            Program.SetupTestEnvironment();
+            Program._engine.Evaluate("var wnd = LoadWindowStyle(\"main.rws\");");
         }
 
         [Test()]
@@ -45,7 +43,7 @@ namespace Engine
             Assert.IsInstanceOf<FunctionInstance>(func);
 
             object wnd = Program._engine.Evaluate("wnd.clone();");
-            Assert.IsInstanceOf<WindowStyleInstance>(func);
+            Assert.IsInstanceOf<WindowStyleInstance>(wnd);
         }
 
         [Test()]

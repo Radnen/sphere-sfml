@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System;
 using Engine.Objects;
+using Jurassic.Library;
 
 namespace Engine
 {
@@ -10,7 +11,7 @@ namespace Engine
         [TestFixtureSetUp()]
         public void Init()
         {
-            Program.SetupTest();
+            Program.SetupTestEnvironment();
             Program._engine.Evaluate("var col = CreateColor(0, 0, 0, 255);");
             Program._engine.Evaluate("var col_op = CreateColor(0, 0, 0);");
         }
@@ -58,6 +59,20 @@ namespace Engine
             object str = Program._engine.Evaluate("col.toString();");
             Assert.IsInstanceOf<string>(str);
             Assert.AreEqual(str, "[object color]");
+        }
+
+        [Test()]
+        public void TestBlendColors()
+        {
+            object func = Program._engine.Evaluate("BlendColors;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestBlendColorsWeighted()
+        {
+            object func = Program._engine.Evaluate("BlendColorsWeighted;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
         }
     }
 }
