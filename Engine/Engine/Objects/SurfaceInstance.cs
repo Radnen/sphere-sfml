@@ -61,6 +61,24 @@ namespace Engine.Objects
             _changed = true;
         }
 
+        [JSFunction(Name = "replaceColor")]
+        public void ReplaceColor(ColorInstance colorA, ColorInstance colorB)
+        {
+            Color A = colorA.GetColor();
+            Color B = colorB.GetColor();
+            uint w = _image.Size.X;
+            uint h = _image.Size.Y;
+
+            for (uint y = 0; y < h; ++y)
+            {
+                for (uint x = 0; x < w; ++x)
+                {
+                    if (_image.GetPixel(x, y).Equals(A))
+                        _image.SetPixel(x, y, B);
+                }
+            }
+        }
+
         [JSFunction(Name = "getPixel")]
         public ColorInstance GetPixel(int x, int y)
         {

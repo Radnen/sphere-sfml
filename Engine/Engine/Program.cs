@@ -15,10 +15,7 @@ namespace Engine
     {
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
-        private static Dictionary<int, bool> _keyCache = new Dictionary<int, bool>();
-        private static Queue<int> _keyQueue = new Queue<int>(10);
 
-        private static bool _fullscreen;
         private static int _internal_fps = 0;
         private static bool _scaled = true;
 
@@ -106,7 +103,7 @@ namespace Engine
             return ret;
         }
 
-        static bool InitWindow(Styles style)
+        public static bool InitWindow(Styles style)
         {
             int width, height;
             if (!_game.TryGetData("screen_width", out width))
@@ -143,7 +140,7 @@ namespace Engine
                 return false;
             }
 
-            _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), "", style);
+            _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), GlobalProps.GameName, style);
 
             if (_scaled)
             {
@@ -153,43 +150,13 @@ namespace Engine
                 _window.SetView(v);
             }
 
-            _window.Closed += window_Closed;
-            _window.KeyPressed += window_KeyPressed;
-            _window.KeyReleased += window_KeyReleased;
             _window.SetMouseCursorVisible(false);
+            GlobalInput.AddWindowHandlers(_window);
+            Program._window.SetFramerateLimit((uint)_internal_fps);
+            Program._window.SetMouseCursorVisible(false);
 
             GlobalPrimitives.window = _window;
             return true;
-        }
-
-        public static void ToggleFullScreen()
-        {
-            if (_window != null) {
-                _window.Closed -= window_Closed;
-                _window.KeyPressed -= window_KeyPressed;
-                _window.KeyReleased -= window_KeyReleased;
-                _window.Close();
-            }
-
-            _fullscreen = !_fullscreen;
-            var style = (_fullscreen) ? Styles.Fullscreen : Styles.Default;
-
-            InitWindow(style);
-            _window.SetFramerateLimit((uint)_internal_fps);
-            _window.SetMouseCursorVisible(false);
-        }
-
-        public static void window_KeyPressed(object sender, KeyEventArgs e) {
-            _keyCache[(int)e.Code] = true;
-
-            _keyQueue.Enqueue((int)e.Code);
-
-            if (e.Code == Keyboard.Key.F10)
-                ToggleFullScreen();
-        }
-
-        public static void window_KeyReleased(object sender, KeyEventArgs e) {
-            _keyCache[(int)e.Code] = false;
         }
 
         public static ScriptEngine GetSphereEngine()
@@ -229,7 +196,6 @@ namespace Engine
             engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GlobalPrimitives.GradientLine));
             engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, SurfaceInstance>(CreateSurface)); 
             engine.SetGlobalFunction("GrabImage", new Func<ImageInstance>(GrabImage));
-            engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(IsKeyPressed));
             engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
             engine.SetGlobalFunction("GetFrameRate", new Func<int>(GetFrameRate));
             engine.SetGlobalFunction("GetRealFrameRate", new Func<int>(GetRealFrameRate));
@@ -238,12 +204,26 @@ namespace Engine
             engine.SetGlobalFunction("BlendColorsWeighted", new Func<ColorInstance, ColorInstance, double, ColorInstance>(BlendColorsWeighted));
             engine.SetGlobalFunction("ApplyColorMask", new Action<ColorInstance>(GlobalPrimitives.ApplyColorMask));
             engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
-            engine.SetGlobalFunction("AreKeysLeft", new Func<bool>(AreKeysLeft));
-            engine.SetGlobalFunction("GetKey", new Func<int>(GetKey));
-            engine.SetGlobalFunction("GetMouseX", new Func<int>(GetMouseX));
-            engine.SetGlobalFunction("GetMouseY", new Func<int>(GetMouseY));
-            engine.SetGlobalFunction("SetMouseX", new Action<int>(SetMouseX));
-            engine.SetGlobalFunction("SetMouseY", new Action<int>(SetMouseY));
+            engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
+            engine.SetGlobalFunction("IsAnyKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
+            engine.SetGlobalFunction("IsMouseButtonPressed", new Func<int, bool>(GlobalInput.IsMouseButtonPressed));
+            engine.SetGlobalFunction("IsJoystickButtonPressed", new Func<int, int, bool>(GlobalInput.IsJoystickButtonPressed));
+            engine.SetGlobalFunction("AreKeysLeft", new Func<bool>(GlobalInput.AreKeysLeft));
+            engine.SetGlobalFunction("GetKey", new Func<int>(GlobalInput.GetKey));
+            engine.SetGlobalFunction("GetKeyString", new Func<int, bool, string>(GlobalInput.GetKeyString));
+            engine.SetGlobalFunction("SetTalkActivationKey", new Action<int>(GlobalInput.SetTalkActivationKey));
+            engine.SetGlobalFunction("SetTalkActivationButton", new Action<int>(GlobalInput.SetTalkActivationButton));
+            engine.SetGlobalFunction("GetTalkActivationKey", new Func<int>(GlobalInput.GetTalkActivationKey));
+            engine.SetGlobalFunction("GetTalkActivationButton", new Func<int>(GlobalInput.GetTalkActivationButton));
+            engine.SetGlobalFunction("GetMouseX", new Func<int>(GlobalInput.GetMouseX));
+            engine.SetGlobalFunction("GetMouseY", new Func<int>(GlobalInput.GetMouseY));
+            engine.SetGlobalFunction("SetMouseX", new Action<int>(GlobalInput.SetMouseX));
+            engine.SetGlobalFunction("SetMouseY", new Action<int>(GlobalInput.SetMouseY));
+            engine.SetGlobalFunction("SetMousePosition", new Action<int, int>(GlobalInput.SetMousePosition));
+            engine.SetGlobalFunction("BindKey", new Action<int, string, string>(GlobalInput.BindKey));
+            engine.SetGlobalFunction("UnbindKey", new Action<int>(GlobalInput.UnbindKey));
+            engine.SetGlobalFunction("GetNumJoysticks", new Func<int>(GlobalInput.GetNumJoySticks));
+            engine.SetGlobalFunction("GetNumJoystickButtons", new Func<int, int>(GlobalInput.GetNumJoyStickButtons));
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -271,6 +251,11 @@ namespace Engine
             engine.SetGlobalValue("SUBTRACT", 5);
             engine.SetGlobalValue("MULTIPLY", 6);
             engine.SetGlobalValue("AVERAGE", 7);
+            engine.SetGlobalValue("MOUSE_LEFT", (int)Mouse.Button.Left);
+            engine.SetGlobalValue("MOUSE_RIGHT", (int)Mouse.Button.Right);
+            engine.SetGlobalValue("MOUSE_MIDDLE", (int)Mouse.Button.Middle);
+            engine.SetGlobalValue("MOUSE_EX1", (int)Mouse.Button.XButton1);
+            engine.SetGlobalValue("MOUSE_EX2", (int)Mouse.Button.XButton2);
 
             return engine;
         }
@@ -284,7 +269,7 @@ namespace Engine
             _engine = GetSphereEngine();
         }
 
-		static void Exit()
+		public static void Exit()
 		{
 			_window.Close();
 
@@ -336,48 +321,6 @@ namespace Engine
         static double GetTime()
         {
             return DateInstance.Now();
-        }
-
-        static bool IsKeyPressed(int code)
-        {
-            return (_keyCache.ContainsKey(code)) ? _keyCache[code] : false;
-        }
-
-        static bool AreKeysLeft()
-        {
-            return _keyQueue.Count > 0;
-        }
-
-        static int GetKey()
-        {
-            while (_keyQueue.Count == 0)
-            {
-                _window.DispatchEvents();
-                _window.Clear(Color.Cyan);
-            }
-            return _keyQueue.Dequeue();
-        }
-
-        static int GetMouseX()
-        {
-            return _window.InternalGetMousePosition().X;
-        }
-
-        static int GetMouseY()
-        {
-            return _window.InternalGetMousePosition().Y;
-        }
-
-        static void SetMouseX(int new_x)
-        {
-            int y = GetMouseY();
-            _window.InternalSetMousePosition(new Vector2i(new_x, y));
-        }
-
-        static void SetMouseY(int new_y)
-        {
-            int x = GetMouseX();
-            _window.InternalSetMousePosition(new Vector2i(x, new_y));
         }
 
 		static ColorInstance CreateColor(int r, int g, int b, int a = 255)
@@ -506,12 +449,5 @@ namespace Engine
                 Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
             }
         }
-
-        static void window_Closed(object sender, EventArgs e)
-		{
-			Window window = sender as Window;
-            if (window != null)
-                Exit();
-		}
     }
 }

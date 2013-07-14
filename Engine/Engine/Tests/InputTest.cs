@@ -39,6 +39,13 @@ namespace Engine
         }
 
         [Test()]
+        public void TestIsAnyKeyPressed()
+        {
+            object func = Program._engine.Evaluate("IsAnyKeyPressed;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestBindKey()
         {
             object func = Program._engine.Evaluate("BindKey;");
@@ -88,6 +95,13 @@ namespace Engine
         }
 
         [Test()]
+        public void TestSetMousePosition()
+        {
+            object func = Program._engine.Evaluate("SetMousePosition;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestIsMouseButtonPressed()
         {
             object func = Program._engine.Evaluate("IsMouseButtonPressed;");
@@ -98,6 +112,76 @@ namespace Engine
         public void TestIsJoystickButtonPressed()
         {
             object func = Program._engine.Evaluate("IsJoystickButtonPressed;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetMouseWheelEvent()
+        {
+            object func = Program._engine.Evaluate("GetMouseWheelEvent;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetNumMouseWheelEvents()
+        {
+            object func = Program._engine.Evaluate("GetNumMouseWheelEvents;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetNumJoysticks()
+        {
+            object func = Program._engine.Evaluate("GetNumJoysticks;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetNumJoystickButtons()
+        {
+            object func = Program._engine.Evaluate("GetNumJoystickButtons;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetNumJoystickAxes()
+        {
+            object func = Program._engine.Evaluate("GetNumJoystickAxes;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetJoystickAxis()
+        {
+            object func = Program._engine.Evaluate("GetJoystickAxis;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetTalkActivationButton()
+        {
+            object func = Program._engine.Evaluate("GetTalkActivationButton;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestSetTalkActivationButton()
+        {
+            object func = Program._engine.Evaluate("SetTalkActivationButton;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetTalkActivationKey()
+        {
+            object func = Program._engine.Evaluate("GetTalkActivationKey;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestSetTalkActivationKey()
+        {
+            object func = Program._engine.Evaluate("SetTalkActivationKey;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
     }

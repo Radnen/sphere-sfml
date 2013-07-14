@@ -8,6 +8,9 @@ namespace Engine.Objects
 {
     public class ImageInstance : ObjectInstance
     {
+        private static readonly Vector2f VECT_1 = new Vector2f(1, 1);
+        private static readonly Vector2f VECT_0 = new Vector2f(0, 0);
+
         private Texture _image;
         private Sprite _sprite;
         private RectangleShape _shape = new RectangleShape();
@@ -60,9 +63,9 @@ namespace Engine.Objects
         {
 			_sprite.Position = new Vector2f((float)x, (float)y);
             _sprite.Color = Color.White;
-            _sprite.Scale = new Vector2f(1, 1);
+            _sprite.Scale = VECT_1;
             _sprite.Rotation = 0;
-            _sprite.Origin = new Vector2f(0, 0);
+            _sprite.Origin = VECT_0;
 
             BlendMode before = _state.BlendMode;
             switch (mode)
@@ -87,9 +90,9 @@ namespace Engine.Objects
 		{
 			_sprite.Position = new Vector2f((float)x, (float)y);
             _sprite.Color = color.GetColor();
-            _sprite.Scale = new Vector2f(1, 1);
+            _sprite.Scale = VECT_1;
             _sprite.Rotation = 0;
-            _sprite.Origin = new Vector2f(0, 0);
+            _sprite.Origin = VECT_0;
 
             Program._window.Draw(_sprite);
 		}
@@ -100,7 +103,18 @@ namespace Engine.Objects
             _sprite.Color = Color.White;
             _sprite.Scale = new Vector2f((float)z, (float)z);
             _sprite.Rotation = 0;
-            _sprite.Origin = new Vector2f(0, 0);
+            _sprite.Origin = VECT_0;
+
+            Program._window.Draw(_sprite);
+        }
+
+        [JSFunction(Name = "zoomBlitMask")]
+        public void ZoomBlitMask(double x, double y, double z, ColorInstance color) {
+            _sprite.Position = new Vector2f((float)x, (float)y);
+            _sprite.Color = color.GetColor();
+            _sprite.Scale = new Vector2f((float)z, (float)z);
+            _sprite.Rotation = 0;
+            _sprite.Origin = VECT_0;
 
             Program._window.Draw(_sprite);
         }
@@ -109,7 +123,18 @@ namespace Engine.Objects
         public void RotateBlit(double x, double y, double r) {
             _sprite.Position = new Vector2f((float)(x + _image.Size.X / 2), (float)(y + _image.Size.Y / 2));
             _sprite.Color = Color.White;
-            _sprite.Scale = new Vector2f(1, 1);
+            _sprite.Scale = VECT_1;
+            _sprite.Rotation = (float)(r / Math.PI) * 180.0f;
+            _sprite.Origin = new Vector2f((float)_image.Size.X / 2, (float)_image.Size.Y / 2);
+
+            Program._window.Draw(_sprite);
+        }
+
+        [JSFunction(Name = "rotateBlitMask")]
+        public void RotateBlitMask(double x, double y, double r, ColorInstance color) {
+            _sprite.Position = new Vector2f((float)(x + _image.Size.X / 2), (float)(y + _image.Size.Y / 2));
+            _sprite.Color = color.GetColor();
+            _sprite.Scale = VECT_1;
             _sprite.Rotation = (float)(r / Math.PI) * 180.0f;
             _sprite.Origin = new Vector2f((float)_image.Size.X / 2, (float)_image.Size.Y / 2);
 

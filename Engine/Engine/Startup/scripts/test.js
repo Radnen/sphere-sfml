@@ -16,11 +16,11 @@ function game()
 	menu.addOption("Images", TestImages);
 	menu.addOption("Fonts", TestFonts);
 	menu.addOption("Windows", TestWindows);
-	menu.addOption("Mouse", TestMouse);
+	menu.addOption("Mouse/Input", TestMouse);
 	menu.addOption("Exit", Exit);
 	
 	while (!done) {
-		menu.draw(16, 16, 80, 64);
+		menu.draw(16, 16, 96, 80);
 		FlipScreen();
 		while (AreKeysLeft()) {
 			var key = GetKey();

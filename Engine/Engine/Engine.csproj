@@ -132,6 +132,7 @@
     <Compile Include="Objects\FontInstance.cs" />
     <Compile Include="Tests\FontTest.cs" />
     <Compile Include="Tests\InputTest.cs" />
+    <Compile Include="GlobalInput.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />

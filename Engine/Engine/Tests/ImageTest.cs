@@ -119,9 +119,23 @@ namespace Engine
         }
 
         [Test()]
+        public void TestImageRotateBlitMask()
+        {
+            object func = Program._engine.Evaluate("img.rotateBlitMask;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestImageZoomBlit()
         {
             object func = Program._engine.Evaluate("img.zoomBlit;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestImageZoomBlitMask()
+        {
+            object func = Program._engine.Evaluate("img.zoomBlitMask;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
