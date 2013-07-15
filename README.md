@@ -2,7 +2,8 @@
 
 A .NET Sphere implementation using SFML for graphics, input, etc.
 
-Download History:
+**Downloads:**
+ - v0.55: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.55.zip
  - v0.5: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.5.zip
 
 Parity with Sphere v1.6
@@ -20,6 +21,21 @@ Parity with Sphere v1.6
  - Files: 0%
  - Sound: 0%
  - Networking: 0%
+
+How To
+======
+
+You can use the following command line args with this engine:
+ - **-games:** a list of the games in the /games directory
+ - **-game "dir":** play the game (ending in .sgm) from anywhere on your computer.
+ - **-conformance:** see what Sphere version parity it's at.
+ - **-help:** see this help message.
+ - **"dir":** play the sphere game (ending in .sgm) by dragging and dropping it over this executable.
+
+**Example**:
+```
+Engine.exe -game "C:/Path/to/game.sgm"
+```
 
 Credits
 =======
