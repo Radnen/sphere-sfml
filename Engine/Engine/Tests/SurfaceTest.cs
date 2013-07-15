@@ -30,7 +30,7 @@ namespace Engine
             object func = Program._engine.Evaluate("GrabSurface;");
             Assert.IsInstanceOf<FunctionInstance>(func);
 
-            object surf = Program._engine.Evaluate("GrabSurface();");
+            object surf = Program._engine.Evaluate("GrabSurface(0, 0, 10, 10);");
             Assert.IsInstanceOf<SurfaceInstance>(surf);
         }
 

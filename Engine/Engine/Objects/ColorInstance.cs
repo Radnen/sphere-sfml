@@ -30,13 +30,8 @@ namespace Engine.Objects
         }
 
         public ColorInstance(ObjectInstance proto, ColorInstance color)
-            : base (proto)
+            : this (proto, color.GetColor())
         {
-            Color c = color.GetColor();
-            this["red"] = (int)c.R;
-            this["green"] = (int)c.G;
-            this["blue"] = (int)c.B;
-            this["alpha"] = (int)c.A;
         }
 
         /// <summary>

@@ -156,6 +156,15 @@
     <None Include="startup\scripts\surfacetest.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="startup\sounds\test.ogg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\sounds\test.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\soundtest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -211,6 +220,8 @@
     <Compile Include="GlobalInput.cs" />
     <Compile Include="Objects\TextureAtlas.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Tests\SoundTest.cs" />
+    <Compile Include="Objects\SoundInstance.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />
@@ -222,6 +233,7 @@
     <Folder Include="Tests\" />
     <Folder Include="system\" />
     <Folder Include="system\scripts\" />
+    <Folder Include="startup\sounds\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

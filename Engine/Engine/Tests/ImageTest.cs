@@ -30,7 +30,7 @@ namespace Engine
             object func = Program._engine.Evaluate("GrabImage;");
             Assert.IsInstanceOf<FunctionInstance>(func);
 
-            object image = Program._engine.Evaluate("GrabImage();");
+            object image = Program._engine.Evaluate("GrabImage(0, 0, 10, 10);");
             Assert.IsInstanceOf<ImageInstance>(image);
         }
 

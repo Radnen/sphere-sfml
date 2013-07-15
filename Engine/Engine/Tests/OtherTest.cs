@@ -28,6 +28,20 @@ namespace Engine
         }
 
         [Test()]
+        public void TestEvaluateScript()
+        {
+            object func = Program._engine.Evaluate("EvaluateScript;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestEvaluateSystemScript()
+        {
+            object func = Program._engine.Evaluate("EvaluateSystemScript;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestGetScreenWidth()
         {
             object func = Program._engine.Evaluate("GetScreenWidth;");

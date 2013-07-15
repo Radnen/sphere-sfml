@@ -20,7 +20,7 @@ namespace Engine
 
         private static int _internal_fps = 0;
         private static bool SCALED = false;
-        private static readonly bool DEBUG  = true;
+        private static readonly bool DEBUG = true;
 
         static GameFile _game = new GameFile();
 
@@ -189,6 +189,7 @@ namespace Engine
             engine.SetGlobalFunction("Exit", new Action(Exit));
             engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
+            engine.SetGlobalFunction("LoadSound", new Func<string, SoundInstance>(LoadSound));
             engine.SetGlobalFunction("LoadSurface", new Func<string, SurfaceInstance>(LoadSurface));
             engine.SetGlobalFunction("LoadWindowStyle", new Func<string, WindowStyleInstance>(LoadWindowStyle));
             engine.SetGlobalFunction("LoadFont", new Func<string, FontInstance>(LoadFont));
@@ -447,6 +448,12 @@ namespace Engine
         {
             return new ImageInstance(_engine.Object.InstancePrototype,
                                      GlobalProps.BasePath + "/images/" + filename);
+        }
+
+        static SoundInstance LoadSound(string filename)
+        {
+            return new SoundInstance(_engine.Object.InstancePrototype,
+                                     GlobalProps.BasePath + "/sounds/" + filename);
         }
 
         static SurfaceInstance LoadSurface(string filename)
