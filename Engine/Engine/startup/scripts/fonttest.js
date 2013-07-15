@@ -16,6 +16,10 @@ function TestFonts()
 	
 	var strings = font.wordWrapString(string, GetScreenWidth());
 	var text = "Once upon a time there was a box with letters that wrapped around the edges...";
+	var height = font.getStringHeight(text, 200);
+	
+	var glyph = font.getCharacterImage(65);
+	font2.setCharacterImage(105, GetSystemArrow());
 	
 	while (!done) {
 		font.drawText(0, 0, "Hello World!");
@@ -23,7 +27,7 @@ function TestFonts()
 		font.setColorMask(green);
 		font.drawText(0, 16, "Height: " + font.getHeight());
 		
-		font2.drawText(80, 16, "A copy!!");
+		font2.drawText(80, 16, "A modified copy!");
 		
 		font.setColorMask(white);
 		
@@ -31,8 +35,10 @@ function TestFonts()
 			font.drawText(0, 32+i*16, strings[i]);
 		}
 		
-		OutlinedRectangle(32, 128, 200, 64, white);
-		font.drawTextBox(34, 130, 200, 64, 0, text);
+		OutlinedRectangle(32, 128, 200, height + 4, white);
+		font.drawTextBox(34, 130, 200, height, 0, text);
+		
+		glyph.blit(0, 96);
 		
 		FlipScreen();
 	

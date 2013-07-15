@@ -26,9 +26,11 @@ namespace Engine.Objects
                 while (!reader.EndOfStream)
                 {
                     string line = reader.ReadLine();
-                    string key = line.Substring(0, line.IndexOf("="));
-                    string value = line.Substring(line.IndexOf("=") + 1);
-                    _data.Add(key, value);
+                    string[] parts = line.Split('=');
+                    if (parts.Length > 1)
+                        _data.Add(parts[0], parts[1]);
+                    else if (parts.Length == 1)
+                        _data.Add(parts[0], "");
                 }
             }
 

@@ -12,7 +12,7 @@ namespace Engine
         public void Init()
         {
             Program.SetupTestEnvironment();
-            Program._engine.Evaluate("var font = LoadFont(\"rendered.rfn\");");
+            Program._engine.Evaluate("var font = LoadFont(\"test.rfn\");");
         }
 
         [Test()]
@@ -39,6 +39,13 @@ namespace Engine
         public void TestFontDrawText()
         {
             object func = Program._engine.Evaluate("font.drawText;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestFontDrawZoomedText()
+        {
+            object func = Program._engine.Evaluate("font.drawZoomedText;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
@@ -75,6 +82,31 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("font.getStringWidth;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestFontGetCharacterImage()
+        {
+            object func = Program._engine.Evaluate("font.getCharacterImage;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestFontSetCharacterImage()
+        {
+            object func = Program._engine.Evaluate("font.setCharacterImage;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestFontGetStringHeight()
+        {
+            object func = Program._engine.Evaluate("font.getStringHeight;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object value = Program._engine.Evaluate("font.getStringHeight(\"hi\", 32);");
+            Assert.IsInstanceOf<int>(value);
+            Assert.AreEqual(value, Program._engine.Evaluate("font.getHeight();"));
         }
 
         [Test()]

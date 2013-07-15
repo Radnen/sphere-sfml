@@ -36,6 +36,14 @@ namespace Engine
                     ListGames();
                     return;
                 }
+                else if (File.Exists(args[0]))
+                {
+                    if (!_game.ReadFile("startup/game.sgm"))
+                    {
+                        Console.WriteLine("Faliled to find game.sgm in startup/");
+                        return;
+                    }
+                }
                 else
                 {
                     Console.WriteLine("Useage: ");
@@ -45,7 +53,7 @@ namespace Engine
                     return;
                 }
             }
-            if (args.Length == 2)
+            else if (args.Length == 2)
             {
                 if (args[0] != "-game" || !_game.ReadFile(args[1]))
                 {
@@ -162,6 +170,7 @@ namespace Engine
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
+            engine.EnableDebugging = true;
 
             // The glorious Sphere game API :)
             engine.SetGlobalFunction("Abort", new Action<string>(Abort));

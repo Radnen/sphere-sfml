@@ -10,10 +10,11 @@ namespace Engine.Objects
     public class FontInstance : ObjectInstance
     {
         private const int SIZE = 256; // atlas size
+        private static readonly Vector2f VECT_1 = new Vector2f(1, 1); 
 
-        Texture _fontAtlas;
+        TextureAtlas _atlas = new TextureAtlas(SIZE);
         Sprite _fontSprite;
-        IntRect[] _sources;
+        Image[] _glyphs;
         uint _height = 0;
         short _version = 0;
 
@@ -42,43 +43,22 @@ namespace Engine.Objects
                 int num_chars = reader.ReadInt16();
                 reader.ReadBytes(248);
 
-                uint x = 0, y = 0;
-
-                // construct a packed atlas:
-                Image canvas = new Image(SIZE, SIZE, Color.Red);
-                _sources = new IntRect[num_chars];
+                _glyphs = new Image[num_chars];
                 for (var i = 0; i < num_chars; ++i)
                 {
                     short width = reader.ReadInt16();
-
-                    if (x + width >= SIZE)
-                    {
-                        x = 0;
-                        y += _height;
-                    }
-
                     short height = reader.ReadInt16();
                     _height = Math.Max(_height, (uint)height);
                     reader.ReadBytes(28);
 
                     byte[] pixels = reader.ReadBytes(width * height * 4);
-                    Image glyph = new Image((uint)width, (uint)height, pixels);
-                    _sources[i] = new IntRect((int)x, (int)y, width, height);
-                    canvas.Copy(glyph, x, y);
-
-                    if (x + width >= SIZE)
-                    {
-                        x = 0;
-                        y += _height;
-                    }
-                    else
-                        x += (uint)width;
+                    _glyphs[i] = new Image((uint)width, (uint)height, pixels);
                 }
 
-                _fontAtlas = new Texture(canvas);
-                _fontSprite = new Sprite(_fontAtlas);
-                canvas.Dispose();
+                _atlas.Update(_glyphs);
             }
+
+            _fontSprite = new Sprite(_atlas.Texture);
         }
 
         [JSFunction(Name = "drawText")]
@@ -91,9 +71,29 @@ namespace Engine.Objects
             {
                 int ch = (int)text[i];
 
-                _fontSprite.TextureRect = _sources[ch];
+                _fontSprite.TextureRect = _atlas.Sources[ch];
+                _fontSprite.Scale = VECT_1;
                 _fontSprite.Position = start + offset;
-                offset.X += _sources[ch].Width;
+                offset.X += _atlas.Sources[ch].Width;
+                Program._window.Draw(_fontSprite);
+            }
+        }
+
+        [JSFunction(Name = "drawZoomedText")]
+        public void DrawZoomedText(double x, double y, double zoom, string text)
+        {
+            Vector2f start = new Vector2f((float)x, (float)y);
+            Vector2f offset = new Vector2f(0, 0);
+            Vector2f scale = new Vector2f((float)zoom, (float)zoom);
+
+            for (var i = 0; i < text.Length; ++i)
+            {
+                int ch = (int)text[i];
+
+                _fontSprite.TextureRect = _atlas.Sources[ch];
+                _fontSprite.Scale = scale;
+                _fontSprite.Position = start + offset;
+                offset.X += _atlas.Sources[ch].Width * scale.X;
                 Program._window.Draw(_fontSprite);
             }
         }
@@ -108,15 +108,18 @@ namespace Engine.Objects
             }
         }
 
-        private int GetNextWordLength(ref string text, int pos)
+        [JSFunction(Name = "setCharacterImage")]
+        public void SetCharacterImage(int ch, ImageInstance image)
         {
-            int stop = text.IndexOf(" ", pos + 1) - pos;
-            string word;
-            if (stop < 0)
-                word = text.Substring(pos, text.Length - pos);
-            else
-                word = text.Substring(pos, stop);
-            return GetStringWidth(word);
+            _glyphs[ch] = image.GetImage();
+            _atlas.Update(_glyphs);
+        }
+
+        [JSFunction(Name = "getCharacterImage")]
+        public ImageInstance GetCharacterImage(int ch)
+        {
+            return new ImageInstance(Program._engine.Object.InstancePrototype,
+                                     new Texture(_atlas.GetImageAt((uint)ch)));
         }
 
         [JSFunction(Name = "wordWrapString")]
@@ -157,7 +160,7 @@ namespace Engine.Objects
                 }
                 else
                 {
-                    int char_w = _sources[c].Width;
+                    int char_w = _atlas.Sources[c].Width;
                     if (word_w + char_w > width && x == 0) // break up long lines
                     {
                         array.Push(current + word);
@@ -185,9 +188,16 @@ namespace Engine.Objects
             int w = 0;
             for (var i = 0; i < text.Length; ++i)
             {
-                w += _sources[(int)text[i]].Width;
+                w += _atlas.Sources[(int)text[i]].Width;
             }
             return w;
+        }
+
+        [JSFunction(Name = "getStringHeight")]
+        public int GetStringHeight(string text, int width)
+        {
+            ArrayInstance array = Wrap(text, width);
+            return (int)(array.Length * _height);
         }
 
         [JSFunction(Name = "setColorMask")]
@@ -218,10 +228,12 @@ namespace Engine.Objects
         public FontInstance Clone()
         {
             FontInstance font = new FontInstance(Program._engine.Object.InstancePrototype);
-            font._fontAtlas = new Texture(_fontAtlas);
-            font._fontSprite = new Sprite(font._fontAtlas);
+            font._atlas = new TextureAtlas(_atlas);
+            font._fontSprite = new Sprite(font._atlas.Texture);
+            font._glyphs = new Image[_glyphs.Length];
+            for (var i = 0; i < _glyphs.Length; ++i)
+                font._glyphs[i] = new Image(_glyphs[i]);
             font._height = _height;
-            font._sources = (IntRect[])_sources.Clone();
             font._version = _version;
             return font;
         }
@@ -236,22 +248,20 @@ namespace Engine.Objects
                 writer.Write(_version);
                 writer.Write(new Byte[248]);
 
-                Image canvas = _fontAtlas.CopyToImage();
-
-                for (var i = 0; i < _sources.Length; ++i)
+                using (Image canvas = _atlas.Texture.CopyToImage())
                 {
-                    writer.Write((short)_sources[i].Width);
-                    writer.Write((short)_sources[i].Height);
-                    writer.Write(new Byte[28]);
+                    for (uint i = 0; i < _atlas.Sources.Length; ++i)
+                    {
+                        writer.Write((short)_atlas.Sources[i].Width);
+                        writer.Write((short)_atlas.Sources[i].Height);
+                        writer.Write(new Byte[28]);
 
-                    Image portion = new Image((uint)_sources[i].Width, (uint)_sources[i].Height);
-                    portion.Copy(canvas, 0, 0, _sources[i]);
-
-                    writer.Write(portion.Pixels);
-                    portion.Dispose();
+                        using (Image portion = _atlas.GetImageAt(i))
+                        {
+                            writer.Write(portion.Pixels);
+                        }
+                    }
                 }
-
-                canvas.Dispose();
             }
         }
     }
