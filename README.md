@@ -8,17 +8,18 @@ Download History:
 Parity with Sphere v1.6
 =======================
  - Images: 100%
- - Surfaces: 23.14159%
+ - Primitives: 65%
+ - Surfaces: 37%
  - Fonts: 100%
  - WindowStyles: 100%
  - Spritesets: 0%
  - Persons: 0%
  - Map Engine: 0%
- - Input: 90%
- - General: 100%
- - System: 50%
+ - Input: 83%
+ - General: 50%
  - Files: 0%
- - Misc: 0%
+ - Sound: 0%
+ - Networking: 0%
 
 Credits
 =======

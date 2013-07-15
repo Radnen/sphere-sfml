@@ -44,10 +44,10 @@ namespace Engine.Objects
         /// </summary>
         public Color GetColor()
         {
-            _color.R = (byte)((int)this["red"]);
-            _color.G = (byte)((int)this["green"]);
-            _color.B = (byte)((int)this["blue"]);
-            _color.A = (byte)((int)this["alpha"]);
+            _color.R = (byte)Double.Parse(this["red"].ToString());
+            _color.G = (byte)Double.Parse(this["green"].ToString());
+            _color.B = (byte)Double.Parse(this["blue"].ToString());
+            _color.A = (byte)Double.Parse(this["alpha"].ToString());
             return _color;
         }
 

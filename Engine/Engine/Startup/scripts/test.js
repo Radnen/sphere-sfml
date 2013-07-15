@@ -4,6 +4,7 @@ RequireScript("imagetest.js");
 RequireScript("fonttest.js");
 RequireScript("windowtest.js");
 RequireScript("mousetest.js");
+RequireScript("surfacetest.js");
 
 var sys_window = GetSystemWindowStyle();
 var sys_arrow = GetSystemArrow();
@@ -17,10 +18,11 @@ function game()
 	menu.addOption("Fonts", TestFonts);
 	menu.addOption("Windows", TestWindows);
 	menu.addOption("Mouse/Input", TestMouse);
+	menu.addOption("Surfaces", game2);
 	menu.addOption("Exit", Exit);
 	
 	while (!done) {
-		menu.draw(16, 16, 96, 80);
+		menu.draw(16, 16, 96, 96);
 		FlipScreen();
 		while (AreKeysLeft()) {
 			var key = GetKey();

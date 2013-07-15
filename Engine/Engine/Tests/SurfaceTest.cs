@@ -13,8 +13,8 @@ namespace Engine
         public void Init()
         {
             Program.SetupTestEnvironment();
-            Program._engine.Evaluate("var surf = CreateSurface(50, 50, CreateColor(255, 255, 255));");
-            Program._engine.Evaluate("var r_surf = CreateSurface(50, 50, CreateColor(255, 255, 255));");
+            Program._engine.Evaluate("var surf = CreateSurface(10, 10, CreateColor(255, 255, 255));");
+            Program._engine.Evaluate("var r_surf = CreateSurface(10, 10, CreateColor(255, 255, 255));");
         }
 
         [Test()]
@@ -137,8 +137,10 @@ namespace Engine
             object func = Program._engine.Evaluate("surf.cloneSection;");
             Assert.IsInstanceOf<FunctionInstance>(func);
 
-            object clone = Program._engine.Evaluate("surf.cloneSection();");
+            object clone = Program._engine.Evaluate("surf.cloneSection(0, 0, 5, 5);");
             Assert.IsInstanceOf<SurfaceInstance>(clone);
+            Assert.AreEqual(((ObjectInstance)clone).GetPropertyValue("width"), 5);
+            Assert.AreEqual(((ObjectInstance)clone).GetPropertyValue("height"), 5);
         }
 
         [Test()]
@@ -206,14 +208,14 @@ namespace Engine
         {
             object width = Program._engine.Evaluate("surf.width;");
             Assert.IsInstanceOf<int>(width);
-            Assert.AreEqual(width, 50);
+            Assert.AreEqual(width, 10);
         }
 
         [Test()]
         public void TestSurfaceSetWidth()
         {
             object width = Program._engine.Evaluate("surf.width = 5; surf.width;");
-            Assert.AreEqual(width, 50);
+            Assert.AreEqual(width, 10);
         }
 
         [Test()]
@@ -221,14 +223,14 @@ namespace Engine
         {
             object height = Program._engine.Evaluate("surf.height;");
             Assert.IsInstanceOf<int>(height);
-            Assert.AreEqual(height, 50);
+            Assert.AreEqual(height, 10);
         }
 
         [Test()]
         public void TestSurfaceSetHeight()
         {
             object height = Program._engine.Evaluate("surf.height = 5; surf.height;");
-            Assert.AreEqual(height, 50);
+            Assert.AreEqual(height, 10);
         }
 
         [Test()]
@@ -245,14 +247,14 @@ namespace Engine
             Assert.IsInstanceOf<FunctionInstance>(func);
 
             Program._engine.Evaluate("r_surf.replaceColor(CreateColor(255, 255, 255), CreateColor(0, 0, 0));");
-            object color = Program._engine.Evaluate("r_surf.getColor(2, 2);");
+            object color = Program._engine.Evaluate("r_surf.getPixel(2, 2);");
 
             Color col = ((ColorInstance)color).GetColor();
 
             Assert.AreEqual(col.R, 0);
             Assert.AreEqual(col.G, 0);
             Assert.AreEqual(col.B, 0);
-            Assert.AreEqual(col.A, 0);
+            Assert.AreEqual(col.A, 255);
         }
         
         [Test()]

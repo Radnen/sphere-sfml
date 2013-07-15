@@ -20,28 +20,24 @@ namespace Engine.Objects
             : base(proto)
         {
             _image = new Texture(filename);
-            _sprite = new Sprite(_image);
-            PopulateFunctions();
-            
-            _state.Texture = _image;
-            _state.BlendMode = BlendMode.Alpha;
-            _state.Transform = Transform.Identity;
-
-            DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
-            DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
+            Init();
         }
 
-        public ImageInstance(ObjectInstance proto, Texture copy)
+        public ImageInstance(ObjectInstance proto, Texture copy, bool clone = true)
             : base(proto)
         {
-            _image = new Texture(copy);
+            _image = (clone) ? new Texture(copy) : copy;
+            Init();
+        }
+
+        private void Init() {
             _sprite = new Sprite(_image);
             PopulateFunctions();
-            
+
             _state.Texture = _image;
             _state.BlendMode = BlendMode.Alpha;
             _state.Transform = Transform.Identity;
-            
+
             DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
         }

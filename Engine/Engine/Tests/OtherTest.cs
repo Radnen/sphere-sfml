@@ -14,6 +14,20 @@ namespace Engine
         }
 
         [Test()]
+        public void TestRequireScript()
+        {
+            object func = Program._engine.Evaluate("RequireScript;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestRequireSystemScript()
+        {
+            object func = Program._engine.Evaluate("RequireSystemScript;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestGetScreenWidth()
         {
             object func = Program._engine.Evaluate("GetScreenWidth;");

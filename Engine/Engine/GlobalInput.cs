@@ -128,7 +128,6 @@ namespace Engine
             while (_keyQueue.Count == 0)
             {
                 Program._window.DispatchEvents();
-                Program._window.Display();
             }
             return _keyQueue.Dequeue();
         }

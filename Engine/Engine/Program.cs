@@ -16,8 +16,11 @@ namespace Engine
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
 
+        private static Dictionary<string, bool> _required = new Dictionary<string, bool>();
+
         private static int _internal_fps = 0;
-        private static bool _scaled = true;
+        private static bool SCALED = false;
+        private static readonly bool DEBUG  = true;
 
         static GameFile _game = new GameFile();
 
@@ -36,11 +39,11 @@ namespace Engine
                     ListGames();
                     return;
                 }
-                else if (File.Exists(args[0]))
+                else if (args[0].EndsWith(".sgm"))
                 {
-                    if (!_game.ReadFile("startup/game.sgm"))
+                    if (!_game.ReadFile(args[0]))
                     {
-                        Console.WriteLine("Faliled to find game.sgm in startup/");
+                        Console.WriteLine("Faliled to load game: " + args[0]);
                         return;
                     }
                 }
@@ -58,16 +61,15 @@ namespace Engine
                 if (args[0] != "-game" || !_game.ReadFile(args[1]))
                 {
                     Console.WriteLine("Failed to load game: " + args[1]);
+                    Console.WriteLine("Useage: ");
+                    Console.WriteLine("    -game <directory>  | Loads the game running at that directory.");
                     return;
                 }
             }
-            else
+            else if (!_game.ReadFile("startup/game.sgm"))
             {
-                if (!_game.ReadFile("startup/game.sgm"))
-                {
-                    Console.WriteLine("Faliled to find game.sgm in startup/");
-                    return;
-                }
+                Console.WriteLine("Faliled to find game.sgm in startup/");
+                return;
             }
 
             if (!InitEngine())
@@ -134,7 +136,7 @@ namespace Engine
             GlobalProps.Width = width;
             GlobalProps.Height = height;
 
-            if (_scaled)
+            if (SCALED)
             {
                 width *= 2;
                 height *= 2;
@@ -150,7 +152,7 @@ namespace Engine
 
             _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), GlobalProps.GameName, style);
 
-            if (_scaled)
+            if (SCALED)
             {
                 View v = _window.GetView();
                 v.Size = new Vector2f(GlobalProps.Width, GlobalProps.Height);
@@ -170,7 +172,7 @@ namespace Engine
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
-            engine.EnableDebugging = true;
+            engine.EnableDebugging = DEBUG;
 
             // The glorious Sphere game API :)
             engine.SetGlobalFunction("Abort", new Action<string>(Abort));
@@ -180,10 +182,14 @@ namespace Engine
             engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             engine.SetGlobalFunction("RequireScript", new Action<string>(RequireScript));
+            engine.SetGlobalFunction("RequireSystemScript", new Action<string>(RequireSystemScript));
+            engine.SetGlobalFunction("EvaluateScript", new Action<string>(EvaluateScript));
+            engine.SetGlobalFunction("EvaluateSystemScript", new Action<string>(EvaluateSystemScript));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
             engine.SetGlobalFunction("Exit", new Action(Exit));
             engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
+            engine.SetGlobalFunction("LoadSurface", new Func<string, SurfaceInstance>(LoadSurface));
             engine.SetGlobalFunction("LoadWindowStyle", new Func<string, WindowStyleInstance>(LoadWindowStyle));
             engine.SetGlobalFunction("LoadFont", new Func<string, FontInstance>(LoadFont));
             engine.SetGlobalFunction("GetSystemFont", new Func<FontInstance>(GetSystemFont));
@@ -191,11 +197,12 @@ namespace Engine
             engine.SetGlobalFunction("GetSystemArrow", new Func<ImageInstance>(GetSystemArrow));
             engine.SetGlobalFunction("GetSystemUpArrow", new Func<ImageInstance>(GetSystemUpArrow));
             engine.SetGlobalFunction("GetSystemDownArrow", new Func<ImageInstance>(GetSystemDownArrow));
-            engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Rectangle));
             engine.SetGlobalFunction("Triangle", new Action<double, double, double, double, double, double, ColorInstance>(GlobalPrimitives.Triangle));
             engine.SetGlobalFunction("GradientTriangle", new Action<ObjectInstance, ObjectInstance, ObjectInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientTriangle));
+            engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Rectangle));
             engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedRectangle));
             engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientRectangle));
+            engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.OutlinedCircle));
             engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.FilledCircle));
             engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Line));
             engine.SetGlobalFunction("LineSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.LineSeries));
@@ -203,15 +210,16 @@ namespace Engine
             engine.SetGlobalFunction("PointSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.PointSeries));
             engine.SetGlobalFunction("Polygon", new Action<ArrayInstance, ColorInstance, bool>(GlobalPrimitives.Polygon));
             engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GlobalPrimitives.GradientLine));
+            engine.SetGlobalFunction("ApplyColorMask", new Action<ColorInstance>(GlobalPrimitives.ApplyColorMask));
             engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, SurfaceInstance>(CreateSurface)); 
-            engine.SetGlobalFunction("GrabImage", new Func<ImageInstance>(GrabImage));
+            engine.SetGlobalFunction("GrabImage", new Func<int, int, int, int, ImageInstance>(GrabImage));
+            engine.SetGlobalFunction("GrabSurface", new Func<int, int, int, int, SurfaceInstance>(GrabSurface));
             engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
             engine.SetGlobalFunction("GetFrameRate", new Func<int>(GetFrameRate));
             engine.SetGlobalFunction("GetRealFrameRate", new Func<int>(GetRealFrameRate));
             engine.SetGlobalFunction("GetTime", new Func<double>(GetTime));
             engine.SetGlobalFunction("BlendColors", new Func<ColorInstance, ColorInstance, ColorInstance>(BlendColors));
             engine.SetGlobalFunction("BlendColorsWeighted", new Func<ColorInstance, ColorInstance, double, ColorInstance>(BlendColorsWeighted));
-            engine.SetGlobalFunction("ApplyColorMask", new Action<ColorInstance>(GlobalPrimitives.ApplyColorMask));
             engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
             engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
             engine.SetGlobalFunction("IsAnyKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
@@ -337,10 +345,29 @@ namespace Engine
             return new ColorInstance(_engine.Object.InstancePrototype, r, g, b, a);
 		}
 
-        static ImageInstance GrabImage()
+        static ImageInstance GrabImage(int x, int y, int w, int h)
         {
-            Image window = _window.Capture();
-            return new ImageInstance(_engine.Object.InstancePrototype, new Texture(window));
+            x *= (SCALED ? 2 : 1);
+            y *= (SCALED ? 2 : 1);
+            w *= (SCALED ? 2 : 1);
+            h *= (SCALED ? 2 : 1);
+            Texture tex = new Texture((uint)w, (uint)h);
+            tex.Update(_window);
+            return new ImageInstance(_engine.Object.InstancePrototype, tex, false);
+        }
+
+        static SurfaceInstance GrabSurface(int x, int y, int w, int h)
+        {
+            x *= (SCALED ? 2 : 1);
+            y *= (SCALED ? 2 : 1);
+            w *= (SCALED ? 2 : 1);
+            h *= (SCALED ? 2 : 1);
+            using (Image window = _window.Capture())
+            {
+                Image section = new Image((uint)w, (uint)h);
+                section.Copy(window, 0, 0, new IntRect(x, y, w, h));
+                return new SurfaceInstance(_engine.Object.InstancePrototype, section, false);
+            }
         }
 
         static DateTime _start = DateTime.Now;
@@ -388,32 +415,43 @@ namespace Engine
 
         static WindowStyleInstance GetSystemWindowStyle()
         {
-            return new WindowStyleInstance(_engine.Object.InstancePrototype, "system/system.rws");
+            return new WindowStyleInstance(_engine.Object.InstancePrototype,
+                                           GlobalProps.EnginePath + "/system/system.rws");
         }
 
         static FontInstance GetSystemFont()
         {
-            return new FontInstance(_engine.Object.InstancePrototype, "system/system.rfn");
+            return new FontInstance(_engine.Object.InstancePrototype,
+                                    GlobalProps.EnginePath + "/system/system.rfn");
         }
 
         static ImageInstance GetSystemArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype, "system/pointer.png");
+            return new ImageInstance(_engine.Object.InstancePrototype,
+                                     GlobalProps.EnginePath + "/system/pointer.png");
         }
 
         static ImageInstance GetSystemUpArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype, "system/up_arrow.png");
+            return new ImageInstance(_engine.Object.InstancePrototype,
+                                     GlobalProps.EnginePath + "/system/up_arrow.png");
         }
 
         static ImageInstance GetSystemDownArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype, "system/down_arrow.png");
+            return new ImageInstance(_engine.Object.InstancePrototype,
+                                     GlobalProps.EnginePath + "/system/down_arrow.png");
         }
 
         static ImageInstance LoadImage(string filename)
         {
             return new ImageInstance(_engine.Object.InstancePrototype,
+                                     GlobalProps.BasePath + "/images/" + filename);
+        }
+
+        static SurfaceInstance LoadSurface(string filename)
+        {
+            return new SurfaceInstance(_engine.Object.InstancePrototype,
                                      GlobalProps.BasePath + "/images/" + filename);
         }
 
@@ -436,10 +474,37 @@ namespace Engine
 
         static void RequireScript(string filename)
         {
+            if (_required.ContainsKey(filename) && _required[filename])
+                return;
+            EvaluateScript(filename);
+        }
+
+        static void EvaluateScript(string filename)
+        {
             try
             {
                 System.Text.Encoding ISO_8859_1 = System.Text.Encoding.GetEncoding("iso-8859-1");
                 _engine.ExecuteFile(GlobalProps.BasePath + "/scripts/" + filename, ISO_8859_1);
+            }
+            catch (JavaScriptException ex)
+            {
+                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
+            }
+        }
+
+        static void RequireSystemScript(string filename)
+        {
+            if (_required.ContainsKey(filename) && _required[filename])
+                return;
+            EvaluateSystemScript(filename);
+        }
+
+        static void EvaluateSystemScript(string filename)
+        {
+            try
+            {
+                System.Text.Encoding ISO_8859_1 = System.Text.Encoding.GetEncoding("iso-8859-1");
+                _engine.ExecuteFile(GlobalProps.EnginePath + "/system/scripts/" + filename, ISO_8859_1);
             }
             catch (JavaScriptException ex)
             {

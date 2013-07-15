@@ -1,7 +1,7 @@
 using System;
+using Jurassic.Library;
 using SFML.Graphics;
 using SFML.Window;
-using Jurassic.Library;
 using Engine.Objects;
 
 namespace Engine
@@ -11,6 +11,7 @@ namespace Engine
         private static RectangleShape _rect = new RectangleShape();
         private static RectangleShape _orect = new RectangleShape();
         private static CircleShape _circle = new CircleShape();
+        private static CircleShape _ocircle = new CircleShape();
         private static Vertex[] _verts = new Vertex[4];
 
         public static RenderWindow window;
@@ -18,6 +19,7 @@ namespace Engine
         static GlobalPrimitives()
         {
             _orect.FillColor = new Color(0, 0, 0, 0);
+            _ocircle.FillColor = new Color(0, 0, 0, 0);
         }
 
         /// <summary>
@@ -170,6 +172,15 @@ namespace Engine
         {
             _circle.Radius = (float)radius;
             _circle.FillColor = color.GetColor();
+            _circle.Position = new Vector2f((float)x, (float)y);
+            _circle.Origin = new Vector2f((float)radius, (float)radius);
+            window.Draw(_circle);
+        }
+
+        public static void OutlinedCircle(double x, double y, double radius, ColorInstance color)
+        {
+            _circle.Radius = (float)radius;
+            _circle.OutlineColor = color.GetColor();
             _circle.Position = new Vector2f((float)x, (float)y);
             _circle.Origin = new Vector2f((float)radius, (float)radius);
             window.Draw(_circle);
