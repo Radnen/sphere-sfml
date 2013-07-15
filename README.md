@@ -3,8 +3,9 @@
 A .NET Sphere implementation using SFML for graphics, input, etc.
 
 **Downloads:**
+ - v0.60: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.60.zip
  - v0.55: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.55.zip
- - v0.5: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.5.zip
+ - v0.50: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.50.zip
 
 Parity with Sphere v1.6
 =======================
