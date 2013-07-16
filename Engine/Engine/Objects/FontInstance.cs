@@ -9,7 +9,7 @@ namespace Engine.Objects
 {
     public class FontInstance : ObjectInstance
     {
-        private const int SIZE = 256; // atlas size
+        private const int SIZE = 512; // atlas size
         private static readonly Vector2f VECT_1 = new Vector2f(1, 1); 
 
         TextureAtlas _atlas = new TextureAtlas(SIZE);

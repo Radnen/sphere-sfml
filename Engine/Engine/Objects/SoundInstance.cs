@@ -10,7 +10,7 @@ namespace Engine.Objects
         bool _isSound;
         Sound _sound = null;
         Music _music = null;
-        int pan;
+        int _pan, _volume = 255;
 
         public SoundInstance(ObjectInstance proto)
             : base (proto)
@@ -54,19 +54,17 @@ namespace Engine.Objects
         [JSFunction(Name = "setVolume")]
         public void SetVolume(int volume)
         {
+            _volume = volume;
             if (_isSound)
-                _sound.Volume = ((float)volume / 255) * 100f;
+                _sound.Volume = ((float)_volume / 255) * 100f;
             else
-                _music.Volume = ((float)volume / 255) * 100f;
+                _music.Volume = ((float)_volume / 255) * 100f;
         }
 
         [JSFunction(Name = "getVolume")]
-        public double GetVolume()
+        public int GetVolume()
         {
-            if (_isSound)
-                return (int)Math.Min(((_sound.Volume / 100) * 255f), 255f);
-            else
-                return (int)Math.Min(((_music.Volume / 100) * 255f), 255f);
+            return _volume > 255 ? 255 : _volume;
         }
 
         [JSFunction(Name = "setPitch")]
@@ -123,13 +121,13 @@ namespace Engine.Objects
         [JSFunction(Name = "setPan")]
         public void SetPan(int val)
         {
-            pan = val; // doesn't do anything
+            _pan = val; // doesn't do anything
         }
 
         [JSFunction(Name = "getPan")]
         public int GetPan()
         {
-            return pan;
+            return _pan;
         }
 
         [JSFunction(Name = "stop")]
@@ -189,7 +187,7 @@ namespace Engine.Objects
         public SoundInstance Clone()
         {
             SoundInstance instance = new SoundInstance(Program._engine.Object.InstancePrototype);
-            instance.pan = pan;
+            instance._pan = _pan;
             instance._isSound = _isSound;
             if (_isSound)
                 instance._sound = new Sound(_sound);

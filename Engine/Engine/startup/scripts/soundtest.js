@@ -19,7 +19,7 @@ function TestMusic()
 		var p = music.getPitch();
 		
 		sys_font.drawText(0, 32, "Vol: " + v + "/255");
-		sys_font.drawText(0, 48, "Pitch: " + p + "/255");
+		sys_font.drawText(0, 48, "Pitch: " + p);
 	
 		FlipScreen();
 	
@@ -45,7 +45,7 @@ function TestMusic()
 					if (p > 0.20) music.setPitch(p - 0.20);
 				break;
 				case KEY_RIGHT:
-					if (p < 2) music.setPitch(p + 0.20);
+					if (p < 10) music.setPitch(p + 0.20);
 				break;
 			}
 		}
