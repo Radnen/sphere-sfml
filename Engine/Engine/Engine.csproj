@@ -171,6 +171,12 @@
     <None Include="startup\scripts\spritesettest.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="startup\save\test.sav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\scripts\savetest.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -231,6 +237,7 @@
     <Compile Include="Tests\SpritesetTest.cs" />
     <Compile Include="Objects\SpritesetInstance.cs" />
     <Compile Include="Tests\FileTest.cs" />
+    <Compile Include="Objects\FileInstance.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />
@@ -243,6 +250,7 @@
     <Folder Include="system\" />
     <Folder Include="system\scripts\" />
     <Folder Include="startup\sounds\" />
+    <Folder Include="startup\save\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

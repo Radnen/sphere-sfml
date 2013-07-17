@@ -6,13 +6,13 @@ namespace Engine.Objects
 {
     public class GameFile
     {
-        private Dictionary<string, string> _data;
+        private SortedDictionary<string, string> _data;
 
         public string FileName { get; private set; }
 
         public GameFile()
         {
-            _data = new Dictionary<string, string>();
+            _data = new SortedDictionary<string, string>();
         }
 
         public bool ReadFile(string filename)
@@ -37,14 +37,39 @@ namespace Engine.Objects
             return true;
         }
 
+        public void WriteFile(string filename)
+        {
+            FileName = filename;
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                foreach (KeyValuePair<string, string> pair in _data)
+                {
+                    writer.WriteLine(pair.Key + "=" + _data[pair.Key]);
+                }
+            }
+        }
+
+        public void SetData(string key, object data)
+        {
+            _data[key] = data.ToString();
+        }
+
         public bool TryGetData(string key, out bool result)
         {
             if (_data.ContainsKey(key))
                 return bool.TryParse(_data[key], out result);
-            else {
+            else
                 result = false;
-                return false;
-            }
+            return false;
+        }
+
+        public bool TryGetData(string key, out double result)
+        {
+            if (_data.ContainsKey(key))
+                return double.TryParse(_data[key], out result);
+            else
+                result = 0.0;
+            return false;
         }
 
         public bool TryGetData(string key, out int result)
@@ -53,7 +78,7 @@ namespace Engine.Objects
                 return int.TryParse(_data[key], out result);
             else
                 result = 0;
-                return false;
+            return false;
         }
 
         public bool TryGetData(string key, out string result)

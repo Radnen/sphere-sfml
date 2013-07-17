@@ -12,6 +12,7 @@ namespace Engine
         public void Init()
         {
             Program.SetupTestEnvironment();
+            Program._engine.Evaluate("var file = OpenFile(\"test.sav\");");
         }
 
         [Test()]
@@ -61,6 +62,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("OpenFile;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object file = Program._engine.Evaluate("file;");
+            Assert.IsInstanceOf<FileInstance>(file);
         }
         [Test()]
 

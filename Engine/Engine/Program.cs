@@ -249,6 +249,7 @@ namespace Engine
             engine.SetGlobalFunction("UnbindKey", new Action<int>(GlobalInput.UnbindKey));
             engine.SetGlobalFunction("GetNumJoysticks", new Func<int>(GlobalInput.GetNumJoySticks));
             engine.SetGlobalFunction("GetNumJoystickButtons", new Func<int, int>(GlobalInput.GetNumJoyStickButtons));
+            engine.SetGlobalFunction("OpenFile", new Func<string, FileInstance>(OpenFile));
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -485,6 +486,11 @@ namespace Engine
         static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
             return new SurfaceInstance(_engine, w, h, color.GetColor());
+        }
+
+        static FileInstance OpenFile(string filename)
+        {
+            return new FileInstance(_engine, GlobalProps.BasePath + "/save/" + filename);
         }
 
         static void RequireScript(string filename)
