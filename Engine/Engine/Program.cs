@@ -79,7 +79,7 @@ namespace Engine
             if (_game.TryGetData("script", out filename))
             {
                 RequireScript(filename);
-                RunCode("game();");
+                RunCode("game();", filename);
             }
             else
             {
@@ -169,6 +169,11 @@ namespace Engine
             return true;
         }
 
+        public static ObjectInstance CreateObject()
+        {
+            return ObjectConstructor.Create(_engine, _engine.Object.InstancePrototype);
+        }
+
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
@@ -192,6 +197,8 @@ namespace Engine
             engine.SetGlobalFunction("LoadSound", new Func<string, SoundInstance>(LoadSound));
             engine.SetGlobalFunction("LoadSurface", new Func<string, SurfaceInstance>(LoadSurface));
             engine.SetGlobalFunction("LoadWindowStyle", new Func<string, WindowStyleInstance>(LoadWindowStyle));
+            engine.SetGlobalFunction("LoadSpriteset", new Func<string, SpritesetInstance>(LoadSpriteset));
+            engine.SetGlobalFunction("CreateSpriteset", new Func<int, int, int, int, int, SpritesetInstance>(CreateSpriteset));
             engine.SetGlobalFunction("LoadFont", new Func<string, FontInstance>(LoadFont));
             engine.SetGlobalFunction("GetSystemFont", new Func<FontInstance>(GetSystemFont));
             engine.SetGlobalFunction("GetSystemWindowStyle", new Func<WindowStyleInstance>(GetSystemWindowStyle));
@@ -328,7 +335,7 @@ namespace Engine
             int G = (int)((int)c1["green"] * w + (int)c2["green"] * (1 - w));
             int B = (int)((int)c1["blue"] * w + (int)c2["blue"] * (1 - w));
             int A = (int)((int)c1["alpha"] * w + (int)c2["alpha"] * (1 - w));
-            return new ColorInstance(_engine.Object.InstancePrototype, R, G, B, A);
+            return new ColorInstance(_engine, R, G, B, A);
         }
 
         static void Print(object obj)
@@ -343,7 +350,7 @@ namespace Engine
 
 		static ColorInstance CreateColor(int r, int g, int b, int a = 255)
 		{
-            return new ColorInstance(_engine.Object.InstancePrototype, r, g, b, a);
+            return new ColorInstance(_engine, r, g, b, a);
 		}
 
         static ImageInstance GrabImage(int x, int y, int w, int h)
@@ -354,7 +361,7 @@ namespace Engine
             h *= (SCALED ? 2 : 1);
             Texture tex = new Texture((uint)w, (uint)h);
             tex.Update(_window);
-            return new ImageInstance(_engine.Object.InstancePrototype, tex, false);
+            return new ImageInstance(_engine, tex, false);
         }
 
         static SurfaceInstance GrabSurface(int x, int y, int w, int h)
@@ -367,7 +374,7 @@ namespace Engine
             {
                 Image section = new Image((uint)w, (uint)h);
                 section.Copy(window, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(_engine.Object.InstancePrototype, section, false);
+                return new SurfaceInstance(_engine, section, false);
             }
         }
 
@@ -416,44 +423,37 @@ namespace Engine
 
         static WindowStyleInstance GetSystemWindowStyle()
         {
-            return new WindowStyleInstance(_engine.Object.InstancePrototype,
-                                           GlobalProps.EnginePath + "/system/system.rws");
+            return new WindowStyleInstance(_engine, GlobalProps.EnginePath + "/system/system.rws");
         }
 
         static FontInstance GetSystemFont()
         {
-            return new FontInstance(_engine.Object.InstancePrototype,
-                                    GlobalProps.EnginePath + "/system/system.rfn");
+            return new FontInstance(_engine, GlobalProps.EnginePath + "/system/system.rfn");
         }
 
         static ImageInstance GetSystemArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.EnginePath + "/system/pointer.png");
+            return new ImageInstance(_engine, GlobalProps.EnginePath + "/system/pointer.png");
         }
 
         static ImageInstance GetSystemUpArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.EnginePath + "/system/up_arrow.png");
+            return new ImageInstance(_engine, GlobalProps.EnginePath + "/system/up_arrow.png");
         }
 
         static ImageInstance GetSystemDownArrow()
         {
-            return new ImageInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.EnginePath + "/system/down_arrow.png");
+            return new ImageInstance(_engine, GlobalProps.EnginePath + "/system/down_arrow.png");
         }
 
         static ImageInstance LoadImage(string filename)
         {
-            return new ImageInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.BasePath + "/images/" + filename);
+            return new ImageInstance(_engine, GlobalProps.BasePath + "/images/" + filename);
         }
 
         static SoundInstance LoadSound(string filename)
         {
-            return new SoundInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.BasePath + "/sounds/" + filename);
+            return new SoundInstance(_engine, GlobalProps.BasePath + "/sounds/" + filename);
         }
 
         static SurfaceInstance LoadSurface(string filename)
@@ -464,19 +464,27 @@ namespace Engine
 
         static WindowStyleInstance LoadWindowStyle(string filename)
         {
-            return new WindowStyleInstance(_engine.Object.InstancePrototype,
-                                           GlobalProps.BasePath + "/windowstyles/" + filename);
+            return new WindowStyleInstance(_engine, GlobalProps.BasePath + "/windowstyles/" + filename);
+        }
+
+        static SpritesetInstance LoadSpriteset(string filename)
+        {
+            return new SpritesetInstance(_engine, GlobalProps.BasePath + "/spritesets/" + filename);
+        }
+
+        static SpritesetInstance CreateSpriteset(int width, int height, int i, int d, int f)
+        {
+            return new SpritesetInstance(_engine, width, height, i, d, f);
         }
 
         static FontInstance LoadFont(string filename)
         {
-            return new FontInstance(_engine.Object.InstancePrototype,
-                                    GlobalProps.BasePath + "/fonts/" + filename);
+            return new FontInstance(_engine, GlobalProps.BasePath + "/fonts/" + filename);
         }
 
         static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
-            return new SurfaceInstance(_engine.Object.InstancePrototype, w, h, color.GetColor());
+            return new SurfaceInstance(_engine, w, h, color.GetColor());
         }
 
         static void RequireScript(string filename)
@@ -519,15 +527,19 @@ namespace Engine
             }
         }
 
-        static void RunCode(string code)
+        static void RunCode(string code, string filename)
         {
             try
             {
-                _engine.Execute(code);
+                _engine.Execute(new StringScriptSource(code, filename));
             }
             catch (JavaScriptException ex)
             {
                 Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Fatal Error: " + e.Message);
             }
         }
     }

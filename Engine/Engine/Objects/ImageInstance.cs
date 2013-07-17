@@ -16,15 +16,15 @@ namespace Engine.Objects
         private RectangleShape _shape = new RectangleShape();
         private RenderStates _state = new RenderStates();
 
-		public ImageInstance(ObjectInstance proto, string filename)
-            : base(proto)
+		public ImageInstance(ScriptEngine parent, string filename)
+            : base(parent)
         {
             _image = new Texture(filename);
             Init();
         }
 
-        public ImageInstance(ObjectInstance proto, Texture copy, bool clone = true)
-            : base(proto)
+        public ImageInstance(ScriptEngine parent, Texture copy, bool clone = true)
+            : base(parent)
         {
             _image = (clone) ? new Texture(copy) : copy;
             Init();
@@ -172,13 +172,13 @@ namespace Engine.Objects
         [JSFunction(Name = "createSurface")]
         public SurfaceInstance CreateSurface()
         {
-            return new SurfaceInstance(Program._engine.Object.InstancePrototype, _image.CopyToImage());
+            return new SurfaceInstance(Program._engine, _image.CopyToImage(), false);
         }
 
         [JSFunction(Name = "clone")]
         public ImageInstance Clone()
         {
-            return new ImageInstance(Program._engine.Object.InstancePrototype, _image);
+            return new ImageInstance(Engine, _image);
         }
     }
 }

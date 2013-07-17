@@ -9,13 +9,13 @@ namespace Engine.Objects
     {
         private Color _color;
 
-        public ColorInstance(ObjectInstance proto)
-            : this(proto, 0, 0, 0, 0)
+        public ColorInstance(ScriptEngine parent)
+            : this(parent, 0, 0, 0, 0)
         {
         }
 
-        public ColorInstance(ObjectInstance proto, int r, int g, int b, int a)
-            : base(proto)
+        public ColorInstance(ScriptEngine parent, int r, int g, int b, int a)
+            : base(parent)
         {
             PopulateFunctions();
             this["red"] = r;
@@ -24,13 +24,13 @@ namespace Engine.Objects
             this["alpha"] = a;
         }
 
-        public ColorInstance(ObjectInstance proto, Color color)
-            : this(proto, (int)color.R, (int)color.G, (int)color.B, (int)color.A)
+        public ColorInstance(ScriptEngine parent, Color color)
+            : this(parent, (int)color.R, (int)color.G, (int)color.B, (int)color.A)
         {
         }
 
-        public ColorInstance(ObjectInstance proto, ColorInstance color)
-            : this (proto, color.GetColor())
+        public ColorInstance(ScriptEngine parent, ColorInstance color)
+            : this (parent, color.GetColor())
         {
         }
 

@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using SFML.Graphics;
-using SFML.Window;
 using Jurassic;
 using Jurassic.Library;
+using SFML.Graphics;
+using SFML.Window;
 
 namespace Engine.Objects
 {
@@ -15,6 +15,11 @@ namespace Engine.Objects
         private class RGBA
         {
             Color _rgba;
+
+            public RGBA(BinaryReader reader)
+            {
+                ReadData(reader);
+            }
 
             public void ReadData(BinaryReader reader)
             {
@@ -35,15 +40,15 @@ namespace Engine.Objects
         RGBA[] _edgeColors = new RGBA[4];
         byte[] _edgeOffsets = new byte[4];
 
-        public WindowStyleInstance(ObjectInstance proto)
-            : base(proto)
+        public WindowStyleInstance(ScriptEngine parent)
+            : base(parent)
         {
-            this["color"] = new ColorInstance(Program._engine.Object.InstancePrototype);
+            this["color"] = new ColorInstance(Program._engine);
             PopulateFunctions();
         }
 
-        public WindowStyleInstance(ObjectInstance proto, string filename)
-            : this(proto)
+        public WindowStyleInstance(ScriptEngine parent, string filename)
+            : this(parent)
         {
             ReadFromFile(filename);
         }
@@ -61,8 +66,7 @@ namespace Engine.Objects
                 _edgeWidth = reader.ReadByte();
                 _backgroundMode = reader.ReadByte();
                 for (int i = 0; i < _edgeColors.Length; ++i) {
-                    _edgeColors[i] = new RGBA();
-                    _edgeColors[i].ReadData(reader);
+                    _edgeColors[i] = new RGBA(reader);
                 }
                 _edgeOffsets = reader.ReadBytes(4);
                 reader.ReadBytes(36); // reserved
@@ -123,8 +127,8 @@ namespace Engine.Objects
         [JSFunction(Name = "clone")]
         public WindowStyleInstance Clone()
         {
-            WindowStyleInstance wind = new WindowStyleInstance(Program._engine.Object.InstancePrototype);
-            wind["color"] = new ColorInstance((ColorInstance)this["color"]);
+            WindowStyleInstance wind = new WindowStyleInstance(Engine);
+            wind["color"] = new ColorInstance(Program._engine, (ColorInstance)this["color"]);
             wind._backgroundMode = _backgroundMode;
             _edgeColors.CopyTo(wind._edgeColors, 0);
             _edgeOffsets.CopyTo(wind._edgeOffsets, 0);

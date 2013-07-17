@@ -1,6 +1,7 @@
-using NUnit.Framework;
 using System;
 using Jurassic.Library;
+using NUnit.Framework;
+using Engine.Objects;
 
 namespace Engine
 {
@@ -17,7 +18,7 @@ namespace Engine
         public void TestLoadSound()
         {
             object func = Program._engine.Evaluate("sound;");
-            Assert.IsInstanceOf<ObjectInstance>(func);
+            Assert.IsInstanceOf<SoundInstance>(func);
         }
 
         [Test()]

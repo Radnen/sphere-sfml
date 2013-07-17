@@ -1,4 +1,5 @@
 using System;
+using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
 using SFML.Window;
@@ -12,8 +13,8 @@ namespace Engine.Objects
         private bool _changed;
         private Sprite _sprite;
 
-        public SurfaceInstance(ObjectInstance proto, int width, int height, Color bg_color)
-            : base(proto)
+        public SurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
+            : base(parent)
         {
             if (width <= 0)
                 throw new ArgumentOutOfRangeException("width", "Width must be > 0.");
@@ -25,8 +26,8 @@ namespace Engine.Objects
             Init();
         }
 
-        public SurfaceInstance(ObjectInstance proto, Image copy, bool clone = true)
-            : base(proto)
+        public SurfaceInstance(ScriptEngine parent, Image copy, bool clone = true)
+            : base(parent)
         {
             _image = (clone) ? new Image(copy) : copy;
             Init();
@@ -97,8 +98,7 @@ namespace Engine.Objects
         [JSFunction(Name = "getPixel")]
         public ColorInstance GetPixel(int x, int y)
         {
-            Color col = _image.GetPixel((uint)x, (uint)y);
-            return new ColorInstance(Program._engine.Object.InstancePrototype, col);
+            return new ColorInstance(Program._engine, _image.GetPixel((uint)x, (uint)y));
         }
 
         [JSFunction(Name = "flipHorizontally")]
@@ -121,13 +121,13 @@ namespace Engine.Objects
             if (_changed)
                 _tex.Update(_image);
 
-            return new ImageInstance(Program._engine.Object.InstancePrototype, _tex);
+            return new ImageInstance(Program._engine, _tex);
         }
 
         [JSFunction(Name = "clone")]
         public SurfaceInstance Clone()
         {
-            return new SurfaceInstance(Program._engine.Object.InstancePrototype, _image);
+            return new SurfaceInstance(Engine, _image);
         }
 
         [JSFunction(Name = "cloneSection")]
@@ -136,7 +136,7 @@ namespace Engine.Objects
             using (Image image = new Image((uint)w, (uint)h))
             {
                 image.Copy(_image, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(Program._engine.Object.InstancePrototype, image);
+                return new SurfaceInstance(Engine, image);
             }
         }
 

@@ -9,20 +9,25 @@ A .NET Sphere implementation using SFML for graphics, input, etc.
 
 Parity with Sphere v1.6
 =======================
+**Complete**
  - Images: 100%
+ - Sounds: 100%
  - Fonts: 100%
  - WindowStyles: 100%
- - Sounds: 100%
+ - Spritesets: 100%
+
+**Incomplete**
+ - Input: 83%
  - Primitives: 65%
+ - General: 50%
  - Surfaces: 37%
- - Spritesets: 0%
+
+**To Do**
+ - Files: 0%
  - Persons: 0%
  - Map Engine: 0%
- - Input: 83%
- - General: 50%
- - Files: 0%
  - Networking: 0%
-
+ 
 How To
 ======
 

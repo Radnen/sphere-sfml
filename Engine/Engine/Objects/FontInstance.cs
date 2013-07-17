@@ -18,14 +18,14 @@ namespace Engine.Objects
         uint _height = 0;
         short _version = 0;
 
-        public FontInstance(ObjectInstance proto)
-            : base (proto)
+        public FontInstance(ScriptEngine parent)
+            : base (parent)
         {
             PopulateFunctions();
         }
 
-        public FontInstance(ObjectInstance proto, string filename)
-            : this (proto)
+        public FontInstance(ScriptEngine parent, string filename)
+            : this (parent)
         {
             ReadFromFile(filename);
         }
@@ -111,15 +111,19 @@ namespace Engine.Objects
         [JSFunction(Name = "setCharacterImage")]
         public void SetCharacterImage(int ch, ImageInstance image)
         {
-            _glyphs[ch] = image.GetImage();
-            _atlas.Update(_glyphs);
+            using (_glyphs[ch] = image.GetImage())
+            {
+                _atlas.Update(_glyphs);
+            }
         }
 
         [JSFunction(Name = "getCharacterImage")]
         public ImageInstance GetCharacterImage(int ch)
         {
-            return new ImageInstance(Program._engine.Object.InstancePrototype,
-                                     new Texture(_atlas.GetImageAt((uint)ch)));
+            using (Image img = _atlas.GetImageAt((uint)ch))
+            {
+                return new ImageInstance(Program._engine, new Texture(img), false);
+            }
         }
 
         [JSFunction(Name = "wordWrapString")]
@@ -196,8 +200,7 @@ namespace Engine.Objects
         [JSFunction(Name = "getStringHeight")]
         public int GetStringHeight(string text, int width)
         {
-            ArrayInstance array = Wrap(text, width);
-            return (int)(array.Length * _height);
+            return (int)(Wrap(text, width).Length * _height);
         }
 
         [JSFunction(Name = "setColorMask")]
@@ -209,7 +212,7 @@ namespace Engine.Objects
         [JSFunction(Name = "getColorMask")]
         public ColorInstance GetColorMask()
         {
-            return new ColorInstance(Program._engine.Object.InstancePrototype, _fontSprite.Color);
+            return new ColorInstance(Program._engine, _fontSprite.Color);
         }
 
         [JSFunction(Name = "getHeight")]
@@ -227,7 +230,7 @@ namespace Engine.Objects
         [JSFunction(Name = "clone")]
         public FontInstance Clone()
         {
-            FontInstance font = new FontInstance(Program._engine.Object.InstancePrototype);
+            FontInstance font = new FontInstance(Engine);
             font._atlas = new TextureAtlas(_atlas);
             font._fontSprite = new Sprite(font._atlas.Texture);
             font._glyphs = new Image[_glyphs.Length];

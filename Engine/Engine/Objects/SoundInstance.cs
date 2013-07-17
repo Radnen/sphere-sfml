@@ -1,4 +1,5 @@
 using System;
+using Jurassic;
 using Jurassic.Library;
 using SFML.Audio;
 
@@ -12,14 +13,14 @@ namespace Engine.Objects
         Music _music = null;
         int _pan, _volume = 255;
 
-        public SoundInstance(ObjectInstance proto)
-            : base (proto)
+        public SoundInstance(ScriptEngine parent)
+            : base (parent)
         {
             PopulateFunctions();
         }
 
-        public SoundInstance(ObjectInstance proto, string filename)
-            : base (proto)
+        public SoundInstance(ScriptEngine parent, string filename)
+            : base (parent)
         {
             PopulateFunctions();
 
@@ -186,7 +187,7 @@ namespace Engine.Objects
         [JSFunction(Name = "clone")]
         public SoundInstance Clone()
         {
-            SoundInstance instance = new SoundInstance(Program._engine.Object.InstancePrototype);
+            SoundInstance instance = new SoundInstance(Engine);
             instance._pan = _pan;
             instance._isSound = _isSound;
             if (_isSound)
