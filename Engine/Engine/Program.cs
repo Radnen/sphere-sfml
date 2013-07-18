@@ -250,6 +250,16 @@ namespace Engine
             engine.SetGlobalFunction("GetNumJoysticks", new Func<int>(GlobalInput.GetNumJoySticks));
             engine.SetGlobalFunction("GetNumJoystickButtons", new Func<int, int>(GlobalInput.GetNumJoyStickButtons));
             engine.SetGlobalFunction("OpenFile", new Func<string, FileInstance>(OpenFile));
+            engine.SetGlobalFunction("OpenRawFile", new Func<string, bool, RawFileInstance>(OpenRawFile));
+            engine.SetGlobalFunction("CreateByteArray", new Func<int, ByteArrayInstance>(CreateByteArray));
+            engine.SetGlobalFunction("CreateByteArrayFromString", new Func<string, ByteArrayInstance>(CreateByteArrayFromString));
+            engine.SetGlobalFunction("CreateStringFromByteArray", new Func<ByteArrayInstance, string>(CreateStringFromByteArray));
+            engine.SetGlobalFunction("CreateDirectory", new Action<string>(CreateDirectory));
+            engine.SetGlobalFunction("GetDirectoryList", new Func<string, ArrayInstance>(GetDirectoryList));
+            engine.SetGlobalFunction("GetFileList", new Func<string, ArrayInstance>(GetFileList));
+            engine.SetGlobalFunction("RemoveDirectory", new Action<string>(RemoveDirectory));
+            engine.SetGlobalFunction("RemoveFile", new Action<string>(RemoveFile));
+            engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -493,11 +503,76 @@ namespace Engine
             return new FileInstance(_engine, GlobalProps.BasePath + "/save/" + filename);
         }
 
+        static RawFileInstance OpenRawFile(string filename, bool writeable = false)
+        {
+            return new RawFileInstance(_engine, GlobalProps.BasePath + "/other/" + filename, writeable);
+        }
+
+        static ByteArrayInstance CreateByteArray(int size)
+        {
+            return new ByteArrayInstance(_engine, new byte[size]);
+        }
+
+        static ByteArrayInstance CreateByteArrayFromString(string content)
+        {
+            return new ByteArrayInstance(_engine, content);
+        }
+
+        static string CreateStringFromByteArray(ByteArrayInstance array)
+        {
+            byte[] data = array.GetBytes();
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(data.Length);
+            for (var i = 0; i < data.Length; ++i)
+                    builder.Append((char)data[i]);
+            return builder.ToString();
+        }
+
+        static ArrayInstance GetFileList(string filepath = "")
+        {
+            if (string.IsNullOrEmpty(filepath))
+                filepath = GlobalProps.BasePath + "/save/";
+            return _engine.Array.New(Directory.GetFiles(filepath));
+        }
+
+        static void RemoveDirectory(string filepath)
+        {
+            if (Directory.Exists(filepath))
+                Directory.Delete(filepath);
+        }
+
+        static void RemoveFile(string filepath)
+        {
+            if (File.Exists(filepath))
+                File.Delete(filepath);
+        }
+
+        static ArrayInstance GetDirectoryList(string filepath = "")
+        {
+            if (string.IsNullOrEmpty(filepath))
+                filepath = GlobalProps.BasePath;
+            return _engine.Array.New(Directory.GetDirectories(filepath));
+        }
+
+        static void CreateDirectory(string fullname)
+        {
+            if (string.IsNullOrEmpty(fullname))
+                fullname = GlobalProps.BasePath + "/" + fullname;
+            Directory.CreateDirectory(fullname);
+        }
+
         static void RequireScript(string filename)
         {
             if (_required.ContainsKey(filename) && _required[filename])
                 return;
             EvaluateScript(filename);
+        }
+
+        static bool Rename(string file1, string file2)
+        {
+            if (!File.Exists(file1) || File.Exists(file2))
+                return false;
+            File.Move(file1, file2);
+            return true;
         }
 
         static void EvaluateScript(string filename)

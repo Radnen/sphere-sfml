@@ -3,6 +3,7 @@
 A .NET Sphere implementation using SFML for graphics, input, etc.
 
 **Downloads:**
+ - v0.65: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.65.zip
  - v0.60: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.60.zip
  - v0.55: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.55.zip
  - v0.50: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.50.zip
@@ -15,15 +16,15 @@ Parity with Sphere v1.6
  - Fonts: 100%
  - WindowStyles: 100%
  - Spritesets: 100%
+ - Files: 100%
 
 **Incomplete**
  - Input: 83%
  - Primitives: 65%
- - General: 50%
+ - General: 65%
  - Surfaces: 37%
 
 **To Do**
- - Files: 0%
  - Persons: 0%
  - Map Engine: 0%
  - Networking: 0%

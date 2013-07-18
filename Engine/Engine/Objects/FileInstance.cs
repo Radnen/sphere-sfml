@@ -21,6 +21,18 @@ namespace Engine.Objects
             _file.WriteFile(_file.FileName);
         }
 
+        [JSFunction(Name = "getNumKeys")]
+        public int GetNumKeys()
+        {
+            return _file.GetNumKeys();
+        }
+
+        [JSFunction(Name = "getKey")]
+        public string GetKeyAt(int index)
+        {
+            return _file.GetKeyAt(index);
+        }
+
         [JSFunction(Name = "flush")]
         public void Flush()
         {
@@ -63,6 +75,12 @@ namespace Engine.Objects
         public void Write(string key, object value)
         {
             _file.SetData(key, value);
+        }
+
+        [JSFunction(Name = "toString")]
+        public override string ToString()
+        {
+            return "[object file]";
         }
     }
 }

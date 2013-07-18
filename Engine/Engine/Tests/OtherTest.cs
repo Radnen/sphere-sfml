@@ -125,6 +125,63 @@ namespace Engine
             object func = Program._engine.Evaluate("ApplyColorMask;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
+
+        [Test()]
+        public void TestCreateByteArray()
+        {
+            object func = Program._engine.Evaluate("CreateByteArray;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object array = Program._engine.Evaluate("CreateByteArray(5);");
+            Assert.IsInstanceOf<ByteArrayInstance>(array);
+        }
+
+        [Test()]
+        public void TestCreateByteArrayFromString()
+        {
+            object func = Program._engine.Evaluate("CreateByteArrayFromString;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object array = Program._engine.Evaluate("CreateByteArrayFromString(\"hi\");");
+            Assert.IsInstanceOf<ByteArrayInstance>(array);
+        }
+
+        [Test()]
+        public void TestCreateStringFromByteArray()
+        {
+            object func = Program._engine.Evaluate("CreateStringFromByteArray;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object str = Program._engine.Evaluate("CreateStringFromByteArray(CreateByteArray(5));");
+            Assert.IsInstanceOf<string>(str);
+        }
+
+        [Test()]
+        public void TestByteArrayConcat()
+        {
+            object size = Program._engine.Evaluate("var bytea = CreateByteArray(5);" +
+                "var byteb = CreateByteArray(5);" +
+                "bytea.concat(byteb); bytea.getSize();");
+            Assert.IsInstanceOf<int>(size);
+            Assert.AreEqual(size, 10);
+        }
+
+        [Test()]
+        public void TestByteArraySplice()
+        {
+            object size = Program._engine.Evaluate("var bytea = CreateByteArray(5);" +
+                "var byteb = bytea.splice(1, 3); byteb.getSize();");
+            Assert.IsInstanceOf<int>(size);
+            Assert.AreEqual(size, 2);
+        }
+
+        [Test()]
+        public void TestByteArrayToString()
+        {
+            object str = Program._engine.Evaluate("CreateByteArray(5).toString();");
+            Assert.IsInstanceOf<string>(str);
+            Assert.AreEqual(str, "[object bytearray]");
+        }
     }
 }
 

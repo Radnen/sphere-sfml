@@ -85,6 +85,23 @@ namespace Engine.Objects
         {
             return _data.TryGetValue(key, out result);
         }
+
+        public int GetNumKeys()
+        {
+            return _data.Keys.Count;
+        }
+
+        public string GetKeyAt(int index)
+        {
+            int i = 0;
+            foreach (string s in _data.Keys)
+            {
+                if (i == index)
+                    return s;
+                i++;
+            }
+            return "";
+        }
     }
 }
 

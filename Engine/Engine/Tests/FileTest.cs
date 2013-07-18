@@ -13,6 +13,14 @@ namespace Engine
         {
             Program.SetupTestEnvironment();
             Program._engine.Evaluate("var file = OpenFile(\"test.sav\");");
+            Program._engine.Evaluate("var raw = OpenRawFile(\"raw.dat\");");
+        }
+
+        [TestFixtureTearDown()]
+        public void Destroy()
+        {
+            Program._engine.Evaluate("file.close();");
+            Program._engine.Evaluate("raw.close();");
         }
 
         [Test()]
@@ -96,6 +104,17 @@ namespace Engine
         }
 
         [Test()]
+        public void TestFileToString()
+        {
+            object func = Program._engine.Evaluate("file.toString;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object str = Program._engine.Evaluate("file.toString();");
+            Assert.IsInstanceOf<string>(str);
+            Assert.AreEqual(str, "[object file]");
+        }
+
+        [Test()]
         public void TestOpenRawFile()
         {
             object func = Program._engine.Evaluate("OpenRawFile;");
@@ -142,6 +161,17 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("raw.setPosition;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestRawFileToString()
+        {
+            object func = Program._engine.Evaluate("raw.toString;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object str = Program._engine.Evaluate("raw.toString();");
+            Assert.IsInstanceOf<string>(str);
+            Assert.AreEqual(str, "[object rawfile]");
         }
 
         [Test()]
