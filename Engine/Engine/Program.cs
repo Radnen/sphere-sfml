@@ -267,6 +267,7 @@ namespace Engine
             engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
             engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
             engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
+            PersonManager.BindToEngine(engine);
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));

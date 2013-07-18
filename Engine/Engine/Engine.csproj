@@ -243,6 +243,9 @@
     <Compile Include="Objects\FileInstance.cs" />
     <Compile Include="Objects\RawFileInstance.cs" />
     <Compile Include="Objects\ByteArrayInstance.cs" />
+    <Compile Include="Tests\PersonTest.cs" />
+    <Compile Include="PersonManager.cs" />
+    <Compile Include="Objects\Person.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />
