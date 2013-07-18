@@ -182,6 +182,13 @@ namespace Engine
             Assert.IsInstanceOf<string>(str);
             Assert.AreEqual(str, "[object bytearray]");
         }
+
+        [Test()]
+        public void TestHashByteArray()
+        {
+            object func = Program._engine.Evaluate("HashByteArray;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
     }
 }
 

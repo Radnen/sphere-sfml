@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Threading;
 using SFML;
 using SFML.Graphics;
@@ -232,7 +233,11 @@ namespace Engine
             engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
             engine.SetGlobalFunction("IsAnyKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
             engine.SetGlobalFunction("IsMouseButtonPressed", new Func<int, bool>(GlobalInput.IsMouseButtonPressed));
+            engine.SetGlobalFunction("GetMouseWheelEvent", new Func<int>(GlobalInput.GetMouseWheelEvent));
+            engine.SetGlobalFunction("GetNumMouseWheelEvents", new Func<int>(GlobalInput.GetNumMouseWheelEvents));
             engine.SetGlobalFunction("IsJoystickButtonPressed", new Func<int, int, bool>(GlobalInput.IsJoystickButtonPressed));
+            engine.SetGlobalFunction("GetJoystickAxis", new Func<int, int, double>(GlobalInput.GetJoystickAxis));
+            engine.SetGlobalFunction("GetNumJoystickAxes", new Func<int, int>(GlobalInput.GetNumJoystickAxes));
             engine.SetGlobalFunction("AreKeysLeft", new Func<bool>(GlobalInput.AreKeysLeft));
             engine.SetGlobalFunction("GetKey", new Func<int>(GlobalInput.GetKey));
             engine.SetGlobalFunction("GetKeyString", new Func<int, bool, string>(GlobalInput.GetKeyString));
@@ -260,6 +265,8 @@ namespace Engine
             engine.SetGlobalFunction("RemoveDirectory", new Action<string>(RemoveDirectory));
             engine.SetGlobalFunction("RemoveFile", new Action<string>(RemoveFile));
             engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
+            engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
+            engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -558,6 +565,36 @@ namespace Engine
             if (string.IsNullOrEmpty(fullname))
                 fullname = GlobalProps.BasePath + "/" + fullname;
             Directory.CreateDirectory(fullname);
+        }
+
+        static string HashFromFile(string filename)
+        {
+            if (!File.Exists(filename))
+                return "";
+            using (MD5 mdHash = MD5.Create())
+            {
+                return GetMd5Hash(mdHash, File.ReadAllBytes(filename));
+            }
+        }
+
+        static string GetMd5Hash(MD5 md5Hash, byte[] content)
+        {
+            byte[] data = md5Hash.ComputeHash(content);
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+
+            for (int i = 0; i < data.Length; i++)
+                builder.Append(data[i].ToString("x2"));
+
+            // Return the hexadecimal string. 
+            return builder.ToString();
+        }
+
+        static string HashByteArray(ByteArrayInstance array)
+        {
+            using (MD5 mdHash = MD5.Create())
+            {
+                return GetMd5Hash(mdHash, array.GetBytes());
+            }
         }
 
         static void RequireScript(string filename)

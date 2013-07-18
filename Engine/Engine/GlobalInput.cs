@@ -6,10 +6,8 @@ namespace Engine
 {
     public static class GlobalInput
     {
-        private static bool[] _mouseCache = new bool[(int)Mouse.Button.ButtonCount];
-        private static bool[,] _joyCache = new bool[Joystick.Count, Joystick.ButtonCount];
-        private static bool[] _keyCache = new bool[(int)Keyboard.Key.KeyCount];
         private static Queue<int> _keyQueue = new Queue<int>(10);
+        private static Queue<int> _wheelQueue = new Queue<int>(10);
         private static bool _fullscreen, _anyKey;
         private static Dictionary<int, Tuple<string, string>> _boundKeys = new Dictionary<int, Tuple<string, string>>();
 
@@ -23,8 +21,6 @@ namespace Engine
 
         public static void window_KeyPressed(object sender, KeyEventArgs e) {
             _anyKey = true;
-            _keyCache[(int)e.Code] = true;
-
             _keyQueue.Enqueue((int)e.Code);
 
             if (e.Code == Keyboard.Key.F10)
@@ -33,27 +29,6 @@ namespace Engine
 
         public static void window_KeyReleased(object sender, KeyEventArgs e) {
             _anyKey = false;
-            _keyCache[(int)e.Code] = false;
-        }
-
-        public static void window_MousePressed(object sender, MouseButtonEventArgs e)
-        {
-            _mouseCache[(int)e.Button] = true;
-        }
-
-        public static void window_MouseReleased(object sender, MouseButtonEventArgs e)
-        {
-            _mouseCache[(int)e.Button] = false;
-        }
-
-        public static void window_JoyPressed(object sender, JoystickButtonEventArgs e)
-        {
-            _joyCache[e.JoystickId, (int)e.Button] = true;
-        }
-
-        public static void window_JoyReleased(object sender, JoystickButtonEventArgs e)
-        {
-            _joyCache[e.JoystickId, (int)e.Button] = false;
         }
 
         public static void window_Closed(object sender, EventArgs e)
@@ -67,10 +42,12 @@ namespace Engine
             wind.Closed += window_Closed;
             wind.KeyPressed += window_KeyPressed;
             wind.KeyReleased += window_KeyReleased;
-            wind.MouseButtonPressed += window_MousePressed;
-            wind.MouseButtonReleased += window_MouseReleased;
-            wind.JoystickButtonPressed += window_JoyPressed;
-            wind.JoystickButtonReleased += window_JoyReleased;
+            wind.MouseWheelMoved += window_MouseWheel;
+        }
+
+        static void window_MouseWheel (object sender, MouseWheelEventArgs e)
+        {
+            _wheelQueue.Enqueue(e.Delta);
         }
 
         public static void RemoveWindowHandlers(Window wind)
@@ -78,10 +55,7 @@ namespace Engine
             wind.Closed -= window_Closed;
             wind.KeyPressed -= window_KeyPressed;
             wind.KeyReleased -= window_KeyReleased;
-            wind.MouseButtonPressed -= window_MousePressed;
-            wind.MouseButtonReleased -= window_MouseReleased;
-            wind.JoystickButtonPressed -= window_JoyPressed;
-            wind.JoystickButtonReleased -= window_JoyReleased;
+            wind.MouseWheelMoved -= window_MouseWheel;
         }
 
         public static void ToggleFullScreen()
@@ -100,7 +74,7 @@ namespace Engine
 
         public static bool IsKeyPressed(int code)
         {
-            return _keyCache[code];
+            return Keyboard.IsKeyPressed((Keyboard.Key)code);
         }
 
         public static bool IsAnyKeyPressed(int code)
@@ -110,12 +84,39 @@ namespace Engine
 
         public static bool IsMouseButtonPressed(int code)
         {
-            return _mouseCache[code];
+            return Mouse.IsButtonPressed((Mouse.Button)code);
+        }
+
+        public static int GetMouseWheelEvent()
+        {
+            return _wheelQueue.Dequeue();
+        }
+
+        public static int GetNumMouseWheelEvents()
+        {
+            return _wheelQueue.Count;
         }
 
         public static bool IsJoystickButtonPressed(int id, int code)
         {
-            return _joyCache[id, code];
+            return Joystick.IsButtonPressed((uint)id, (uint)code);
+        }
+
+        public static double GetJoystickAxis(int id, int axis_id)
+        {
+            return Joystick.GetAxisPosition((uint)id, (Joystick.Axis)axis_id);
+        }
+
+        public static int GetNumJoystickAxes(int id)
+        {
+            int count = 0;
+            Array a = Enum.GetValues(typeof(Joystick.Axis));
+            foreach (object axis in a)
+            {
+                if (Joystick.HasAxis((uint)id, (Joystick.Axis)axis))
+                    count++;
+            }
+            return count;
         }
 
         public static bool AreKeysLeft()

@@ -12,6 +12,7 @@ Parity with Sphere v1.6
 =======================
 **Complete**
  - Images: 100%
+ - Input: 100%
  - Sounds: 100%
  - Fonts: 100%
  - WindowStyles: 100%
@@ -19,9 +20,8 @@ Parity with Sphere v1.6
  - Files: 100%
 
 **Incomplete**
- - Input: 83%
+ - General: 85%
  - Primitives: 65%
- - General: 65%
  - Surfaces: 37%
 
 **To Do**
