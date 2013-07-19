@@ -180,6 +180,12 @@
     <None Include="startup\other\raw.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="startup\maps\outside_neo.rts">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\maps\village.rmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -246,6 +252,16 @@
     <Compile Include="Tests\PersonTest.cs" />
     <Compile Include="PersonManager.cs" />
     <Compile Include="Objects\Person.cs" />
+    <Compile Include="Tests\MapTest.cs" />
+    <Compile Include="Objects\Layer.cs" />
+    <Compile Include="Objects\Segment.cs" />
+    <Compile Include="Objects\Map.cs" />
+    <Compile Include="Objects\Zone.cs" />
+    <Compile Include="Objects\Tileset.cs" />
+    <Compile Include="Objects\Tile.cs" />
+    <Compile Include="Objects\Line.cs" />
+    <Compile Include="Objects\Entity.cs" />
+    <Compile Include="Objects\MapEngineHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />

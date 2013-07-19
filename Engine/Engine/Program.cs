@@ -20,7 +20,7 @@ namespace Engine
         private static Dictionary<string, bool> _required = new Dictionary<string, bool>();
 
         private static int _internal_fps = 0;
-        private static bool SCALED = false;
+        private static bool SCALED = true;
         private static readonly bool DEBUG = true;
 
         static GameFile _game = new GameFile();
@@ -229,7 +229,6 @@ namespace Engine
             engine.SetGlobalFunction("GetTime", new Func<double>(GetTime));
             engine.SetGlobalFunction("BlendColors", new Func<ColorInstance, ColorInstance, ColorInstance>(BlendColors));
             engine.SetGlobalFunction("BlendColorsWeighted", new Func<ColorInstance, ColorInstance, double, ColorInstance>(BlendColorsWeighted));
-            engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
             engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
             engine.SetGlobalFunction("IsAnyKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
             engine.SetGlobalFunction("IsMouseButtonPressed", new Func<int, bool>(GlobalInput.IsMouseButtonPressed));
@@ -268,6 +267,7 @@ namespace Engine
             engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
             engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
             PersonManager.BindToEngine(engine);
+            MapEngineHandler.BindToEngine(engine);
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -333,11 +333,6 @@ namespace Engine
             return _internal_fps;
         }
 
-        static bool IsMapEngineRunning()
-        {
-            return false;
-        }
-
         static int GetRealFrameRate()
         {
             return _fps;
@@ -399,7 +394,7 @@ namespace Engine
 
         static DateTime _start = DateTime.Now;
         static int _fps = 0;
-        static void FlipScreen()
+        public static void FlipScreen()
         {
             _window.DispatchEvents();
             _window.Display();
@@ -414,12 +409,12 @@ namespace Engine
             }
         }
 
-        static int GetScreenWidth()
+        public static int GetScreenWidth()
         {
             return GlobalProps.Width;
         }
 
-        static int GetScreenHeight()
+        public static int GetScreenHeight()
         {
             return GlobalProps.Height;
         }

@@ -25,6 +25,9 @@ function game()
 	menu.addOption("Surfaces", game2);
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
+	menu.addOption("Map Engine", function() {
+		MapEngine("village.rmp", 60);
+	});
 	menu.addOption("Exit", Exit);
 	
 	while (!done) {
