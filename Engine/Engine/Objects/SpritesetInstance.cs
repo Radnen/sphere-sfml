@@ -53,6 +53,11 @@ namespace Engine.Objects
             this["directions"] = Program._engine.Array.New(directions);
         }
 
+        public IntRect GetBase()
+        {
+            return new IntRect(_bx1, _by1, _bx2 - _bx1, _by2 - _by1);
+        }
+
         private void ReadFromFile(string filename)
         {
             if (!File.Exists(filename))

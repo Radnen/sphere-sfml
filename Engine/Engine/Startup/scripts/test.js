@@ -26,17 +26,40 @@ function game()
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
 	menu.addOption("Map Engine", function() {
+		CreatePerson("player", "test.rss", false);
+		SetUpdateScript("Update();");
+		SetRenderScript("Render();");
 		MapEngine("village.rmp", 60);
 	});
 	menu.addOption("Exit", Exit);
 	
 	while (!done) {
-		menu.draw(16, 16, 96, 144);
+		menu.draw(16, 16, 96, 160);
 		FlipScreen();
 		while (AreKeysLeft()) {
 			var key = GetKey();
 			menu.update(key);
 			if (key == KEY_ESCAPE) done = true;
+		}
+	}
+}
+
+function Render()
+{
+	sys_font.drawText(0, 0, "Hello world");
+}
+
+function Update()
+{
+	if (IsKeyPressed(KEY_UP)) SetCameraY(-2);
+	if (IsKeyPressed(KEY_DOWN)) SetCameraY(2);
+	if (IsKeyPressed(KEY_LEFT)) SetCameraX(-2);
+	if (IsKeyPressed(KEY_RIGHT)) SetCameraX(2);
+
+
+	while (AreKeysLeft()) {
+		switch (GetKey()) {
+			case KEY_ESCAPE: ExitMapEngine(); break;
 		}
 	}
 }

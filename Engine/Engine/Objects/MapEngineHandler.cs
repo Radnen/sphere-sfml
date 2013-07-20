@@ -2,6 +2,7 @@ using System;
 using Jurassic;
 using SFML.Graphics;
 using SFML.Window;
+using System.Collections.Generic;
 
 namespace Engine.Objects
 {
@@ -11,6 +12,7 @@ namespace Engine.Objects
         private static TextureAtlas _tileAtlas;
         private static Sprite _tiles;
         private static bool _ended = false;
+        private static int _fps = 0;
 
         private static RenderTexture[] _layertex;
         private static Sprite[] _layer_sprites;
@@ -22,6 +24,7 @@ namespace Engine.Objects
         public static void BindToEngine(ScriptEngine engine)
         {
             engine.SetGlobalFunction("MapEngine", new Action<string, int>(MapEngine));
+            engine.SetGlobalFunction("ExitMapEngine", new Action(ExitMapEngine));
             engine.SetGlobalFunction("ChangeMap", new Action<string>(LoadMap));
             engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
             engine.SetGlobalFunction("SetCameraX", new Action<int>(SetCameraX));
@@ -29,6 +32,8 @@ namespace Engine.Objects
             engine.SetGlobalFunction("SetUpdateScript", new Action<string>(SetUpdateScript));
             engine.SetGlobalFunction("SetRenderScript", new Action<string>(SetRenderScript));
             engine.SetGlobalFunction("SetLayerRenderer", new Action<int, string>(SetLayerRenderer));
+            engine.SetGlobalFunction("GetMapEngineFrameRate", new Func<int>(GetMapEngineFrameRate));
+            engine.SetGlobalFunction("SetMapEngineFrameRate", new Action<int>(SetMapEngineFrameRate));
         }
 
         private static bool IsMapEngineRunning()
@@ -36,20 +41,42 @@ namespace Engine.Objects
             return !_ended;
         }
 
+        private static int GetMapEngineFrameRate()
+        {
+            return _fps;
+        }
+
+        private static void SetMapEngineFrameRate(int rate)
+        {
+            Program._window.SetFramerateLimit((uint)rate);
+            _fps = rate;
+        }
+
         private static void MapEngine(string filename, int fps = 60)
         {
-            //Program._window.SetFramerateLimit((uint)fps);
+            _ended = false;
+            SetMapEngineFrameRate(fps);
 
+            View v = Program._window.GetView();
             filename = GlobalProps.BasePath + "/maps/" + filename;
             LoadMap(filename);
 
             while (!_ended) {
+                Program._engine.Execute(_updateScript);
+
                 for (var i = 0; i < _layer_sprites.Length; ++i)
+                {
                     Program._window.Draw(_layer_sprites[i]);
+                    if (i == _map.StartLayer)
+                        DrawPersons();
+                }
 
                 Program._engine.Execute(_renderScript);
                 Program.FlipScreen();
             }
+
+            Program._window.SetView(v);
+            Program.SetFrameRate(Program.GetFrameRate());
         }
 
         private static void LoadMap(string filename)
@@ -84,6 +111,11 @@ namespace Engine.Objects
             }
         }
 
+        private static void ExitMapEngine()
+        {
+            _ended = true;
+        }
+
         private static void DrawTiles(RenderTexture layer_tex, Layer layer)
         {
             Vector2f position = new Vector2f();
@@ -104,6 +136,14 @@ namespace Engine.Objects
                     _tiles.TextureRect = _tileAtlas.Sources[t];
                     layer_tex.Draw(_tiles);
                 }
+            }
+        }
+
+        private static void DrawPersons()
+        {
+            foreach (KeyValuePair<string, Person> pair in PersonManager.People)
+            {
+                pair.Value.Draw(_map.StartX, _map.StartY);
             }
         }
 

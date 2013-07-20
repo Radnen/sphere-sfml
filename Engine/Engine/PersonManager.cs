@@ -11,6 +11,8 @@ namespace Engine
     {
         private static SortedDictionary<string, Person> _people = new SortedDictionary<string, Person>();
 
+        public static SortedDictionary<string, Person> People { get { return _people; } }
+
         public static void BindToEngine(ScriptEngine engine)
         {
             engine.SetGlobalFunction("CreatePerson", new Action<string, string, bool>(CreatePerson));

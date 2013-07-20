@@ -225,7 +225,6 @@ namespace Engine
             engine.SetGlobalFunction("GrabSurface", new Func<int, int, int, int, SurfaceInstance>(GrabSurface));
             engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
             engine.SetGlobalFunction("GetFrameRate", new Func<int>(GetFrameRate));
-            engine.SetGlobalFunction("GetRealFrameRate", new Func<int>(GetRealFrameRate));
             engine.SetGlobalFunction("GetTime", new Func<double>(GetTime));
             engine.SetGlobalFunction("BlendColors", new Func<ColorInstance, ColorInstance, ColorInstance>(BlendColors));
             engine.SetGlobalFunction("BlendColorsWeighted", new Func<ColorInstance, ColorInstance, double, ColorInstance>(BlendColorsWeighted));
@@ -322,20 +321,15 @@ namespace Engine
             proc.Kill();
 		}
 
-        static void SetFrameRate(int fps)
+        public static void SetFrameRate(int fps)
         {
             _window.SetFramerateLimit((uint)fps);
             _internal_fps = fps;
         }
 
-        static int GetFrameRate()
+        public static int GetFrameRate()
         {
             return _internal_fps;
-        }
-
-        static int GetRealFrameRate()
-        {
-            return _fps;
         }
 
         static ColorInstance BlendColors(ColorInstance c1, ColorInstance c2)
@@ -357,7 +351,7 @@ namespace Engine
             Console.WriteLine(obj);
         }
 
-        static double GetTime()
+        public static double GetTime()
         {
             return DateInstance.Now();
         }
@@ -419,7 +413,7 @@ namespace Engine
             return GlobalProps.Height;
         }
 
-        static void Abort(string msg)
+        public static void Abort(string msg)
         {
             Print(msg);
             Exit();

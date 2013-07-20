@@ -42,7 +42,7 @@ namespace Engine.Objects
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
         }
 
-        public Image GetImage()
+        public Image GetImage(bool copy = true)
         {
             return _image.CopyToImage();
         }
