@@ -27,10 +27,14 @@ namespace Engine.Objects
                 {
                     string line = reader.ReadLine();
                     string[] parts = line.Split('=');
-                    if (parts.Length > 1)
-                        _data.Add(parts[0], parts[1]);
-                    else if (parts.Length == 1)
-                        _data.Add(parts[0], "");
+                    if (parts.Length > 1) {
+                        if (!_data.ContainsKey(parts[0]))
+                            _data.Add(parts[0], parts[1]);
+                    }
+                    else if (parts.Length == 1) {
+                        if (!_data.ContainsKey(parts[0]))
+                            _data.Add(parts[0], "");
+                    }
                 }
             }
 

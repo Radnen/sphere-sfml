@@ -33,6 +33,8 @@ namespace Engine
 
         public static void CreatePerson(string name, string ss, bool destroy = true)
         {
+            if (_people.ContainsKey(name))
+                return;
             ss = GlobalProps.BasePath + "/spritesets/" + ss;
             SpritesetInstance sprite = new SpritesetInstance(Program._engine, ss);
             _people.Add(name, new Person(name, sprite, destroy));

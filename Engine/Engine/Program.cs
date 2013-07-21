@@ -17,16 +17,15 @@ namespace Engine
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
 
-        private static Dictionary<string, bool> _required = new Dictionary<string, bool>();
-
         private static int _internal_fps = 0;
-        private static bool SCALED = true;
-        private static readonly bool DEBUG = true;
+        private static bool SCALED = false;
+        private static readonly bool DEBUG = false;
 
         static GameFile _game = new GameFile();
 
         static void Main(string[] args)
         {
+            string filename;
             if (args.Length == 1)
             {
                 if (args[0] == "-compliance")
@@ -59,9 +58,13 @@ namespace Engine
             }
             else if (args.Length == 2)
             {
-                if (args[0] != "-game" || !_game.ReadFile(args[1]))
+                filename = args[1];
+                if (!filename.EndsWith("game.sgm"))
+                    filename += "/game.sgm";
+
+                if (args[0] != "-game" || !_game.ReadFile(filename))
                 {
-                    Console.WriteLine("Failed to load game: " + args[1]);
+                    Console.WriteLine("Failed to load game: " + filename);
                     Console.WriteLine("Useage: ");
                     Console.WriteLine("    -game <directory>  | Loads the game running at that directory.");
                     return;
@@ -76,11 +79,11 @@ namespace Engine
             if (!InitEngine())
                 return;
 
-            string filename;
             if (_game.TryGetData("script", out filename))
             {
-                RequireScript(filename);
-                RunCode("game();", filename);
+                GlobalScripts.RequireScript(filename);
+                GlobalScripts.RunCode(new StringScriptSource("game();", filename));
+                GlobalScripts.RunCode(new StringScriptSource("GetKey();", filename));
             }
             else
             {
@@ -187,10 +190,6 @@ namespace Engine
             engine.SetGlobalFunction("FlipScreen", new Action(FlipScreen));
             engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
-            engine.SetGlobalFunction("RequireScript", new Action<string>(RequireScript));
-            engine.SetGlobalFunction("RequireSystemScript", new Action<string>(RequireSystemScript));
-            engine.SetGlobalFunction("EvaluateScript", new Action<string>(EvaluateScript));
-            engine.SetGlobalFunction("EvaluateSystemScript", new Action<string>(EvaluateSystemScript));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
             engine.SetGlobalFunction("Exit", new Action(Exit));
             engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
@@ -265,6 +264,7 @@ namespace Engine
             engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
             engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
             engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
+            GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
 
@@ -587,68 +587,12 @@ namespace Engine
             }
         }
 
-        static void RequireScript(string filename)
-        {
-            if (_required.ContainsKey(filename) && _required[filename])
-                return;
-            EvaluateScript(filename);
-        }
-
         static bool Rename(string file1, string file2)
         {
             if (!File.Exists(file1) || File.Exists(file2))
                 return false;
             File.Move(file1, file2);
             return true;
-        }
-
-        static void EvaluateScript(string filename)
-        {
-            try
-            {
-                System.Text.Encoding ISO_8859_1 = System.Text.Encoding.GetEncoding("iso-8859-1");
-                _engine.ExecuteFile(GlobalProps.BasePath + "/scripts/" + filename, ISO_8859_1);
-            }
-            catch (JavaScriptException ex)
-            {
-                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
-            }
-        }
-
-        static void RequireSystemScript(string filename)
-        {
-            if (_required.ContainsKey(filename) && _required[filename])
-                return;
-            EvaluateSystemScript(filename);
-        }
-
-        static void EvaluateSystemScript(string filename)
-        {
-            try
-            {
-                System.Text.Encoding ISO_8859_1 = System.Text.Encoding.GetEncoding("iso-8859-1");
-                _engine.ExecuteFile(GlobalProps.EnginePath + "/system/scripts/" + filename, ISO_8859_1);
-            }
-            catch (JavaScriptException ex)
-            {
-                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
-            }
-        }
-
-        static void RunCode(string code, string filename)
-        {
-            try
-            {
-                _engine.Execute(new StringScriptSource(code, filename));
-            }
-            catch (JavaScriptException ex)
-            {
-                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Fatal Error: " + e.Message);
-            }
         }
     }
 }
