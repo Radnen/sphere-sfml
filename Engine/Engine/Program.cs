@@ -290,6 +290,7 @@ namespace Engine
                     key = "BACKSPACE";
                 engine.SetGlobalValue("KEY_" + key, (int)a.GetValue(i));
             }
+
             engine.SetGlobalValue("BLEND", 0);
             engine.SetGlobalValue("REPLACE", 1);
             engine.SetGlobalValue("RGB_ONLY", 2);
@@ -369,7 +370,16 @@ namespace Engine
             return BlendColorsWeighted(c1, c2, 0.5);
         }
 
-        static ColorInstance BlendColorsWeighted(ColorInstance c1, ColorInstance c2, double w)
+        public static ColorInstance BlendColorsWeighted(Color c1, Color c2, double w)
+        {
+            int R = (int)(c1.R * w + c2.R * (1 - w));
+            int G = (int)(c1.G * w + c2.G * (1 - w));
+            int B = (int)(c1.B * w + c2.B * (1 - w));
+            int A = (int)(c1.A * w + c2.A * (1 - w));
+            return new ColorInstance(_engine, R, G, B, A);
+        }
+
+        public static ColorInstance BlendColorsWeighted(ColorInstance c1, ColorInstance c2, double w)
         {
             int R = (int)((int)c1["red"] * w + (int)c2["red"] * (1 - w));
             int G = (int)((int)c1["green"] * w + (int)c2["green"] * (1 - w));

@@ -30,7 +30,7 @@ namespace Engine.Objects
             ArrayInstance s_images = _innerSS["images"] as ArrayInstance;
             Image[] images = new Image[s_images.Length];
             for (var i = 0; i < s_images.Length; ++i)
-                images[i] = ((ImageInstance)s_images[i]).GetImage(false);
+                images[i] = ((ImageInstance)s_images[i]).GetImage();
 
             _innerAtlas.Update(images);
             _sprite = new Sprite(_innerAtlas.Texture);

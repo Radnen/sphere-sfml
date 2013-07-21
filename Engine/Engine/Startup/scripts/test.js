@@ -22,7 +22,7 @@ function game()
 	menu.addOption("Windows", TestWindows);
 	menu.addOption("Spritesets", TestSpritesets);
 	menu.addOption("Mouse/Input", TestMouse);
-	menu.addOption("Surfaces", game2);
+	menu.addOption("Surfaces", TestSurfaces);
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
 	menu.addOption("Map Engine", function() {

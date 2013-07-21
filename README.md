@@ -22,7 +22,7 @@ Parity with Sphere v1.6
 **Incomplete**
  - General: 85%
  - Primitives: 65%
- - Surfaces: 37%
+ - Surfaces: 50%
  - Persons: 21%
 
 **To Do**

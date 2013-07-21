@@ -71,11 +71,26 @@ namespace Engine.Objects
             _changed = true;
         }
 
+        [JSFunction(Name = "blitImage")]
+        public void BlitSurface(int x, int y, ImageInstance img)
+        {
+            using (Image image = img.GetImage())
+            {
+                _image.Copy(image, (uint)x, (uint)y);
+            }
+            _changed = true;
+        }
+
         [JSFunction(Name = "setPixel")]
         public void SetPixel(int x, int y, ColorInstance color)
         {
             _image.SetPixel((uint)x, (uint)y, color.GetColor());
             _changed = true;
+        }
+
+        public void SetPixel(int x, int y, Color sfmlcol)
+        {
+            _image.SetPixel((uint)x, (uint)y, sfmlcol);
         }
 
         [JSFunction(Name = "replaceColor")]
@@ -128,6 +143,130 @@ namespace Engine.Objects
         public SurfaceInstance Clone()
         {
             return new SurfaceInstance(Engine, _image);
+        }
+
+        /// <summary>
+        /// Bresenham's Line Algorithm.
+        /// </summary>
+        [JSFunction(Name = "line")]
+        public void Line(int x1, int y1, int x2, int y2, ColorInstance color)
+        {
+            Line(x1, y1, x2, y2, color.GetColor());
+        }
+
+        public void Line(int x1, int y1, int x2, int y2, Color color)
+        {
+            x1 = Math.Max(0, x1);
+            y1 = Math.Max(0, y1);
+            x2 = Math.Min(x2, (int)(_image.Size.X) - 1);
+            y2 = Math.Min(y2, (int)(_image.Size.Y) - 1);
+            int dx = Math.Abs(x2 - x1);
+            int dy = Math.Abs(y2 - y1);
+            int sx = (x1 < x2) ? 1 : -1;
+            int sy = (y1 < y2) ? 1 : -1;
+            int err = dx - dy, e2;
+            SetPixel(x1, y1, color);
+
+            while (x1 != x2 || y1 != y2)
+            {
+                e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x1 += sx;
+                }
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y1 += sy;
+                }
+                SetPixel(x1, y1, color);
+            }
+            _changed = true;
+        }
+
+        [JSFunction(Name = "lineSeries")]
+        public void LineSeries(ArrayInstance points, ColorInstance color)
+        {
+            for (var i = 1; i < points.Length; i += 2)
+            {
+                Vector2f start = GlobalPrimitives.GetVector(points[i - 1] as ObjectInstance);
+                Vector2f end = GlobalPrimitives.GetVector(points[i] as ObjectInstance);
+                Line((int)start.X, (int)start.Y, (int)end.X, (int)end.Y, color);
+            }
+        }
+
+        [JSFunction(Name = "gradientLine")]
+        public void GradientLine(int x1, int y1, int x2, int y2, ColorInstance col1, ColorInstance col2)
+        {
+            GradientLine(x1, y1, x2, y2, col1.GetColor(), col2.GetColor());
+        }
+
+        public void GradientLine(int x1, int y1, int x2, int y2, Color col1, Color col2)
+        {
+            x1 = Math.Max(0, x1);
+            y1 = Math.Max(0, y1);
+            x2 = Math.Min(x2, (int)(_image.Size.X) - 1);
+            y2 = Math.Min(y2, (int)(_image.Size.Y) - 1);
+            int dx = Math.Abs(x2 - x1), nx;
+            int dy = Math.Abs(y2 - y1), ny;
+            int sx = (x1 < x2) ? 1 : -1;
+            int sy = (y1 < y2) ? 1 : -1;
+            int err = dx - dy, e2;
+            double dist;
+
+            SetPixel(x1, y1, col2);
+
+            while (x1 != x2 || y1 != y2)
+            {
+                e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x1 += sx;
+                }
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y1 += sy;
+                }
+                nx = x2 - x1;
+                ny = y2 - y1;
+                dist = (nx * nx + ny * ny) / (double)(dx * dx + dy * dy);
+                SetPixel(x1, y1, Program.BlendColorsWeighted(col2, col1, dist));
+            }
+            _changed = true;
+        }
+
+        [JSFunction(Name = "rectangle")]
+        public void Rectangle(int x, int y, int w, int h, ColorInstance color)
+        {
+            w += x;
+            h += y;
+            Color col = color.GetColor();
+            for (int i = y; i < h; ++i)
+                Line(x, i, w, i, col);
+            _changed = true;
+        }
+
+        [JSFunction(Name = "gradientRectangle")]
+        public void GradientRectangle(int x, int y, int w, int h, ColorInstance c1, ColorInstance c2, ColorInstance c3, ColorInstance c4)
+        {
+            h += y;
+            w += x;
+            for (var i = y; i < h; ++i)
+            {
+                ColorInstance A = Program.BlendColorsWeighted(c4, c1, (double)i / h);
+                ColorInstance B = Program.BlendColorsWeighted(c3, c2, (double)i / h);
+                GradientLine(x, i, w, i, A, B);
+            }
+        }
+
+        [JSFunction(Name = "setAlpha")]
+        public void SetAlpha(ColorInstance color)
+        {
+            _image.CreateMaskFromColor(color.GetColor());
+            _changed = true;
         }
 
         [JSFunction(Name = "cloneSection")]
