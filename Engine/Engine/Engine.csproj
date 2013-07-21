@@ -263,6 +263,7 @@
     <Compile Include="Objects\Entity.cs" />
     <Compile Include="Objects\MapEngineHandler.cs" />
     <Compile Include="GlobalScripts.cs" />
+    <Compile Include="Objects\Commands.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />

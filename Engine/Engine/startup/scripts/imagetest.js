@@ -5,6 +5,7 @@ RequireSystemScript("time.js");
 function TestImages()
 {
 	var done = false;
+	var black = CreateColor(0, 0, 0);
 	var blue = CreateColor(0, 0, 255);
 	blue.alpha = 175.25;
 	var image = LoadImage("blockman.png");
@@ -17,11 +18,13 @@ function TestImages()
 	var SH = GetScreenHeight();
 
 	while (!done) {
+		GradientRectangle(0, 0, SW, SH, black, black, blue, blue);
+
 		for (var i = 0; i < 5; ++i) {
 			image.blit(i * 48, 52);
 		}
 		
-		image.rotateBlitMask(5 * 48, 0, rad, blue);
+		image.rotateBlitMask(5 * 48, 0, rad, blue);		
 		
 		if (time + 10 < GetTime())
 		{

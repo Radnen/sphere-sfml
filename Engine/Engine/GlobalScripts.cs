@@ -18,6 +18,14 @@ namespace Engine
             engine.SetGlobalFunction("RequireSystemScript", new Action<string>(RequireSystemScript));
             engine.SetGlobalFunction("EvaluateScript", new Action<string>(EvaluateScript));
             engine.SetGlobalFunction("EvaluateSystemScript", new Action<string>(EvaluateSystemScript));
+
+            engine.Execute("Object.__defineGetter__ = function(name, func) {" +
+                "this.defineProperty({}, name, {get: func.bind(this)});" +
+                "}");
+
+            engine.Execute("Object.__defineSetter__ = function(name, func) {" +
+                "this.defineProperty({}, name, {set: func.bind(this)});" +
+                "}");
         }
 
         public static void RequireScript(string filename)

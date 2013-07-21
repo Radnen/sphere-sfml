@@ -33,8 +33,8 @@ namespace Engine.Objects
             Init();
         }
 
-        public SurfaceInstance(ObjectInstance proto, string filename)
-            : base(proto)
+        public SurfaceInstance(ScriptEngine parent, string filename)
+            : base(parent)
         {
             _image = new Image(filename);
             Init();

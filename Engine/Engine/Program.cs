@@ -30,7 +30,11 @@ namespace Engine
             {
                 if (args[0] == "-compliance")
                 {
-                    Console.WriteLine("Sphere v1.5 subset compliance.");
+                    Console.WriteLine("Sphere Objects: 100%");
+                    Console.WriteLine("File IO: 80%");
+                    Console.WriteLine("Networking: 0%");
+                    Console.WriteLine("Map Engine: 10%");
+                    Console.WriteLine("Other: 85%");
                     return;
                 }
                 else if (args[0] == "-games")
@@ -86,9 +90,7 @@ namespace Engine
                 GlobalScripts.RunCode(new StringScriptSource("GetKey();", filename));
             }
             else
-            {
                 Console.WriteLine("Invalid script file in game.sgm");
-            }
         }
 
         static void ListGames()
@@ -284,6 +286,8 @@ namespace Engine
                     key = "ALT";
                 if (key.StartsWith("NUM"))
                     key = key[3].ToString();
+                if (key == "BACK")
+                    key = "BACKSPACE";
                 engine.SetGlobalValue("KEY_" + key, (int)a.GetValue(i));
             }
             engine.SetGlobalValue("BLEND", 0);
@@ -299,6 +303,34 @@ namespace Engine
             engine.SetGlobalValue("MOUSE_MIDDLE", (int)Mouse.Button.Middle);
             engine.SetGlobalValue("MOUSE_EX1", (int)Mouse.Button.XButton1);
             engine.SetGlobalValue("MOUSE_EX2", (int)Mouse.Button.XButton2);
+
+            engine.SetGlobalValue("COMMAND_WAIT", 0);
+            engine.SetGlobalValue("COMMAND_ANIMATE", 1);
+            engine.SetGlobalValue("COMMAND_FACE_NORTH", 2);
+            engine.SetGlobalValue("COMMAND_FACE_NORTHEAST", 3);
+            engine.SetGlobalValue("COMMAND_FACE_EAST", 4);
+            engine.SetGlobalValue("COMMAND_FACE_SOUTHEAST", 5);
+            engine.SetGlobalValue("COMMAND_FACE_SOUTH", 6);
+            engine.SetGlobalValue("COMMAND_FACE_SOUTHWEST", 7);
+            engine.SetGlobalValue("COMMAND_FACE_WEST", 8);
+            engine.SetGlobalValue("COMMAND_FACE_NORTHWEST", 9);
+            engine.SetGlobalValue("COMMAND_MOVE_NORTH", 10);
+            engine.SetGlobalValue("COMMAND_MOVE_EAST", 11);
+            engine.SetGlobalValue("COMMAND_MOVE_SOUTH", 12);
+            engine.SetGlobalValue("COMMAND_MOVE_WEST", 13);
+
+            engine.SetGlobalValue("SCRIPT_ON_ENTER_MAP", 0);
+            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP", 1);
+            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_NORTH", 2);
+            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_EAST", 3);
+            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_SOUTH", 4);
+            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_WEST", 5);
+
+            engine.SetGlobalValue("SCRIPT_ON_CREATE", 0);
+            engine.SetGlobalValue("SCRIPT_ON_DESTROY", 1);
+            engine.SetGlobalValue("SCRIPT_ON_ACTIVATE_TOUCH", 2);
+            engine.SetGlobalValue("SCRIPT_ON_ACTIVATE_TALK", 3);
+            engine.SetGlobalValue("SCRIPT_COMMAND_GENERATOR", 4);
 
             return engine;
         }
@@ -454,30 +486,43 @@ namespace Engine
             return new ImageInstance(_engine, GlobalProps.EnginePath + "/system/down_arrow.png");
         }
 
+        /// <summary>
+        /// Sandboxes the game.sgm, allows to peek a level behind.
+        /// </summary>
+        /// <returns>The sphere path.</returns>
+        /// <param name="path">Path.</param>
+        /// <param name="root">Root.</param>
+        static string ParseSpherePath(string path, string root)
+        {
+            if (path.StartsWith("~") || path.StartsWith("."))
+                return GlobalProps.BasePath + "/" + path.Substring(path.StartsWith("..") ? 3 : 2);
+            else
+                return GlobalProps.BasePath + "/" + root + "/" + path;
+        }
+
         static ImageInstance LoadImage(string filename)
         {
-            return new ImageInstance(_engine, GlobalProps.BasePath + "/images/" + filename);
+            return new ImageInstance(_engine, ParseSpherePath(filename, "images"));
         }
 
         static SoundInstance LoadSound(string filename)
         {
-            return new SoundInstance(_engine, GlobalProps.BasePath + "/sounds/" + filename);
+            return new SoundInstance(_engine, ParseSpherePath(filename, "sounds"));
         }
 
         static SurfaceInstance LoadSurface(string filename)
         {
-            return new SurfaceInstance(_engine.Object.InstancePrototype,
-                                     GlobalProps.BasePath + "/images/" + filename);
+            return new SurfaceInstance(_engine, ParseSpherePath(filename, "images"));
         }
 
         static WindowStyleInstance LoadWindowStyle(string filename)
         {
-            return new WindowStyleInstance(_engine, GlobalProps.BasePath + "/windowstyles/" + filename);
+            return new WindowStyleInstance(_engine, ParseSpherePath(filename, "windowstyles"));
         }
 
         static SpritesetInstance LoadSpriteset(string filename)
         {
-            return new SpritesetInstance(_engine, GlobalProps.BasePath + "/spritesets/" + filename);
+            return new SpritesetInstance(_engine, ParseSpherePath(filename, "spritesets"));
         }
 
         static SpritesetInstance CreateSpriteset(int width, int height, int i, int d, int f)
@@ -487,7 +532,7 @@ namespace Engine
 
         static FontInstance LoadFont(string filename)
         {
-            return new FontInstance(_engine, GlobalProps.BasePath + "/fonts/" + filename);
+            return new FontInstance(_engine, ParseSpherePath(filename, "fonts"));
         }
 
         static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
@@ -497,12 +542,12 @@ namespace Engine
 
         static FileInstance OpenFile(string filename)
         {
-            return new FileInstance(_engine, GlobalProps.BasePath + "/save/" + filename);
+            return new FileInstance(_engine, ParseSpherePath(filename, "save"));
         }
 
         static RawFileInstance OpenRawFile(string filename, bool writeable = false)
         {
-            return new RawFileInstance(_engine, GlobalProps.BasePath + "/other/" + filename, writeable);
+            return new RawFileInstance(_engine, ParseSpherePath(filename, "other"), writeable);
         }
 
         static ByteArrayInstance CreateByteArray(int size)
@@ -528,7 +573,17 @@ namespace Engine
         {
             if (string.IsNullOrEmpty(filepath))
                 filepath = GlobalProps.BasePath + "/save/";
-            return _engine.Array.New(Directory.GetFiles(filepath));
+            else
+                filepath = ParseSpherePath(filepath, "");
+
+            if (!Directory.Exists(filepath))
+                return _engine.Array.New();
+
+            string[] files = Directory.GetFiles(filepath);
+            string[] names = new string[files.Length];
+            for (var i = 0; i < names.Length; ++i)
+                names[i] = Path.GetFileName(files[i]);
+            return _engine.Array.New(names);
         }
 
         static void RemoveDirectory(string filepath)
@@ -547,7 +602,17 @@ namespace Engine
         {
             if (string.IsNullOrEmpty(filepath))
                 filepath = GlobalProps.BasePath;
-            return _engine.Array.New(Directory.GetDirectories(filepath));
+            else
+                filepath = ParseSpherePath(filepath, "");
+
+            if (!Directory.Exists(filepath))
+                return _engine.Array.New();
+
+            string[] dirs = Directory.GetDirectories(filepath);
+            string[] names = new string[dirs.Length];
+            for (var i = 0; i < names.Length; ++i)
+                names[i] = Path.GetFileName(dirs[i]);
+            return _engine.Array.New(names);
         }
 
         static void CreateDirectory(string fullname)
@@ -561,6 +626,7 @@ namespace Engine
         {
             if (!File.Exists(filename))
                 return "";
+
             using (MD5 mdHash = MD5.Create())
             {
                 return GetMd5Hash(mdHash, File.ReadAllBytes(filename));
