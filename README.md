@@ -22,7 +22,7 @@ Parity with Sphere v1.6
 **Incomplete**
  - General: 85%
  - Primitives: 65%
- - Surfaces: 54%
+ - Surfaces: 64%
  - Persons: 20%
  - Map Engine: 10%
 

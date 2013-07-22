@@ -18,6 +18,10 @@ namespace Engine.Objects
         uint _height = 0;
         short _version = 0;
 
+        public Image GetGlyph(int num) {
+            return _glyphs[num];
+        }
+
         public FontInstance(ScriptEngine parent)
             : base (parent)
         {
