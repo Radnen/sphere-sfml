@@ -35,9 +35,9 @@ namespace Engine
         }
 
         [Test()]
-        public void TestRenderMapEngine()
+        public void TestRenderMap()
         {
-            object func = Program._engine.Evaluate("RenderMapEngine;");
+            object func = Program._engine.Evaluate("RenderMap;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
@@ -94,6 +94,62 @@ namespace Engine
         public void TestGetCameraY()
         {
             object func = Program._engine.Evaluate("GetCameraY;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestAttachInput()
+        {
+            object func = Program._engine.Evaluate("AttachInput;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestAttachCamera()
+        {
+            object func = Program._engine.Evaluate("AttachCamera;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestDetachInput()
+        {
+            object func = Program._engine.Evaluate("DetachInput;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestDetachCamera()
+        {
+            object func = Program._engine.Evaluate("DetachCamera;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestIsCameraAttached()
+        {
+            object func = Program._engine.Evaluate("IsCameraAttached;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestIsInputAttached()
+        {
+            object func = Program._engine.Evaluate("IsInputAttached;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetCameraPerson()
+        {
+            object func = Program._engine.Evaluate("GetCameraPerson;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetInputPerson()
+        {
+            object func = Program._engine.Evaluate("GetInputPerson;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
     }

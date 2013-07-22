@@ -264,6 +264,7 @@
     <Compile Include="Objects\MapEngineHandler.cs" />
     <Compile Include="GlobalScripts.cs" />
     <Compile Include="Objects\Commands.cs" />
+    <Compile Include="Objects\BlendModes.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Docs\" />

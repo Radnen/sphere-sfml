@@ -266,6 +266,8 @@ namespace Engine
             engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
             engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
             engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
+            engine.SetGlobalFunction("CreateStringFromCode", new Func<int, string>(CreateStringFromCode));
+            engine.SetGlobalFunction("SetScaled", new Action<bool>(SetScaled));
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
@@ -354,6 +356,17 @@ namespace Engine
             proc.Kill();
 		}
 
+        private static void SetScaled(bool v) {
+            SCALED = v;
+            if (_window != null)
+            {
+                GlobalInput.RemoveWindowHandlers(_window);
+                _window.Close();
+            }
+
+            Program.InitWindow(Styles.Default);
+        }
+
         public static void SetFrameRate(int fps)
         {
             _window.SetFramerateLimit((uint)fps);
@@ -365,9 +378,19 @@ namespace Engine
             return _internal_fps;
         }
 
+        public static ColorInstance BlendColors(Color c1, Color c2)
+        {
+            return BlendColorsWeighted(c1, c2, 0.5);
+        }
+
         static ColorInstance BlendColors(ColorInstance c1, ColorInstance c2)
         {
             return BlendColorsWeighted(c1, c2, 0.5);
+        }
+
+        static string CreateStringFromCode(int code)
+        {
+            return ((char)code).ToString();
         }
 
         public static ColorInstance BlendColorsWeighted(Color c1, Color c2, double w)

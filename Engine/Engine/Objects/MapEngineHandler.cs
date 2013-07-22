@@ -21,6 +21,9 @@ namespace Engine.Objects
         private static string _renderScript = "";
         private static string[] _layerScripts;
 
+        private static string camera_ent = "";
+        private static string input_ent = "";
+
         public static void BindToEngine(ScriptEngine engine)
         {
             engine.SetGlobalFunction("MapEngine", new Action<string, int>(MapEngine));
@@ -34,6 +37,56 @@ namespace Engine.Objects
             engine.SetGlobalFunction("SetLayerRenderer", new Action<int, string>(SetLayerRenderer));
             engine.SetGlobalFunction("GetMapEngineFrameRate", new Func<int>(GetMapEngineFrameRate));
             engine.SetGlobalFunction("SetMapEngineFrameRate", new Action<int>(SetMapEngineFrameRate));
+            engine.SetGlobalFunction("AttachInput", new Action<string>(AttachInput));
+            engine.SetGlobalFunction("AttachCamera", new Action<string>(AttachCamera));
+            engine.SetGlobalFunction("DetachInput", new Action(DetachInput));
+            engine.SetGlobalFunction("DetachCamera", new Action(DetachCamera));
+            engine.SetGlobalFunction("GetInputPerson", new Func<string>(GetInputPerson));
+            engine.SetGlobalFunction("GetCameraPerson", new Func<string>(GetCameraPerson));
+            engine.SetGlobalFunction("IsInputAttached", new Func<bool>(IsInputAttached));
+            engine.SetGlobalFunction("IsCameraAttached", new Func<bool>(IsCameraAttached));
+            engine.SetGlobalFunction("UpdateMapEngine", new Action(UpdateMapEngine));
+            engine.SetGlobalFunction("RenderMap", new Action(RenderMap));
+        }
+
+        private static void AttachInput(string name)
+        {
+            input_ent = name;
+        }
+
+        private static void AttachCamera(string name)
+        {
+            camera_ent = name;
+        }
+
+        private static string GetInputPerson()
+        {
+            return input_ent;
+        }
+
+        private static string GetCameraPerson()
+        {
+            return camera_ent;
+        }
+
+        private static bool IsInputAttached()
+        {
+            return input_ent != "";
+        }
+
+        private static bool IsCameraAttached()
+        {
+            return camera_ent != "";
+        }
+
+        private static void DetachInput()
+        {
+            input_ent = "";
+        }
+
+        private static void DetachCamera()
+        {
+            camera_ent = "";
         }
 
         private static bool IsMapEngineRunning()
@@ -63,14 +116,8 @@ namespace Engine.Objects
 
             while (!_ended) {
                 Program._engine.Execute(_updateScript);
-
-                for (var i = 0; i < _layer_sprites.Length; ++i)
-                {
-                    Program._window.Draw(_layer_sprites[i]);
-                    if (i == _map.StartLayer)
-                        DrawPersons();
-                }
-
+                UpdateMapEngine();
+                RenderMap();
                 Program._engine.Execute(_renderScript);
                 Program.FlipScreen();
             }
@@ -108,6 +155,24 @@ namespace Engine.Objects
 
                 _layer_sprites[i] = new Sprite(tex.Texture);
                 _layertex[i] = tex;
+            }
+        }
+
+        private static void UpdateMapEngine()
+        {
+            foreach (KeyValuePair<string, Person> pair in PersonManager.People)
+            {
+                pair.Value.UpdateCommandQueue();
+            }
+        }
+
+        private static void RenderMap()
+        {
+            for (var i = 0; i < _layer_sprites.Length; ++i)
+            {
+                Program._window.Draw(_layer_sprites[i]);
+                if (i == _map.StartLayer)
+                    DrawPersons();
             }
         }
 

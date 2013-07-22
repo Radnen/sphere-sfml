@@ -12,6 +12,7 @@ namespace Engine.Objects
         private Texture _tex;
         private bool _changed;
         private Sprite _sprite;
+        private BlendModes _mode;
 
         public SurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
             : base(parent)
@@ -44,6 +45,7 @@ namespace Engine.Objects
             PopulateFunctions();
             _tex = new Texture(_image);
             _sprite = new Sprite(_tex);
+            _mode = BlendModes.Blend;
 
             DefineProperty("width", new PropertyDescriptor((int)_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor((int)_image.Size.Y, PropertyAttributes.Sealed), true);
@@ -65,32 +67,114 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "blitSurface")]
-        public void BlitSurface(int x, int y, SurfaceInstance surf)
+        public void BlitSurface(SurfaceInstance surf, int x, int y)
         {
-            _image.Copy(surf.GetImageRef(), (uint)x, (uint)y);
+            Image other = surf.GetImageRef();
+            uint w = other.Size.X;
+            uint h = other.Size.Y;
+
+            for (uint xx = 0; xx < w; ++xx)
+                for (uint yy = 0; yy < h; ++yy)
+                    SetPixel((int)(x + xx), (int)(y + yy), other.GetPixel(xx, yy));
+
+            _changed = true;
+        }
+
+        [JSFunction(Name = "blitMaskSurface")]
+        public void BlitMaskSurface(SurfaceInstance surf, int x, int y, ColorInstance mask)
+        {
+            Color mask_c = mask.GetColor();
+            Image other = surf.GetImageRef();
+            uint w = other.Size.X;
+            uint h = other.Size.Y;
+
+            for (uint xx = 0; xx < w; ++xx)
+            {
+                for (uint yy = 0; yy < h; ++yy)
+                {
+                    Color dest = other.GetPixel(xx, yy);
+                    SetPixel((int)(x + xx), (int)(y + yy), ColorBlend(dest, mask_c));
+                }
+            }
+
             _changed = true;
         }
 
         [JSFunction(Name = "blitImage")]
         public void BlitSurface(int x, int y, ImageInstance img)
         {
-            using (Image image = img.GetImage())
-            {
-                _image.Copy(image, (uint)x, (uint)y);
-            }
+            Image other = img.GetImage();
+            uint w = other.Size.X;
+            uint h = other.Size.Y;
+
+            for (uint xx = 0; xx < w; ++xx)
+                for (uint yy = 0; yy < h; ++yy)
+                    SetPixel((int)(x + xx), (int)(y + yy), other.GetPixel(xx, yy));
+
+            other.Dispose();
             _changed = true;
         }
 
         [JSFunction(Name = "setPixel")]
         public void SetPixel(int x, int y, ColorInstance color)
         {
-            _image.SetPixel((uint)x, (uint)y, color.GetColor());
+            SetPixel(x, y, color.GetColor());
             _changed = true;
         }
 
-        public void SetPixel(int x, int y, Color sfmlcol)
+        public void SetPixel(int x, int y, Color dest)
         {
-            _image.SetPixel((uint)x, (uint)y, sfmlcol);
+            Color source = _image.GetPixel((uint)x, (uint)y);
+            switch (_mode)
+            {
+                case BlendModes.Replace:
+                    _image.SetPixel((uint)x, (uint)y, dest);
+                    break;
+                case BlendModes.Blend:
+                    _image.SetPixel((uint)x, (uint)y, AlphaBlend(source, dest));
+                    break;
+                case BlendModes.Add:
+                    _image.SetPixel((uint)x, (uint)y, AddBlend(source, dest));
+                    break;
+                case BlendModes.Subtract:
+                    _image.SetPixel((uint)x, (uint)y, SubtractBlend(source, dest));
+                    break;
+            }
+        }
+
+        private static Color ColorBlend(Color source, Color dest)
+        {
+            byte r = (byte)(source.R * (double)dest.R / 255);
+            byte g = (byte)(source.G * (double)dest.G / 255);
+            byte b = (byte)(source.B * (double)dest.B / 255);
+            byte a = (byte)(source.A * (double)dest.A / 255);
+            return new Color(r, g, b, a);
+        }
+
+        private static Color AlphaBlend(Color source, Color dest)
+        {
+            double w0 = (double)dest.A / 255;
+            double w1 = 1.0 - w0;
+            byte r = (byte)(source.R * w1 + dest.R * w0);
+            byte g = (byte)(source.G * w1 + dest.G * w0);
+            byte b = (byte)(source.B * w1 + dest.B * w0);
+            return new Color(r, g, b, 255);
+        }
+
+        private static Color AddBlend(Color source, Color dest)
+        {
+            byte r = (byte)Math.Min(source.R + dest.R, 255);
+            byte g = (byte)Math.Min(source.G + dest.G, 255);
+            byte b = (byte)Math.Min(source.B + dest.B, 255);
+            return new Color(r, g, b, 255);
+        }
+
+        private static Color SubtractBlend(Color source, Color dest)
+        {
+            byte r = (byte)Math.Max(source.R - dest.R, 0);
+            byte g = (byte)Math.Max(source.G - dest.G, 0);
+            byte b = (byte)Math.Max(source.B - dest.B, 0);
+            return new Color(r, g, b, 255);
         }
 
         [JSFunction(Name = "replaceColor")]
@@ -143,6 +227,12 @@ namespace Engine.Objects
         public SurfaceInstance Clone()
         {
             return new SurfaceInstance(Engine, _image);
+        }
+
+        [JSFunction(Name = "setBlendMode")]
+        public void SetBlendMode(int mode)
+        {
+            _mode = (BlendModes)mode;
         }
 
         /// <summary>

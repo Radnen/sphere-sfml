@@ -15,6 +15,8 @@ var sys_font = GetSystemFont();
 
 function game()
 {
+	if (this.SetScaled) SetScaled(true);
+
 	var done = false;
 	var menu = new Menu();
 	menu.addOption("Images", TestImages);

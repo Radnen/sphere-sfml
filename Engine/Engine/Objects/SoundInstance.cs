@@ -30,7 +30,7 @@ namespace Engine.Objects
         {
             PopulateFunctions();
 
-            string[] sounds = { ".wav", ".flac" };
+            string[] sounds = { ".wav", ".flac", ".xm" };
             string[] music = { ".ogg", ".mp3" };
 
             _filename = filename;
