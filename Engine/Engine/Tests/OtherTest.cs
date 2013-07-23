@@ -78,6 +78,34 @@ namespace Engine
         }
 
         [Test()]
+        public void TestRestartGame()
+        {
+            object func = Program._engine.Evaluate("RestartGame;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetClippingRectangle()
+        {
+            object func = Program._engine.Evaluate("GetClippingRectangle;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestSetClippingRectangle()
+        {
+            object func = Program._engine.Evaluate("SetClippingRectangle;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGarbageCollect()
+        {
+            object func = Program._engine.Evaluate("GarbageCollect;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestGetVersion()
         {
             object func = Program._engine.Evaluate("GetVersion;");
@@ -120,6 +148,20 @@ namespace Engine
         }
 
         [Test()]
+        public void TestGetGameList()
+        {
+            object func = Program._engine.Evaluate("GetGameList;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestExecuteGame()
+        {
+            object func = Program._engine.Evaluate("ExecuteGame;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
         public void TestApplyColorMask()
         {
             object func = Program._engine.Evaluate("ApplyColorMask;");
@@ -154,6 +196,13 @@ namespace Engine
 
             object str = Program._engine.Evaluate("CreateStringFromByteArray(CreateByteArray(5));");
             Assert.IsInstanceOf<string>(str);
+        }
+
+        [Test()]
+        public void TestCreateStringFromCode()
+        {
+            object func = Program._engine.Evaluate("CreateStringFromCode;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
         [Test()]

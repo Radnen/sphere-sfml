@@ -20,7 +20,7 @@ Parity with Sphere v1.6
  - Files: 100%
 
 **Incomplete**
- - General: 85%
+ - General: 89%
  - Primitives: 65%
  - Surfaces: 64%
  - Persons: 20%

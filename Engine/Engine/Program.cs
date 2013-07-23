@@ -16,6 +16,7 @@ namespace Engine
     {
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
+        public static IntRect _clipper = new IntRect(0, 0, 0, 0);
 
         private static int _internal_fps = 0;
         private static bool SCALED = false;
@@ -157,6 +158,8 @@ namespace Engine
             }
 
             _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), GlobalProps.GameName, style);
+            _clipper.Width = (int)width;
+            _clipper.Height = (int)height;
 
             if (SCALED)
             {
@@ -268,6 +271,9 @@ namespace Engine
             engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
             engine.SetGlobalFunction("CreateStringFromCode", new Func<int, string>(CreateStringFromCode));
             engine.SetGlobalFunction("SetScaled", new Action<bool>(SetScaled));
+            engine.SetGlobalFunction("GetGameList", new Func<ArrayInstance>(GetGameList));
+            engine.SetGlobalFunction("SetClippingRectangle", new Action<int, int, int, int>(SetClippingRectangle));
+            engine.SetGlobalFunction("GetClippingRectangle", new Func<ObjectInstance>(GetClippingRectangle));
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
@@ -391,6 +397,27 @@ namespace Engine
         static string CreateStringFromCode(int code)
         {
             return ((char)code).ToString();
+        }
+
+        static void SetClippingRectangle(int x, int y, int w, int h)
+        {
+            float sh = GetScreenHeight();
+            float sw = GetScreenWidth();
+            _clipper = new IntRect(x, y, w, h);
+            View v = _window.GetView();
+            v.Reset(new FloatRect(x, y, w, h));
+            v.Viewport = new FloatRect(x / sw, y / sh, w / sw, h / sh);
+            _window.SetView(v);
+        }
+
+        static ObjectInstance GetClippingRectangle()
+        {
+            ObjectInstance o = CreateObject();
+            o["x"] = _clipper.Left;
+            o["y"] = _clipper.Top;
+            o["width"] = _clipper.Width;
+            o["height"] = _clipper.Height;
+            return o;
         }
 
         public static ColorInstance BlendColorsWeighted(Color c1, Color c2, double w)
@@ -653,6 +680,23 @@ namespace Engine
             if (string.IsNullOrEmpty(fullname))
                 fullname = GlobalProps.BasePath + "/" + fullname;
             Directory.CreateDirectory(fullname);
+        }
+
+        static ArrayInstance GetGameList()
+        {
+            string[] files = Directory.GetDirectories(GlobalProps.EnginePath + "/games");
+            ObjectInstance[] names = new ObjectInstance[files.Length]; 
+            for (var i = 0; i < files.Length; ++i) {
+                GameFile file = new GameFile();
+                file.ReadFile(files[i] + "/game.sgm");
+                string name;
+                names[i] = CreateObject();
+                names[i]["name"] = (file.TryGetData("name", out name)) ? name : "";
+                names[i]["description"] = (file.TryGetData("description", out name)) ? name : "";
+                names[i]["author"] = (file.TryGetData("author", out name)) ? name : "";
+                names[i]["directory"] = Path.GetFileName(files[i]);
+            }
+            return _engine.Array.New(names);
         }
 
         static string HashFromFile(string filename)

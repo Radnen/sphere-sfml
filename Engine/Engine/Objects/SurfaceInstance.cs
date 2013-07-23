@@ -86,7 +86,8 @@ namespace Engine.Objects
                 for (uint yy = 0; yy < h; ++yy)
                 {
                     Color dest = other.GetPixel(xx, yy);
-                    SetPixel((int)(x + xx), (int)(y + yy), ColorBlend(dest, mask_c));
+                    Color final = ColorBlend(ref dest, ref mask_c);
+                    SetPixel((int)(x + xx), (int)(y + yy), ref final);
                 }
             }
 
@@ -107,63 +108,65 @@ namespace Engine.Objects
             uint w = img.Size.X;
             uint h = img.Size.Y;
 
-            for (uint xx = 0; xx < w; ++xx)
-                for (uint yy = 0; yy < h; ++yy)
-                    SetPixel((int)(x + xx), (int)(y + yy), img.GetPixel(xx, yy));
+            for (int j = 0; j < h; ++j)
+            {
+                for (int i = 0; i < w; ++i)
+                {
+                    Color color = img.GetPixel((uint)i, (uint)j);
+                    SetPixel(x + i, y + j, ref color);
+                }
+            }
         }
 
         [JSFunction(Name = "setPixel")]
         public void SetPixel(int x, int y, ColorInstance color)
         {
-            SetPixel(x, y, color.GetColor());
+            Color col = color.GetColor();
+            SetPixel(x, y, ref col);
             _changed = true;
         }
 
-        public void SetPixel(int ix, int iy, Color dest)
+        public void SetPixel(int x, int y, ref Color dest)
         {
-            uint x = (uint)ix;
-            uint y = (uint)iy;
-            if (x >= _image.Size.X || y >= _image.Size.Y)
+            if (x >= _image.Size.X || y >= _image.Size.Y || x < 0 || y < 0)
                 return;
-           
-            Color source = _image.GetPixel(x, y);
+            Color source = _image.GetPixel((uint)x, (uint)y);
             switch (_mode)
             {
                 case BlendModes.Replace:
-                    _image.SetPixel(x, y, dest);
+                    _image.SetPixel((uint)x, (uint)y, dest);
                     break;
                 case BlendModes.Blend:
-                    _image.SetPixel(x, y, AlphaBlend(source, dest));
+                    _image.SetPixel((uint)x, (uint)y, AlphaBlend(ref source, ref dest));
                     break;
                 case BlendModes.Add:
-                    _image.SetPixel(x, y, AddBlend(source, dest));
+                    _image.SetPixel((uint)x, (uint)y, AddBlend(ref source, ref dest));
                     break;
                 case BlendModes.Subtract:
-                    _image.SetPixel(x, y, SubtractBlend(source, dest));
+                    _image.SetPixel((uint)x, (uint)y, SubtractBlend(ref source, ref dest));
                     break;
             }
         }
 
-        private static Color ColorBlend(Color source, Color dest)
+        private static Color ColorBlend(ref Color source, ref Color dest)
         {
-            byte r = (byte)(source.R * (double)dest.R / 255);
-            byte g = (byte)(source.G * (double)dest.G / 255);
-            byte b = (byte)(source.B * (double)dest.B / 255);
-            byte a = (byte)(source.A * (double)dest.A / 255);
+            byte r = (byte)(source.R * (float)dest.R / 255);
+            byte g = (byte)(source.G * (float)dest.G / 255);
+            byte b = (byte)(source.B * (float)dest.B / 255);
+            byte a = (byte)(source.A * (float)dest.A / 255);
             return new Color(r, g, b, a);
         }
 
-        private static Color AlphaBlend(Color source, Color dest)
+        private static Color AlphaBlend(ref Color source, ref Color dest)
         {
-            double w0 = (double)dest.A / 255;
-            double w1 = 1.0 - w0;
-            byte r = (byte)(source.R * w1 + dest.R * w0);
-            byte g = (byte)(source.G * w1 + dest.G * w0);
-            byte b = (byte)(source.B * w1 + dest.B * w0);
+            float w0 = (float)dest.A / 255;
+            byte r = (byte)(source.R * (1 - w0) + dest.R * w0);
+            byte g = (byte)(source.G * (1 - w0) + dest.G * w0);
+            byte b = (byte)(source.B * (1 - w0) + dest.B * w0);
             return new Color(r, g, b, 255);
         }
 
-        private static Color WeightedBlend(Color source, Color dest, double w)
+        private static Color WeightedBlend(ref Color source, ref Color dest, double w)
         {
             double w1 = 1.0 - w;
             byte r = (byte)(source.R * w + dest.R * w1);
@@ -173,7 +176,7 @@ namespace Engine.Objects
             return new Color(r, g, b, a);
         }
 
-        private static Color AddBlend(Color source, Color dest)
+        private static Color AddBlend(ref Color source, ref Color dest)
         {
             byte r = (byte)Math.Min(source.R + dest.R, 255);
             byte g = (byte)Math.Min(source.G + dest.G, 255);
@@ -181,7 +184,7 @@ namespace Engine.Objects
             return new Color(r, g, b, 255);
         }
 
-        private static Color SubtractBlend(Color source, Color dest)
+        private static Color SubtractBlend(ref Color source, ref Color dest)
         {
             byte r = (byte)Math.Max(source.R - dest.R, 0);
             byte g = (byte)Math.Max(source.G - dest.G, 0);
@@ -254,7 +257,7 @@ namespace Engine.Objects
             for (var i = 0; i < array.Length; ++i)
             {
                 Vector2f vect = GlobalPrimitives.GetVector(array[i] as ObjectInstance);
-                SetPixel((int)vect.X, (int)vect.Y, c);
+                SetPixel((int)vect.X, (int)vect.Y, ref c);
             }
             _changed = true;
         }
@@ -265,18 +268,19 @@ namespace Engine.Objects
         [JSFunction(Name = "line")]
         public void Line(int x1, int y1, int x2, int y2, ColorInstance color)
         {
-            Line(x1, y1, x2, y2, color.GetColor());
+            Color col = color.GetColor();
+            Line(x1, y1, x2, y2, ref col);
             _changed = true;
         }
 
-        public void Line(int x1, int y1, int x2, int y2, Color color)
+        public void Line(int x1, int y1, int x2, int y2, ref Color color)
         {
             int dx = Math.Abs(x2 - x1);
             int dy = Math.Abs(y2 - y1);
             int sx = (x1 < x2) ? 1 : -1;
             int sy = (y1 < y2) ? 1 : -1;
             int err = dx - dy, e2;
-            SetPixel(x1, y1, color);
+            SetPixel(x1, y1, ref color);
 
             while (x1 != x2 || y1 != y2)
             {
@@ -291,7 +295,7 @@ namespace Engine.Objects
                     err += dx;
                     y1 += sy;
                 }
-                SetPixel(x1, y1, color);
+                SetPixel(x1, y1, ref color);
             }
         }
 
@@ -303,7 +307,7 @@ namespace Engine.Objects
             {
                 Vector2f start = GlobalPrimitives.GetVector(points[i - 1] as ObjectInstance);
                 Vector2f end = GlobalPrimitives.GetVector(points[i] as ObjectInstance);
-                Line((int)start.X, (int)start.Y, (int)end.X, (int)end.Y, c);
+                Line((int)start.X, (int)start.Y, (int)end.X, (int)end.Y, ref c);
             }
             _changed = true;
         }
@@ -322,9 +326,9 @@ namespace Engine.Objects
             int sx = (x1 < x2) ? 1 : -1;
             int sy = (y1 < y2) ? 1 : -1;
             int err = dx - dy, e2;
-            double dist, max_d = (dx * dx + dy * dy);
+            double max_d = (dx * dx + dy * dy);
 
-            SetPixel(x1, y1, col2);
+            SetPixel(x1, y1, ref col2);
 
             while (x1 != x2 || y1 != y2)
             {
@@ -341,8 +345,8 @@ namespace Engine.Objects
                 }
                 nx = x2 - x1;
                 ny = y2 - y1;
-                dist = (nx * nx + ny * ny) / max_d;
-                SetPixel(x1, y1, WeightedBlend(col2, col1, dist));
+                Color final = WeightedBlend(ref col2, ref col1, (nx * nx + ny * ny) / max_d);
+                SetPixel(x1, y1, ref final);
             }
         }
 
@@ -353,7 +357,7 @@ namespace Engine.Objects
             h += y;
             Color c = color.GetColor();
             for (int i = y; i < h; ++i)
-                Line(x, i, w, i, c);
+                Line(x, i, w, i, ref c);
             _changed = true;
         }
 
@@ -366,8 +370,8 @@ namespace Engine.Objects
             w += x;
             for (var i = y; i < h; ++i)
             {
-                Color A = WeightedBlend(c4, c1, (double)i / h);
-                Color B = WeightedBlend(c3, c2, (double)i / h);
+                Color A = WeightedBlend(ref c4, ref c1, (double)i / h);
+                Color B = WeightedBlend(ref c3, ref c2, (double)i / h);
                 GradientLine(x, i, w, i, A, B);
             }
             _changed = true;
@@ -377,10 +381,10 @@ namespace Engine.Objects
         public void OutlinedRectangle(int x, int y, int w, int h, ColorInstance color)
         {
             Color c = color.GetColor();
-            Line(x, y, x + w, y, c);
-            Line(x + w, y, x + w, y + h, c);
-            Line(x + w, y + h, x, y + h, c);
-            Line(x, y, x, y + h, c);
+            Line(x, y, x + w, y, ref c);
+            Line(x + w, y, x + w, y + h, ref c);
+            Line(x + w, y + h, x, y + h, ref c);
+            Line(x, y, x, y + h, ref c);
             _changed = true;
         }
 
@@ -408,10 +412,10 @@ namespace Engine.Objects
                         {
                             if (dist > r - 1)
                                 c.A = (byte)(c.A * Math.Sin(Math.Sin((r - dist) * pi2) * pi2));
-                            SetPixel(ox + x + r, oy + y + r, c);
-                            SetPixel(ox + r - x, oy + y + r, c);
-                            SetPixel(ox + r - x, oy + r - y, c);
-                            SetPixel(ox + x + r, oy + r - y, c);
+                            SetPixel(ox + x + r, oy + y + r, ref c);
+                            SetPixel(ox + r - x, oy + y + r, ref c);
+                            SetPixel(ox + r - x, oy + r - y, ref c);
+                            SetPixel(ox + x + r, oy + r - y, ref c);
                         }
                     }
                 }
@@ -421,8 +425,8 @@ namespace Engine.Objects
                 for (var y = 0; y < r; ++y)
                 {
                     int lw = (int)(r * Math.Cos(Math.Asin(1 - y / r)));
-                    Line(ox + r - lw, oy + y, ox + r + lw, oy + y, c);
-                    Line(ox + r - lw, oy + h - y - 1, ox + r + lw, oy + h - y - 1, c);
+                    Line(ox + r - lw, oy + y, ox + r + lw, oy + y, ref c);
+                    Line(ox + r - lw, oy + h - y - 1, ox + r + lw, oy + h - y - 1, ref c);
                 }
             }
             _changed = true;
@@ -451,10 +455,10 @@ namespace Engine.Objects
                         if (dist > r - 2 && dist < r)
                         {
                             c.A = (byte)(c.A * Math.Sin(Math.Sin((1 - Math.Abs(dist - r + 1)) * pio2) * pio2));
-                            SetPixel(ox + x + r, oy + y + r, c);
-                            SetPixel(ox + r - x, oy + y + r, c);
-                            SetPixel(ox + r - x, oy + r - y, c);
-                            SetPixel(ox + x + r, oy + r - y, c);
+                            SetPixel(ox + x + r, oy + y + r, ref c);
+                            SetPixel(ox + r - x, oy + y + r, ref c);
+                            SetPixel(ox + r - x, oy + r - y, ref c);
+                            SetPixel(ox + x + r, oy + r - y, ref c);
                         }
                     }
                 }
@@ -469,7 +473,7 @@ namespace Engine.Objects
                     int y1 = (int)(r + r * Math.Cos(pt));
                     int x2 = (int)(r + r * Math.Sin(pt2));
                     int y2 = (int)(r + r * Math.Cos(pt2));
-                    Line(ox + x1, oy + y1, ox + x2, oy + y2, c);
+                    Line(ox + x1, oy + y1, ox + x2, oy + y2, ref c);
                 }
             }
             _changed = true;
@@ -487,9 +491,9 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "setAlpha")]
-        public void SetAlpha(ColorInstance color)
+        public void SetAlpha(int v)
         {
-            _image.CreateMaskFromColor(color.GetColor());
+            //_image.CreateMaskFromColor(color.GetColor());
             _changed = true;
         }
 

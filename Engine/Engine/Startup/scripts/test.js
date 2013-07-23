@@ -35,8 +35,16 @@ function game()
 	});
 	menu.addOption("Exit", Exit);
 	
+	var games = GetGameList();
+	Print(games.length);
+	
 	while (!done) {
 		menu.draw(16, 16, 96, 160);
+		
+		for (var i = 0; i < games.length; i++) {
+			sys_font.drawText(150, i*16, games[i].name + ": " + games[i].directory);
+		}
+		
 		FlipScreen();
 		while (AreKeysLeft()) {
 			var key = GetKey();
