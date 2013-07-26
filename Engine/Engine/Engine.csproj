@@ -31,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -186,6 +187,9 @@
     <None Include="startup\maps\village.rmp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -215,10 +219,10 @@
       <HintPath>..\sfmlnet-window-2.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="nunit.framework" />
     <Reference Include="Jurassic">
       <HintPath>..\Jurassic.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -266,20 +270,7 @@
     <Compile Include="Objects\Commands.cs" />
     <Compile Include="Objects\BlendModes.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Docs\" />
-    <Folder Include="startup\fonts\" />
-    <Folder Include="startup\images\" />
-    <Folder Include="startup\maps\" />
-    <Folder Include="startup\spritesets\" />
-    <Folder Include="startup\windowstyles\" />
-    <Folder Include="Tests\" />
-    <Folder Include="system\" />
-    <Folder Include="system\scripts\" />
-    <Folder Include="startup\sounds\" />
-    <Folder Include="startup\save\" />
-    <Folder Include="startup\other\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

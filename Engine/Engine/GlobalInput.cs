@@ -33,8 +33,7 @@ namespace Engine
 
         public static void window_Closed(object sender, EventArgs e)
         {
-            Window window = sender as Window;
-            if (window != null) Program.Exit();
+            Program.Exit();
         }
 
         public static void AddWindowHandlers(Window wind)

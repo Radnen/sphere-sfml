@@ -62,13 +62,33 @@ namespace Engine
             window.Draw(_verts, PrimitiveType.Quads);
         }
 
-        public static void OutlinedRectangle(double x, double y, double width, double height, ColorInstance color, double thickness = 1.0f)
+        public static void OutlinedRectangle(double x, double y, double width, double height, ColorInstance color, [DefaultParameterValue(1.0)] double thickness = 1.0)
         {
+            Color c = color.GetColor();
             _orect.Position = new Vector2f((float)x+1, (float)y+1);
-            _orect.OutlineColor = color.GetColor();
+            _orect.OutlineColor = c;
             _orect.Size = new Vector2f((float)width-2, (float)height-2);
             _orect.OutlineThickness = (float)thickness;
             window.Draw(_orect);
+        }
+
+        public static void OutlinedRectangles(ArrayInstance items, ColorInstance color)
+        {
+            Color c = color.GetColor();
+            Vertex[] verts = new Vertex[items.Length * 4];
+            for (var i = 0; i < items.Length; ++i)
+            {
+                ObjectInstance rect = items[i] as ObjectInstance;
+                int x1 = (int)rect["x"];
+                int y1 = (int)rect["y"];
+                int x2 = x1 + (int)rect["w"];
+                int y2 = y1 + (int)rect["h"];
+                int index = i * 4;
+                verts[i] = new Vertex(new Vector2f(x1, y1), c);
+                verts[i + 1] = new Vertex(new Vector2f(x2, y1), c);
+                verts[i + 2] = new Vertex(new Vector2f(x2, y2), c);
+                verts[i + 3] = new Vertex(new Vector2f(x1, y2), c);
+            }
         }
 
         public static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ColorInstance color)
@@ -88,7 +108,7 @@ namespace Engine
             window.Draw(v, PrimitiveType.Triangles);
         }
 
-        public static void Polygon(ArrayInstance points, ColorInstance color, bool inverse = false)
+        public static void Polygon(ArrayInstance points, ColorInstance color, [DefaultParameterValue(false)] bool inverse = false)
         {
             if (points == null || color == null)
                 throw new NullReferenceException();
@@ -98,7 +118,7 @@ namespace Engine
             Vertex[] v = new Vertex[points.Length];
             for (var i = 0; i < points.Length; ++i)
             {
-                ObjectInstance obj = points[i.ToString()] as ObjectInstance;
+                ObjectInstance obj = points[i] as ObjectInstance;
                 if (obj == null)
                     throw new NullReferenceException();
                 v[i] = new Vertex(GetVector(obj), sfml_color);
@@ -131,7 +151,7 @@ namespace Engine
             Vertex[] v = new Vertex[points.Length];
             for (var i = 0; i < points.Length; ++i)
             {
-                ObjectInstance obj = points[i.ToString()] as ObjectInstance;
+                ObjectInstance obj = points[i] as ObjectInstance;
                 if (obj != null)
                     v[i] = new Vertex(GetVector(obj), sfml_col);
                 else
@@ -151,7 +171,7 @@ namespace Engine
             Vertex[] v = new Vertex[points.Length];
             for (var i = 0; i < points.Length; ++i)
             {
-                ObjectInstance obj = points[i.ToString()] as ObjectInstance;
+                ObjectInstance obj = points[i] as ObjectInstance;
                 if (obj != null)
                     v[i] = new Vertex(GetVector(obj), sfml_col);
                 else

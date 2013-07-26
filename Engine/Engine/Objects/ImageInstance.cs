@@ -60,7 +60,7 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "blit")]
-        public void Blit(double x, double y, int mode)
+        public void Blit(double x, double y, [DefaultParameterValue(0)] int mode = 0)
         {
 			_sprite.Position = new Vector2f((float)x, (float)y);
             _sprite.Color = Color.White;

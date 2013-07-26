@@ -1,5 +1,6 @@
 using System;
 using Jurassic;
+using Jurassic.Library;
 using SFML.Graphics;
 using SFML.Window;
 using System.Collections.Generic;
@@ -105,7 +106,7 @@ namespace Engine.Objects
             _fps = rate;
         }
 
-        private static void MapEngine(string filename, int fps = 60)
+        private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
         {
             _ended = false;
             SetMapEngineFrameRate(fps);

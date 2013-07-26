@@ -200,13 +200,30 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "resize")]
-        public void Resize(int width, int height)
+        public SurfaceInstance Resize(int width, int height)
         {
             Image copy = new Image((uint)width, (uint)height, new Color(0, 0, 0, 0));
-            copy.Copy(_image, 0, 0, new IntRect(0, 0, Math.Min(width, (int)_image.Size.X), Math.Min(height, (int)_image.Size.Y)));
-            _image.Dispose();
-            _image = copy;
-            _changed = true;
+            copy.Copy(_image, 0, 0);
+            return new SurfaceInstance(Engine, copy, false);
+        }
+
+        [JSFunction(Name = "rescale")]
+        public SurfaceInstance Rescale(int width, int height)
+        {
+            Image copy = new Image((uint)width, (uint)height, new Color(0, 0, 0, 0));
+            float w = _image.Size.X / (float)width;
+            float h = _image.Size.Y / (float)height;
+
+            for (int y = 0; y < height; ++y) 
+            {
+                for (int x = 0; x < width; ++x)
+                {
+                    Color c = _image.GetPixel((uint)(x * w), (uint)(y * h));
+                    copy.SetPixel((uint)x, (uint)y, c);
+                }
+            }
+
+            return new SurfaceInstance(Engine, copy, false);
         }
 
         [JSFunction(Name = "getPixel")]
@@ -389,7 +406,7 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "filledCircle")]
-        public void FilledCircle(int ox, int oy, int r, ColorInstance color, bool antialias = false)
+        public void FilledCircle(int ox, int oy, int r, ColorInstance color, [DefaultParameterValue(false)] bool antialias = false)
         {
             if (ox < 0 || oy < 0 || r < 0 || color == null)
                 throw new ArgumentException("Invalid parameters.");
@@ -433,7 +450,7 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "outlinedCircle")]
-        public void OutlinedCircle(int ox, int oy, int r, ColorInstance color, bool antialias = false)
+        public void OutlinedCircle(int ox, int oy, int r, ColorInstance color, [DefaultParameterValue(false)] bool antialias = false)
         {
             if (r < 0 || color == null || ox < 0 || oy < 0)
                 throw new ArgumentException("Invalid parameters.");

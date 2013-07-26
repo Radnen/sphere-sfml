@@ -31,7 +31,7 @@ namespace Engine
             engine.SetGlobalFunction("GetPersonVisible", new Func<string, bool>(IsPersonVisible));
         }
 
-        public static void CreatePerson(string name, string ss, bool destroy = true)
+        public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
         {
             if (_people.ContainsKey(name))
                 return;

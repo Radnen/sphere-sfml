@@ -51,11 +51,27 @@ namespace Engine.Objects
             }
 
             this["directions"] = Program._engine.Array.New(directions);
+            this["base"] = CreateBase();
+        }
+
+        public ObjectInstance CreateBase()
+        {
+            ObjectInstance obj = Program.CreateObject();
+            obj["x1"] = (int)_bx1;
+            obj["x2"] = (int)_bx2;
+            obj["y1"] = (int)_by1;
+            obj["y2"] = (int)_by2;
+            return obj;
         }
 
         public IntRect GetBase()
         {
-            return new IntRect(_bx1, _by1, _bx2 - _bx1, _by2 - _by1);
+            ObjectInstance b = this["base"] as ObjectInstance;
+            int x = (int)b["x1"];
+            int y = (int)b["y1"];
+            int w = (int)b["x2"] - x;
+            int h = (int)b["y2"] - y;
+            return new IntRect(x, y, w, h);
         }
 
         private void ReadFromFile(string filename)
@@ -74,6 +90,7 @@ namespace Engine.Objects
                 short num_dir = reader.ReadInt16();
                 _bx1 = reader.ReadInt16(); _by1 = reader.ReadInt16();
                 _bx2 = reader.ReadInt16(); _by2 = reader.ReadInt16();
+                this["base"] = CreateBase();
                 reader.ReadBytes(106);
 
                 if (_version != 3)
@@ -206,6 +223,7 @@ namespace Engine.Objects
                 directions[i] = direction;
             }
             instance["directions"] = Program._engine.Array.New(dirs);
+            instance["base"] = instance.CreateBase();
 
             return instance;
         }

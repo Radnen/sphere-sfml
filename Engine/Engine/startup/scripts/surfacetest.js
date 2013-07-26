@@ -20,11 +20,12 @@ function TestSurfaces()
 	
 	surf2.setBlendMode(BLEND);
 	surf2.drawText(sys_font, 0, 0, "Hello");
+	surf2 = surf2.rescale(75, 75);
 	SetClippingRectangle(0, 0, GetScreenWidth(), GetScreenHeight());
 
     while (!done) {
-    	surf.blit(0, 0);
-    	surf2.blit(48, 0);
+    	surf.blit(0, 16);
+    	surf2.blit(48, 16);
         
         FlipScreen();
 

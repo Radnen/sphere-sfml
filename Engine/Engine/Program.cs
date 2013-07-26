@@ -157,7 +157,7 @@ namespace Engine
                 return false;
             }
 
-            _window = new RenderWindow(new VideoMode((uint)width, (uint)height, 32), GlobalProps.GameName, style);
+            _window = new RenderWindow(new VideoMode((uint)width, (uint)height), GlobalProps.GameName, style);
             _clipper.Width = (int)width;
             _clipper.Height = (int)height;
 
@@ -175,6 +175,7 @@ namespace Engine
             Program._window.SetMouseCursorVisible(false);
 
             GlobalPrimitives.window = _window;
+            FindIcon();
             return true;
         }
 
@@ -448,7 +449,7 @@ namespace Engine
             return DateInstance.Now();
         }
 
-		static ColorInstance CreateColor(int r, int g, int b, int a = 255)
+        static ColorInstance CreateColor(int r, int g, int b, [DefaultParameterValue(255)] int a = 255)
 		{
             return new ColorInstance(_engine, r, g, b, a);
 		}
@@ -521,6 +522,22 @@ namespace Engine
             return "v1.55";
         }
 
+        static void FindIcon()
+        {
+            Image icon = null;
+
+            if (File.Exists(GlobalProps.BasePath + "/icon.png"))
+                icon = new Image(GlobalProps.BasePath + "/icon.png");
+            else if (File.Exists(GlobalProps.EnginePath + "/icon.png"))
+                icon = new Image(GlobalProps.EnginePath + "/icon.png");
+
+            if (icon != null)
+            {
+                _window.SetIcon(icon.Size.X, icon.Size.Y, icon.Pixels);
+                icon.Dispose();
+            }
+        }
+
         static WindowStyleInstance GetSystemWindowStyle()
         {
             return new WindowStyleInstance(_engine, GlobalProps.EnginePath + "/system/system.rws");
@@ -552,7 +569,7 @@ namespace Engine
         /// <returns>The sphere path.</returns>
         /// <param name="path">Path.</param>
         /// <param name="root">Root.</param>
-        static string ParseSpherePath(string path, string root)
+        public static string ParseSpherePath(string path, string root)
         {
             if (path.StartsWith("~") || path.StartsWith("."))
                 return GlobalProps.BasePath + "/" + path.Substring(path.StartsWith("..") ? 3 : 2);
@@ -605,7 +622,7 @@ namespace Engine
             return new FileInstance(_engine, ParseSpherePath(filename, "save"));
         }
 
-        static RawFileInstance OpenRawFile(string filename, bool writeable = false)
+        static RawFileInstance OpenRawFile(string filename, [DefaultParameterValue(false)] bool writeable = false)
         {
             return new RawFileInstance(_engine, ParseSpherePath(filename, "other"), writeable);
         }
@@ -629,7 +646,7 @@ namespace Engine
             return builder.ToString();
         }
 
-        static ArrayInstance GetFileList(string filepath = "")
+        static ArrayInstance GetFileList([DefaultParameterValue("")] string filepath = "")
         {
             if (string.IsNullOrEmpty(filepath))
                 filepath = GlobalProps.BasePath + "/save/";
@@ -658,7 +675,7 @@ namespace Engine
                 File.Delete(filepath);
         }
 
-        static ArrayInstance GetDirectoryList(string filepath = "")
+        static ArrayInstance GetDirectoryList([DefaultParameterValue("")] string filepath = "")
         {
             if (string.IsNullOrEmpty(filepath))
                 filepath = GlobalProps.BasePath;

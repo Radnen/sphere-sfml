@@ -10,7 +10,7 @@ namespace Engine.Objects
         private enum SoundType {
             None,
             Sound,
-            Music,
+            Music
         }
 
         string _filename = "";
@@ -18,6 +18,7 @@ namespace Engine.Objects
         Sound _sound = null;
         Music _music = null;
         int _pan, _volume = 255;
+        bool _looping = false, _playing = false;
 
         public SoundInstance(ScriptEngine parent)
             : base (parent)
@@ -30,8 +31,13 @@ namespace Engine.Objects
         {
             PopulateFunctions();
 
-            string[] sounds = { ".wav", ".flac", ".xm" };
-            string[] music = { ".ogg", ".mp3" };
+            string[] sounds = { ".wav", ".flac" };
+            string[] music = { ".ogg" };
+
+            if (!System.IO.File.Exists(filename)) {
+                _soundType = SoundType.None;
+                return;
+            }
 
             _filename = filename;
             string ending = System.IO.Path.GetExtension(filename);
@@ -45,13 +51,12 @@ namespace Engine.Objects
                 _music = new Music(filename);
                 _soundType = SoundType.Music;
             }
-            else
-                _soundType = SoundType.None;
         }
 
         [JSFunction(Name = "play")]
-        public void Play(bool repeat = false)
+        public void Play([DefaultParameterValue(false)] bool repeat = false)
         {
+            _looping = repeat;
             if (_soundType == SoundType.Sound)
             {
                 _sound.Loop = repeat;
@@ -103,6 +108,7 @@ namespace Engine.Objects
         [JSFunction(Name = "setRepeat")]
         public void SetRepeat(bool val)
         {
+            _looping = val;
             if (_soundType == SoundType.Sound)
                 _sound.Loop = val;
             else if (_soundType == SoundType.Music)
@@ -112,29 +118,19 @@ namespace Engine.Objects
         [JSFunction(Name = "getRepeat")]
         public bool GetRepeat()
         {
-            if (_soundType == SoundType.Sound)
-                return _sound.Loop;
-            else if (_soundType == SoundType.Music)
-                return _music.Loop;
-            else
-                return false;
+            return _looping;
         }
 
         [JSFunction(Name = "isPlaying")]
         public bool IsPlaying()
         {
-            if (_soundType == SoundType.Sound)
-                return _sound.Status == SoundStatus.Playing;
-            else if (_soundType == SoundType.Music)
-                return _music.Status == SoundStatus.Playing;
-            else
-                return false;
+            return _playing;
         }
 
         [JSFunction(Name = "isSeekable")]
         public bool IsSeekable()
         {
-            return true; // I think all types in libsndfile are?
+            return (_soundType != SoundType.None);
         }
 
         [JSFunction(Name = "setPan")]
@@ -152,6 +148,7 @@ namespace Engine.Objects
         [JSFunction(Name = "stop")]
         public void Stop()
         {
+            _playing = false;
             if (_soundType == SoundType.Sound)
                 _sound.Stop();
             else if (_soundType == SoundType.Music)
@@ -172,7 +169,7 @@ namespace Engine.Objects
         {
             if (_soundType == SoundType.None) return;
             Stop();
-            Play();
+            Play(_looping);
         }
 
         [JSFunction(Name = "getPosition")]
@@ -204,7 +201,7 @@ namespace Engine.Objects
             else if (_soundType == SoundType.Music)
                 return _music.Duration.TotalMilliseconds;
             else
-                return 1;
+                return -1;
         }
 
         [JSFunction(Name = "clone")]

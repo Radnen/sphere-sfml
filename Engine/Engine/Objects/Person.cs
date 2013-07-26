@@ -42,6 +42,7 @@ namespace Engine.Objects
         public bool Visible { get; set; }
         public bool DestroyOnMap { get; set; }
         public Vector2f Position { get; set; }
+        public Vector2f Speed { get; set; }
 
         public int Frame
         {
@@ -94,9 +95,13 @@ namespace Engine.Objects
 
         public void UpdateCommandQueue()
         {
+            if (_commandQueue.Count == 0)
+                return;
+
             Commands command = (Commands)_commandQueue.Dequeue();
             bool update = (command == Commands.Animate || (int)command > 9);
 
+            Vector2f move = new Vector2f();
             switch (command)
             {
                 case Commands.FaceNorth:
@@ -111,7 +116,14 @@ namespace Engine.Objects
                 case Commands.FaceWest:
                     Direction = "west";
                     break;
+                case Commands.MoveNorth:
+                    move.Y = -1;
+                    break;
             }
+
+            move.X *= Speed.X;
+            move.Y *= Speed.Y;
+            Position += move;
 
             _toNextDelay += (update ? 1 : 0);
             if (_toNextDelay == _delay)

@@ -19,13 +19,11 @@ namespace Engine
             engine.SetGlobalFunction("EvaluateScript", new Action<string>(EvaluateScript));
             engine.SetGlobalFunction("EvaluateSystemScript", new Action<string>(EvaluateSystemScript));
 
-            engine.Execute("Object.__defineGetter__ = function(name, func) {" +
-                "this.defineProperty({}, name, {get: func.bind(this)});" +
-                "}");
+            engine.Execute("Object.defineProperty(Object.prototype, \"__defineGetter__\", { value: function(name, func) {" +
+                "Object.defineProperty(this, name, { get: func, configurable: true }); } });");
 
-            engine.Execute("Object.__defineSetter__ = function(name, func) {" +
-                "this.defineProperty({}, name, {set: func.bind(this)});" +
-                "}");
+            engine.Execute("Object.defineProperty(Object.prototype, \"__defineSetter__\", { value: function(name, func) {" +
+                "Object.defineProperty(this, name, { set: func, configurable: true }); } });");
         }
 
         public static void RequireScript(string filename)
@@ -38,7 +36,7 @@ namespace Engine
 
         static void EvaluateScript(string filename)
         {
-            filename = GlobalProps.BasePath + "/scripts/" + filename;
+            filename = Program.ParseSpherePath(filename, "scripts");
             string text = File.ReadAllText(filename, ISO_8859_1);
             StringScriptSource source = new StringScriptSource(EvalConsts(text), filename);
             RunCode(source);

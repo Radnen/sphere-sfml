@@ -110,6 +110,13 @@ namespace Engine
             Assert.IsInstanceOf<string>(ss);
             Assert.AreEqual(ss, "[object spriteset]");
         }
+
+        [Test()]
+        public void TestSpritesetBase()
+        {
+            object func = Program._engine.Evaluate("ss.base;");
+            Assert.IsInstanceOf<ObjectInstance>(func);
+        }
     }
 }
 

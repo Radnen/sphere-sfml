@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using SFML.Graphics;
 using SFML.Window;
 using Jurassic;
@@ -115,10 +116,9 @@ namespace Engine.Objects
         [JSFunction(Name = "setCharacterImage")]
         public void SetCharacterImage(int ch, ImageInstance image)
         {
-            using (_glyphs[ch] = image.GetImage())
-            {
-                _atlas.Update(_glyphs);
-            }
+            _glyphs[ch].Dispose();
+            _glyphs[ch] = image.GetImage();
+            _atlas.Update(_glyphs);
         }
 
         [JSFunction(Name = "getCharacterImage")]
@@ -130,11 +130,13 @@ namespace Engine.Objects
             }
         }
 
+        private StringBuilder word = new StringBuilder(), current = new StringBuilder();
+
         [JSFunction(Name = "wordWrapString")]
         public ArrayInstance Wrap(string text, int width)
         {
+            word.Clear(); current.Clear();
             ArrayInstance array = Program._engine.Array.New();
-            string word = "", current = "";
             int x = 0, word_w = 0;
             int space_w = GetStringWidth(" "), tab_w = GetStringWidth("   ");
 
@@ -144,49 +146,51 @@ namespace Engine.Objects
                 if (c == ' ' || c == '\t')
                 {
                     int white_w = (c == ' ') ? space_w : tab_w;
+                    string ws = c == ' ' ? " " : "   ";
                     if (x + word_w + white_w > width)
                     {
-                        array.Push(current); // Push current line...
-                        current = word + " ";
+                        array.Push(current.ToString()); // Push current line...
+                        current.Clear().Append(word).Append(ws);
                         x = word_w + white_w;
                     }
                     else
                     {
-                        current += word + " "; // else add it to current line.
+                        current.Append(word).Append(ws); // else add it to current line.
                         x += word_w + white_w;
                     }
 
-                    word = "";
+                    word.Clear();
                     word_w = 0;
                 }
                 else if (c == '\n')
                 {
-                    array.Push(current + word); // On \n just push current line,
-                    current = word = "";        // and clear it.
-                    word_w = 0;
-                    x = 0;
+                    array.Push(current.Append(word).ToString()); // On \n just push current line,
+                    current.Clear();
+                    word.Clear();
+                    word_w = x = 0;
                 }
                 else
                 {
                     int char_w = _atlas.Sources[c].Width;
                     if (word_w + char_w > width && x == 0) // break up long lines
                     {
-                        array.Push(current + word);
-                        current = word = "";
+                        array.Push(current.Append(word).ToString());
+                        current.Clear();
+                        word.Clear();
                         word_w = 0;
                     }
                     else if (x + word_w + char_w > width)
                     {
-                        array.Push(current);
-                        current = "";
+                        array.Push(current.ToString());
+                        current.Clear();
                         x = 0;
                     }
 
-                    word += c;        // Append character...
+                    word.Append(c);        // Append character...
                     word_w += char_w; // and add to consumed width.
                 }
             }
-            array.Push(current + word);
+            array.Push(current.Append(word).ToString());
             return array;
         }
 
