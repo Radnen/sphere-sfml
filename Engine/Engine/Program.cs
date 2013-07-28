@@ -24,6 +24,29 @@ namespace Engine
 
         static GameFile _game = new GameFile();
 
+        public static ArrayInstance Create(ScriptEngine e)
+        {
+            object[] names = new object[4] { "north", "south", "east", "west" };
+            object[] dirs = new object[4];
+
+            for (int i = 0; i < dirs.Length; ++i)
+            {
+                ObjectInstance test = ObjectConstructor.Create(e, e.Object.InstancePrototype);
+                test["name"] = names[i];
+                dirs[i] = test;
+            }
+
+            return e.Array.New(dirs);
+        }
+
+        public static void Test(ArrayInstance a) {
+            for (var i = 0; i < a.Length; ++i) {
+                ObjectInstance o = a[i] as ObjectInstance;
+                string name = (string)o["name"];
+                Console.WriteLine(name);
+            }
+        }
+
         static void Main(string[] args)
         {
             string filename;
@@ -34,8 +57,8 @@ namespace Engine
                     Console.WriteLine("Sphere Objects: 100%");
                     Console.WriteLine("File IO: 80%");
                     Console.WriteLine("Networking: 0%");
-                    Console.WriteLine("Map Engine: 10%");
-                    Console.WriteLine("Other: 85%");
+                    Console.WriteLine("Map Engine: 30%");
+                    Console.WriteLine("Other: 88%");
                     return;
                 }
                 else if (args[0] == "-games")
@@ -285,18 +308,31 @@ namespace Engine
             for (var i = 0; i < a.Length; ++i)
             {
                 string key = n[i].ToUpper();
-                if (key == "RETURN")
-                    key = "ENTER";
-                if (key == "RSHIFT")
-                    key = "SHIFT";
-                if (key == "RCONTROL")
-                    key = "CTRL";
-                if (key == "RALT")
-                    key = "ALT";
+                switch (key) {
+                    case "RETURN":
+                        key = "ENTER";
+                        break;
+                    case "RSHIFT":
+                        key = "SHIFT";
+                        break;
+                    case "RCONTROL":
+                        key = "CTRL";
+                        break;
+                    case "RALT":
+                        key = "ALT";
+                        break;
+                    case "BACK":
+                        key = "BACKSPACE";
+                        break;
+                    case "SUBTRACT":
+                        key = "MINUS";
+                        break;
+                    case "EQUAL":
+                        key = "EQUALS";
+                        break;
+                }
                 if (key.StartsWith("NUM"))
                     key = key[3].ToString();
-                if (key == "BACK")
-                    key = "BACKSPACE";
                 engine.SetGlobalValue("KEY_" + key, (int)a.GetValue(i));
             }
 

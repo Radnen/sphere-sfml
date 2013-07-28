@@ -269,6 +269,7 @@
     <Compile Include="GlobalScripts.cs" />
     <Compile Include="Objects\Commands.cs" />
     <Compile Include="Objects\BlendModes.cs" />
+    <Compile Include="Objects\PersonCommand.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

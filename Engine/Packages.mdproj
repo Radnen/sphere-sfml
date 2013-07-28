@@ -6,7 +6,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{A2430F45-99F3-48F9-950C-FF772FA82276}</ProjectGuid>
     <Packages>
-      <Packages xmlns="">
+      <Packages>
         <Package name="Microsoft Windows Binaries">
           <Builder targetFile="Engine\Release\sphere-sfml.zip" platform="Windows" configuration="Release" ctype="BinariesZipPackageBuilder">
             <RootEntry path="Engine\Engine.csproj" />

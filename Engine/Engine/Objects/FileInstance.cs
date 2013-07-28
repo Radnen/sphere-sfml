@@ -46,28 +46,31 @@ namespace Engine.Objects
             double doubledata;
             bool booldata;
             string strdata;
-            if (o.GetType() == typeof(int))
+            Type t = o.GetType();
+
+            if (t == typeof(string))
+            {
+                if (_file.TryGetData(key, out strdata))
+                    return strdata;
+            }
+            else if (t == typeof(int))
             {
                 if (_file.TryGetData(key, out intdata))
                     return intdata;
                 if (_file.TryGetData(key, out doubledata))
                     return (int)doubledata;
             }
-            else if (o.GetType() == typeof(double))
+            else if (t == typeof(double))
             {
                 if (_file.TryGetData(key, out doubledata))
                     return doubledata;
             }
-            else if (o.GetType() == typeof(bool))
+            else if (t == typeof(bool))
             {
                 if (_file.TryGetData(key, out booldata))
                     return booldata;
             }
-            else if (o.GetType() == typeof(string))
-            {
-                if (_file.TryGetData(key, out strdata))
-                    return strdata;
-            }
+
             return o;
         }
 

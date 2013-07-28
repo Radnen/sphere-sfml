@@ -18,8 +18,8 @@ namespace Engine.Objects
         private static RenderTexture[] _layertex;
         private static Sprite[] _layer_sprites;
 
-        private static string _updateScript = "";
-        private static string _renderScript = "";
+        private static CompiledMethod _updateScript;
+        private static CompiledMethod _renderScript;
         private static string[] _layerScripts;
 
         private static string camera_ent = "";
@@ -33,6 +33,8 @@ namespace Engine.Objects
             engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
             engine.SetGlobalFunction("SetCameraX", new Action<int>(SetCameraX));
             engine.SetGlobalFunction("SetCameraY", new Action<int>(SetCameraY));
+            engine.SetGlobalFunction("GetCameraX", new Func<int>(GetCameraX));
+            engine.SetGlobalFunction("GetCameraY", new Func<int>(GetCameraY));
             engine.SetGlobalFunction("SetUpdateScript", new Action<string>(SetUpdateScript));
             engine.SetGlobalFunction("SetRenderScript", new Action<string>(SetRenderScript));
             engine.SetGlobalFunction("SetLayerRenderer", new Action<int, string>(SetLayerRenderer));
@@ -48,6 +50,10 @@ namespace Engine.Objects
             engine.SetGlobalFunction("IsCameraAttached", new Func<bool>(IsCameraAttached));
             engine.SetGlobalFunction("UpdateMapEngine", new Action(UpdateMapEngine));
             engine.SetGlobalFunction("RenderMap", new Action(RenderMap));
+            engine.SetGlobalFunction("GetTileWidth", new Func<int>(GetTileWidth));
+            engine.SetGlobalFunction("GetTileHeight", new Func<int>(GetTileHeight));
+            engine.SetGlobalFunction("GetLayerWidth", new Func<int, int>(GetLayerWidth));
+            engine.SetGlobalFunction("GetLayerHeight", new Func<int, int>(GetLayerHeight));
         }
 
         private static void AttachInput(string name)
@@ -106,20 +112,48 @@ namespace Engine.Objects
             _fps = rate;
         }
 
+        public static int GetLayerWidth(int layer)
+        {
+            return _map.Layers[layer].Width;
+        }
+
+        public static int GetLayerHeight(int layer)
+        {
+            return _map.Layers[layer].Height;
+        }
+
+        public static int GetTileWidth()
+        {
+            return _map.Tileset.TileWidth;
+        }
+
+        public static int GetTileHeight()
+        {
+            return _map.Tileset.TileHeight;
+        }
+
         private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
         {
             _ended = false;
-            SetMapEngineFrameRate(fps);
+            //SetMapEngineFrameRate(fps);
 
-            View v = Program._window.GetView();
+            View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
             LoadMap(filename);
 
             while (!_ended) {
-                Program._engine.Execute(_updateScript);
+                if (_updateScript != null)
+                    _updateScript.Execute();
+
                 UpdateMapEngine();
                 RenderMap();
-                Program._engine.Execute(_renderScript);
+
+                View camera = new View(Program._window.GetView());
+                Program._window.SetView(v);
+                if (_renderScript != null)
+                    _renderScript.Execute();
+                Program._window.SetView(camera);
+
                 Program.FlipScreen();
             }
 
@@ -157,13 +191,79 @@ namespace Engine.Objects
                 _layer_sprites[i] = new Sprite(tex.Texture);
                 _layertex[i] = tex;
             }
+
+            Vector2f def_pos = new Vector2f(_map.StartX, _map.StartY);
+            foreach (Person p in PersonManager.People.Values)
+            {
+                if (p.Position.X < 0 || p.Position.Y < 0)
+                    p.Position = def_pos;
+            }
         }
 
         private static void UpdateMapEngine()
         {
-            foreach (KeyValuePair<string, Person> pair in PersonManager.People)
+            if (IsInputAttached() && PersonManager.IsCommandQueueEmpty(input_ent))
             {
-                pair.Value.UpdateCommandQueue();
+                int x = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.X) + 0.5f);
+                int y = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.Y) + 0.5f);
+
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Up))
+                    y = -1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Down))
+                    y = 1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Left))
+                    x = -1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Right))
+                    x = 1;
+
+                switch (x + y * 3) {
+                    case -4: // nw
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                        break;
+                    case -3: // n
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                        break;
+                    case -2: // ne
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                        break;
+                    case -1: // w
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceWest, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, false);
+                        break;
+                    case 1:  // e
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceEast, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, false);
+                        break;
+                    case 2:  // sw
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                        break;
+                    case 3: // s
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                        break;
+                    case 4: // se
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
+                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                        break;
+                }
+            }
+
+            foreach (Person p in PersonManager.People.Values)
+                p.UpdateCommandQueue();
+
+            if (IsCameraAttached())
+            {
+                View v = Program._window.GetView();
+                SetCameraX(PersonManager.GetPersonX(camera_ent) - (int)(v.Size.X / 2));
+                SetCameraY(PersonManager.GetPersonY(camera_ent) - (int)(v.Size.Y / 2));
             }
         }
 
@@ -207,32 +307,42 @@ namespace Engine.Objects
 
         private static void DrawPersons()
         {
-            foreach (KeyValuePair<string, Person> pair in PersonManager.People)
-            {
-                pair.Value.Draw(_map.StartX, _map.StartY);
-            }
+            foreach (Person p in PersonManager.People.Values)
+                p.Draw();
         }
 
         private static void SetCameraX(int x) {
             View v = Program._window.GetView();
-            v.Move(new Vector2f(x, 0));
+            v.Center = new Vector2f(v.Size.X / 2 + x, v.Center.Y);
             Program._window.SetView(v);
+        }
+
+        private static int GetCameraX()
+        {
+            View v = Program._window.GetView();
+            return (int)(v.Center.X - v.Size.X / 2);
         }
 
         private static void SetCameraY(int y) {
             View v = Program._window.GetView();
-            v.Move(new Vector2f(0, y));
+            v.Center = new Vector2f(v.Center.X, v.Size.Y / 2 + y);
             Program._window.SetView(v);
+        }
+
+        private static int GetCameraY()
+        {
+            View v = Program._window.GetView();
+            return (int)(v.Center.Y - v.Size.Y / 2);
         }
 
         private static void SetUpdateScript(string code)
         {
-            _updateScript = code;
+            _updateScript = new CompiledMethod(Program._engine, code);
         }
 
         private static void SetRenderScript(string code)
         {
-            _renderScript = code;
+            _renderScript = new CompiledMethod(Program._engine, code);
         }
 
         private static void SetLayerRenderer(int layer, string code)

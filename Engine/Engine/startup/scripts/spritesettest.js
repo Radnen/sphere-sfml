@@ -25,16 +25,18 @@ function TestSpritesets()
 	var img_bg = CreateSurface(w, h, CreateColor(0, 0, 0, 0));
 	img_bg.outlinedRectangle(0, 0, w - 2, h - 2, white);
 	img_bg = img_bg.createImage();
+	h += 16;
 
     while (!done) {
 		sys_font.drawText(0, 0, "images: " + imgs.length);
         
         for (var d = 0; d < 4; ++d) {
         	var frames = dirs[d].frames;
+        	sys_font.drawText(0, 16 + d * h, dirs[d].name);
         	for (var f = 0; f < frames.length; ++f) {
         	    var image = imgs[frames[f].index];
         	    var x = f * w;
-        	    var y = 16 + d * h;
+        	    var y = 32 + d * h;
         	    
         	    img_bg.blit(x, y);
         		image.blit(x, y);

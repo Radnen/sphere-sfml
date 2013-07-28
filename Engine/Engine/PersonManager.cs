@@ -10,8 +10,10 @@ namespace Engine
     public static class PersonManager
     {
         private static SortedDictionary<string, Person> _people = new SortedDictionary<string, Person>();
+        private static List<string> _personlist = new List<string>();
 
         public static SortedDictionary<string, Person> People { get { return _people; } }
+        public static string _current = "";
 
         public static void BindToEngine(ScriptEngine engine)
         {
@@ -28,7 +30,35 @@ namespace Engine
             engine.SetGlobalFunction("SetPersonXY", new Action<string, int, int>(SetPersonXY));
             engine.SetGlobalFunction("SetPersonXYFloat", new Action<string, double, double>(SetPersonXYFloat));
             engine.SetGlobalFunction("SetPersonVisible", new Action<string, bool>(SetPersonVisible));
-            engine.SetGlobalFunction("GetPersonVisible", new Func<string, bool>(IsPersonVisible));
+            engine.SetGlobalFunction("IsPersonVisible", new Func<string, bool>(IsPersonVisible));
+            engine.SetGlobalFunction("QueuePersonCommand", new Action<string, int, bool>(QueuePersonCommand));
+            engine.SetGlobalFunction("IsCommandQueueEmpty", new Func<string, bool>(IsCommandQueueEmpty));
+            engine.SetGlobalFunction("GetPersonMask", new Func<string, ColorInstance>(GetPersonMask));
+            engine.SetGlobalFunction("SetPersonMask", new Action<string, ColorInstance>(SetPersonMask));
+            engine.SetGlobalFunction("SetPersonSpeedXY", new Action<string, double, double>(SetPersonSpeedXY));
+            engine.SetGlobalFunction("SetPersonSpeed", new Action<string, double>(SetPersonSpeed));
+            engine.SetGlobalFunction("GetPersonSpeedX", new Func<string, double>(GetPersonSpeedX));
+            engine.SetGlobalFunction("GetPersonSpeedY", new Func<string, double>(GetPersonSpeedY));
+            engine.SetGlobalFunction("SetPersonFrame", new Action<string, int>(SetPersonFrame));
+            engine.SetGlobalFunction("GetPersonFrame", new Func<string, int>(GetPersonFrame));
+            engine.SetGlobalFunction("SetPersonDirection", new Action<string, string>(SetPersonDirection));
+            engine.SetGlobalFunction("GetPersonDirection", new Func<string, string>(GetPersonDirection));
+            engine.SetGlobalFunction("SetPersonOffsetX", new Action<string, double>(SetPersonOffsetX));
+            engine.SetGlobalFunction("SetPersonOffsetY", new Action<string, double>(SetPersonOffsetY));
+            engine.SetGlobalFunction("GetPersonOffsetX", new Func<string, double>(GetPersonOffsetX));
+            engine.SetGlobalFunction("GetPersonOffsetY", new Func<string, double>(GetPersonOffsetY));
+            engine.SetGlobalFunction("SetPersonLayer", new Action<string, int>(SetPersonLayer));
+            engine.SetGlobalFunction("GetPersonLayer", new Func<string, int>(GetPersonLayer));
+            engine.SetGlobalFunction("GetPersonBase", new Func<string, ObjectInstance>(GetPersonBase));
+            engine.SetGlobalFunction("GetCurrentPerson", new Func<string>(GetCurrentPerson));
+            engine.SetGlobalFunction("ClearPersonCommands", new Action<string>(ClearPersonCommands));
+            engine.SetGlobalFunction("GetPersonList", new Func<ArrayInstance>(GetPersonList));
+            engine.SetGlobalFunction("GetPersonFrameRevert", new Func<string, int>(GetPersonFrameRevert));
+            engine.SetGlobalFunction("SetPersonFrameRevert", new Action<string, int>(SetPersonFrameRevert));
+            engine.SetGlobalFunction("GetPersonData", new Func<string, ObjectInstance>(GetPersonData));
+            engine.SetGlobalFunction("SetPersonData", new Action<string, ObjectInstance>(SetPersonData));
+            engine.SetGlobalFunction("SetPersonValue", new Action<string, string, object>(SetPersonValue));
+            engine.SetGlobalFunction("GetPersonValue", new Func<string, string, object>(GetPersonValue));
         }
 
         public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
@@ -38,11 +68,13 @@ namespace Engine
             ss = GlobalProps.BasePath + "/spritesets/" + ss;
             SpritesetInstance sprite = new SpritesetInstance(Program._engine, ss);
             _people.Add(name, new Person(name, sprite, destroy));
+            _personlist.Add(name);
         }
 
         public static void DestroyPerson(string name)
         {
             _people.Remove(name);
+            _personlist.Remove(name);
         }
 
         public static void SetPersonX(string name, int x)
@@ -103,6 +135,148 @@ namespace Engine
         public static bool IsPersonVisible(string name)
         {
             return _people[name].Visible;
+        }
+
+        public static void QueuePersonCommand(string name, int command, bool immediate)
+        {
+            _people[name].QueueCommand(command, immediate);
+        }
+
+        public static bool IsCommandQueueEmpty(string name)
+        {
+            return _people[name].IsQueueEmpty();
+        }
+
+        public static ArrayInstance GetPersonList()
+        {
+            return Program._engine.Array.New(_personlist.ToArray());
+        }
+
+        public static void SetPersonMask(string name, ColorInstance color)
+        {
+            _people[name].Mask = color.GetColor();
+        }
+
+        public static ColorInstance GetPersonMask(string name)
+        {
+            return new ColorInstance(Program._engine, _people[name].Mask);
+        }
+
+        public static void SetPersonSpeed(string name, double s)
+        {
+            _people[name].Speed = new Vector2f((float)s, (float)s);
+        }
+
+        public static void SetPersonSpeedXY(string name, double x, double y)
+        {
+            _people[name].Speed = new Vector2f((float)x, (float)y);
+        }
+
+        public static double GetPersonSpeedX(string name)
+        {
+            return _people[name].Speed.X;
+        }
+
+        public static double GetPersonSpeedY(string name)
+        {
+            return _people[name].Speed.Y;
+        }
+
+        public static void SetPersonFrame(string name, int v)
+        {
+            _people[name].Frame = v;
+        }
+
+        public static int GetPersonFrame(string name)
+        {
+            return _people[name].Frame;
+        }
+
+        public static string GetPersonDirection(string name)
+        {
+            return _people[name].Direction;
+        }
+
+        public static void SetPersonDirection(string name, string d)
+        {
+            _people[name].Direction = d;
+        }
+
+        public static void SetPersonLayer(string name, int layer)
+        {
+            _people[name].Layer = layer;
+        }
+
+        public static int GetPersonLayer(string name)
+        {
+            return _people[name].Layer;
+        }
+
+        public static ObjectInstance GetPersonBase(string name)
+        {
+            return _people[name].Base;
+        }
+
+        public static void SetPersonOffsetX(string name, double x)
+        {
+            _people[name].Offset = new Vector2f((float)x, _people[name].Offset.Y);
+        }
+
+        public static void SetPersonOffsetY(string name, double y)
+        {
+            _people[name].Offset = new Vector2f(_people[name].Offset.X, (float)y);
+        }
+
+        public static double GetPersonOffsetX(string name)
+        {
+            return _people[name].Offset.X;
+        }
+
+        public static double GetPersonOffsetY(string name)
+        {
+            return _people[name].Offset.Y;
+        }
+
+        public static string GetCurrentPerson()
+        {
+            return _current;
+        }
+
+        public static void ClearPersonCommands(string name)
+        {
+            _people[name].ClearComands();
+        }
+
+        public static int GetPersonFrameRevert(string name)
+        {
+            return _people[name].FrameRevert;
+        }
+
+        public static void SetPersonFrameRevert(string name, int r)
+        {
+            _people[name].Frame = r;
+        }
+
+        public static ObjectInstance GetPersonData(string name)
+        {
+            // TODO: implement & update data props:
+            // eithre here, or when you set the SS.
+            return _people[name].Data;
+        }
+
+        public static void SetPersonData(string name, ObjectInstance o)
+        {
+            _people[name].Data = o;
+        }
+
+        public static void SetPersonValue(string name, string key, object o)
+        {
+            _people[name].Data[key] = o;
+        }
+
+        public static object GetPersonValue(string name, string key)
+        {
+            return _people[name].Data[key];
         }
     }
 }

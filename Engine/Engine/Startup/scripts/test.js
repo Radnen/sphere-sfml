@@ -9,7 +9,7 @@ RequireScript("surfacetest.js");
 RequireScript("spritesettest.js");
 RequireScript("savetest.js");
 
-var sys_window = GetSystemWindowStyle();
+const sys_window = GetSystemWindowStyle();
 var sys_arrow = GetSystemArrow();
 var sys_font = GetSystemFont();
 
@@ -29,6 +29,8 @@ function game()
 	menu.addOption("Savefiles", TestSaving);
 	menu.addOption("Map Engine", function() {
 		CreatePerson("player", "test.rss", false);
+		AttachInput("player");
+		AttachCamera("player");
 		SetUpdateScript("Update();");
 		SetRenderScript("Render();");
 		MapEngine("village.rmp", 60);
@@ -49,17 +51,11 @@ function game()
 
 function Render()
 {
-	sys_font.drawText(0, 0, "Hello world");
+	sys_font.drawText(0, 0, GetPersonFrame("player"));
 }
 
 function Update()
 {
-	if (IsKeyPressed(KEY_UP)) SetCameraY(-2);
-	if (IsKeyPressed(KEY_DOWN)) SetCameraY(2);
-	if (IsKeyPressed(KEY_LEFT)) SetCameraX(-2);
-	if (IsKeyPressed(KEY_RIGHT)) SetCameraX(2);
-
-
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
 			case KEY_ESCAPE: ExitMapEngine(); break;

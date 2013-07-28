@@ -109,26 +109,30 @@ namespace Engine.Objects
                     object[] dirs = new object[num_dir];
                     for (var d = 0; d < num_dir; ++d)
                     {
+                        ObjectInstance o = Program.CreateObject();
+
                         short num_frames = reader.ReadInt16();
                         reader.ReadBytes(6);
-                        short len = reader.ReadInt16();
-                        string name = new string(reader.ReadChars(len));
-                        object[] frames = new object[num_frames];
 
+                        string name = new string(reader.ReadChars(reader.ReadInt16()));
+                        if (name.EndsWith("\0"))
+                            name = name.Substring(0, name.Length - 1);
+                        o["name"] = name;
+
+                        object[] frames = new object[num_frames];
                         for (var f = 0; f < num_frames; ++f)
                         {
                             short index = reader.ReadInt16();
                             short delay = reader.ReadInt16();
                             reader.ReadBytes(4);
 
-                            frames[f] = Program.CreateObject();
-                            ((ObjectInstance)frames[f])["index"] = (int)index;
-                            ((ObjectInstance)frames[f])["delay"] = (int)delay;
+                            ObjectInstance frame_o = Program.CreateObject();
+                            frame_o["index"] = (int)index;
+                            frame_o["delay"] = (int)delay;
+                            frames[f] = frame_o;
                         }
-
-                        dirs[d] = Program.CreateObject();
-                        ((ObjectInstance)dirs[d])["name"] = name;
-                        ((ObjectInstance)dirs[d])["frames"] = Program._engine.Array.New(frames);
+                        o["frames"] = Engine.Array.New(frames);
+                        dirs[d] = o;
                     }
                     this["directions"] = Program._engine.Array.New(dirs);
                 }

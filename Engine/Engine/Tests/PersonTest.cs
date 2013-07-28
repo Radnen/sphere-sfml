@@ -40,6 +40,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("GetPersonList;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object list = Program._engine.Evaluate("GetPersonList();");
+            Assert.IsInstanceOf<ArrayInstance>(list);
         }
 
         [Test()]
@@ -171,7 +174,7 @@ namespace Engine
         [Test()]
         public void TestClearPersonCommands()
         {
-            object func = Program._engine.Evaluate("ClearCommandQueue;");
+            object func = Program._engine.Evaluate("ClearPersonCommands;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
 
@@ -257,6 +260,7 @@ namespace Engine
             object func = Program._engine.Evaluate("SetPersonSpeed;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
+
         [Test()]
         public void TestSetPersonSpeedXY()
         {

@@ -152,6 +152,34 @@ namespace Engine
             object func = Program._engine.Evaluate("GetInputPerson;");
             Assert.IsInstanceOf<FunctionInstance>(func);
         }
+
+        [Test()]
+        public void TestGetTileWidth()
+        {
+            object func = Program._engine.Evaluate("GetTileWidth;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetTileHeight()
+        {
+            object func = Program._engine.Evaluate("GetTileHeight;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetLayerWidth()
+        {
+            object func = Program._engine.Evaluate("GetLayerWidth;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
+
+        [Test()]
+        public void TestGetLayerHeight()
+        {
+            object func = Program._engine.Evaluate("GetLayerHeight;");
+            Assert.IsInstanceOf<FunctionInstance>(func);
+        }
     }
 }
 

@@ -38,7 +38,7 @@ namespace Engine
         {
             filename = Program.ParseSpherePath(filename, "scripts");
             string text = File.ReadAllText(filename, ISO_8859_1);
-            StringScriptSource source = new StringScriptSource(EvalConsts(text), filename);
+            StringScriptSource source = new StringScriptSource(text, filename);
             RunCode(source);
         }
 
@@ -54,14 +54,8 @@ namespace Engine
         {
             filename = GlobalProps.EnginePath + "/system/scripts/" + filename;
             string text = File.ReadAllText(filename, ISO_8859_1);
-            StringScriptSource source = new StringScriptSource(EvalConsts(text), filename);
+            StringScriptSource source = new StringScriptSource(text, filename);
             RunCode(source);
-        }
-
-        static String EvalConsts(string source)
-        {
-            Regex finder = new Regex("const ");
-            return finder.Replace(source, "var ");
         }
 
         public static void RunCode(StringScriptSource source)

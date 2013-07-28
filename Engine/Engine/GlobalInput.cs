@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using SFML.Window;
+using Jurassic;
 
 namespace Engine
 {
@@ -9,7 +10,7 @@ namespace Engine
         private static Queue<int> _keyQueue = new Queue<int>(10);
         private static Queue<int> _wheelQueue = new Queue<int>(10);
         private static bool _fullscreen, _anyKey;
-        private static Dictionary<int, Tuple<string, string>> _boundKeys = new Dictionary<int, Tuple<string, string>>();
+        private static Dictionary<int, Tuple<CompiledMethod, CompiledMethod>> _boundKeys = new Dictionary<int, Tuple<CompiledMethod, CompiledMethod>>();
 
         public static int TalkKey { get; private set; }
         public static int TalkButton { get; private set; }
@@ -21,7 +22,13 @@ namespace Engine
 
         public static void window_KeyPressed(object sender, KeyEventArgs e) {
             _anyKey = true;
-            _keyQueue.Enqueue((int)e.Code);
+
+            int code = (int)e.Code;
+
+            _keyQueue.Enqueue(code);
+
+            if (_boundKeys.ContainsKey(code) && _boundKeys[code].Item1 != null)
+                    _boundKeys[code].Item1.Execute();
 
             if (e.Code == Keyboard.Key.F10)
                 ToggleFullScreen();
@@ -29,6 +36,9 @@ namespace Engine
 
         public static void window_KeyReleased(object sender, KeyEventArgs e) {
             _anyKey = false;
+            int code = (int)e.Code;
+            if (_boundKeys.ContainsKey(code) && _boundKeys[code].Item2 != null)
+                _boundKeys[code].Item2.Execute();
         }
 
         public static void window_Closed(object sender, EventArgs e)
@@ -73,6 +83,13 @@ namespace Engine
 
         public static bool IsKeyPressed(int code)
         {
+            if (code == (int)Keyboard.Key.LControl)
+                code = (int)Keyboard.Key.RControl;
+            if (code == (int)Keyboard.Key.LShift)
+                code = (int)Keyboard.Key.LShift;
+            if (code == (int)Keyboard.Key.LAlt)
+                code = (int)Keyboard.Key.RAlt;
+
             return Keyboard.IsKeyPressed((Keyboard.Key)code);
         }
 
@@ -181,7 +198,9 @@ namespace Engine
 
         public static void BindKey(int code, string js_down, string js_up)
         {
-            _boundKeys[code] = new Tuple<string, string>(js_down, js_up);
+            CompiledMethod down = new CompiledMethod(Program._engine, js_down);
+            CompiledMethod up = new CompiledMethod(Program._engine, js_up);
+            _boundKeys[code] = new Tuple<CompiledMethod, CompiledMethod>(down, up);
         }
 
         public static void UnbindKey(int code)

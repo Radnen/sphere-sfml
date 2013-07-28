@@ -21,23 +21,17 @@ namespace Engine.Objects
                 return false;
 
             FileName = filename;
-            using (StreamReader reader = new StreamReader(filename))
+            string[] lines = File.ReadAllLines(filename);
+            for (var i = 0; i < lines.Length; ++i)
             {
-                while (!reader.EndOfStream)
-                {
-                    string line = reader.ReadLine();
-                    string[] parts = line.Split('=');
-                    if (parts.Length > 1) {
-                        if (!_data.ContainsKey(parts[0]))
-                            _data.Add(parts[0], parts[1]);
-                    }
-                    else if (parts.Length == 1) {
-                        if (!_data.ContainsKey(parts[0]))
-                            _data.Add(parts[0], "");
-                    }
+                string[] data = lines[i].Split('=');
+                if (data.Length == 2) {
+                    if (data[1].Length == 0)
+                        _data[data[0]] = "";
+                    else
+                        _data[data[0]] = data[1];
                 }
             }
-
             return true;
         }
 
