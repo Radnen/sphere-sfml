@@ -11,15 +11,15 @@ namespace Engine.Objects
     {
         private static Map _map;
         private static TextureAtlas _tileAtlas;
-        private static Sprite _tiles;
         private static bool _ended = false;
         private static int _fps = 0;
 
-        private static RenderTexture[] _layertex;
-        private static Sprite[] _layer_sprites;
+        private static Vertex[] _cutout;
+        private static RenderStates _layerstates;
+        private static List<Vertex[]> _layerverts;
 
-        private static CompiledMethod _updateScript;
-        private static CompiledMethod _renderScript;
+        private static FunctionScript _updateScript;
+        private static FunctionScript _renderScript;
         private static string[] _layerScripts;
 
         private static string camera_ent = "";
@@ -163,6 +163,8 @@ namespace Engine.Objects
 
         private static void LoadMap(string filename)
         {
+            PersonManager.RemoveNonEssential();
+
             _map = new Map();
             _map.Load(filename);
  
@@ -172,25 +174,24 @@ namespace Engine.Objects
             Image[] sources = new Image[_map.Tileset.Tiles.Count];
             for (var i = 0; i < _map.Tileset.Tiles.Count; ++i)
                 sources[i] = _map.Tileset.Tiles[i].Graphic;
-
             _tileAtlas.Update(sources);
-            _tiles = new Sprite(_tileAtlas.Texture);
+
+            int w = GlobalProps.Width / _map.Tileset.TileWidth + 1;
+            int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
+            int length = w * h * 4;
+            if (_cutout == null || _cutout.Length != length) {
+                _cutout = new Vertex[length];
+                _cutout.Initialize();
+            }
 
             _layerScripts = new string[_map.Layers.Count];
             _layerScripts.Initialize();
 
-            _layertex = new RenderTexture[_map.Layers.Count];
-            _layer_sprites = new Sprite[_map.Layers.Count];
-            for (var i = 0; i < _map.Layers.Count; ++i) {
-                RenderTexture tex = new RenderTexture((uint)(_map.Layers[i].Width * _map.Tileset.TileWidth),
-                                                      (uint)(_map.Layers[i].Height * _map.Tileset.TileHeight));
+            Tuple<List<Vertex[]>, RenderStates> tuple;
+            tuple = _map.GetTileMap(_tileAtlas);
 
-                DrawTiles(tex, _map.Layers[i]);
-                tex.Display();
-
-                _layer_sprites[i] = new Sprite(tex.Texture);
-                _layertex[i] = tex;
-            }
+            _layerstates = tuple.Item2;
+            _layerverts = tuple.Item1;
 
             Vector2f def_pos = new Vector2f(_map.StartX, _map.StartY);
             foreach (Person p in PersonManager.People.Values)
@@ -267,11 +268,33 @@ namespace Engine.Objects
             }
         }
 
+        private static void CutoutVerts(Vertex[] in_verts, int x, int y, int scan)
+        {
+            scan <<= 2;
+            y /= _map.Tileset.TileHeight;
+            x /= _map.Tileset.TileWidth;
+
+            Vertex[] local = _cutout;
+            int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
+            int length = (GlobalProps.Width / _map.Tileset.TileWidth + 1) << 2;
+            int offset = (x << 2) + y * scan;
+            int height = offset + h * scan;
+            int index = 0;
+
+            for (var i = offset; i < height; i += scan)
+            {
+                Array.Copy(in_verts, i, local, index, length);
+                index += length;
+            }
+        }
+
         private static void RenderMap()
         {
-            for (var i = 0; i < _layer_sprites.Length; ++i)
+            int length = _map.Layers.Count;
+            for (var i = 0; i < length; ++i)
             {
-                Program._window.Draw(_layer_sprites[i]);
+                CutoutVerts(_layerverts[i], GetCameraX(), GetCameraY(), _map.Layers[i].Width);
+                Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
                 if (i == _map.StartLayer)
                     DrawPersons();
             }
@@ -282,29 +305,6 @@ namespace Engine.Objects
             _ended = true;
         }
 
-        private static void DrawTiles(RenderTexture layer_tex, Layer layer)
-        {
-            Vector2f position = new Vector2f();
-            int sw = Program.GetScreenWidth();
-            int sh = Program.GetScreenHeight();
-            int tw = _map.Tileset.TileWidth;
-            int th = _map.Tileset.TileHeight;
-
-            for (int y = 0; y < layer.Height; ++y)
-            {
-                position.Y = y * th;
-                for (int x = 0; x < layer.Width; ++x)
-                {
-                    position.X = x * th;
-                    short t = layer.GetTile(x, y);
-                    if (t < 0) continue;
-                    _tiles.Position = position;
-                    _tiles.TextureRect = _tileAtlas.Sources[t];
-                    layer_tex.Draw(_tiles);
-                }
-            }
-        }
-
         private static void DrawPersons()
         {
             foreach (Person p in PersonManager.People.Values)
@@ -313,6 +313,8 @@ namespace Engine.Objects
 
         private static void SetCameraX(int x) {
             View v = Program._window.GetView();
+            if (x < 0 || v.Size.X + x >= _map.Layers[0].Width * _map.Tileset.TileWidth)
+                return;
             v.Center = new Vector2f(v.Size.X / 2 + x, v.Center.Y);
             Program._window.SetView(v);
         }
@@ -325,6 +327,8 @@ namespace Engine.Objects
 
         private static void SetCameraY(int y) {
             View v = Program._window.GetView();
+            if (y < 0 || v.Size.Y + y >= _map.Layers[0].Height * _map.Tileset.TileHeight)
+                return;
             v.Center = new Vector2f(v.Center.X, v.Size.Y / 2 + y);
             Program._window.SetView(v);
         }
@@ -335,14 +339,14 @@ namespace Engine.Objects
             return (int)(v.Center.Y - v.Size.Y / 2);
         }
 
-        private static void SetUpdateScript(string code)
+        private static void SetUpdateScript(object code)
         {
-            _updateScript = new CompiledMethod(Program._engine, code);
+            _updateScript = new FunctionScript(code);
         }
 
-        private static void SetRenderScript(string code)
+        private static void SetRenderScript(object code)
         {
-            _renderScript = new CompiledMethod(Program._engine, code);
+            _renderScript = new FunctionScript(code);
         }
 
         private static void SetLayerRenderer(int layer, string code)

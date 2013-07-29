@@ -77,6 +77,19 @@ namespace Engine
             _personlist.Remove(name);
         }
 
+        public static void RemoveNonEssential()
+        {
+            for (var i = 0; i < _personlist.Count; ++i)
+            {
+                if (_people[_personlist[i]].DestroyOnMap)
+                {
+                    _people.Remove(_personlist[i]);
+                    _personlist.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
         public static void SetPersonX(string name, int x)
         {
             _people[name].Position = new Vector2f(x, _people[name].Position.Y);

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using SFML.Window;
+using SFML.Graphics;
 
 namespace Engine.Objects
 {
@@ -228,6 +230,59 @@ namespace Engine.Objects
             Tileset.Save(path + Scripts[0]);
             
             return true;
+        }
+
+        /// <summary>
+        /// Compiles the map into a texture-coordinated vertex array & render states.
+        /// </summary>
+        /// <returns>The tile map.</returns>
+        /// <param name="tileatlas">The tileatlas to get tex-coords from use.</param>
+        public Tuple<List<Vertex[]>, RenderStates> GetTileMap(TextureAtlas tileatlas)
+        {
+            int tw = Tileset.TileWidth;
+            int th = Tileset.TileHeight;
+            List<Vertex[]> vertices = new List<Vertex[]>();
+            foreach (Layer l in Layers)
+            {
+                int size = l.Width * l.Height * 4;
+                Vertex[] lverts = new Vertex[size];
+                Vector2f loc1 = new Vector2f(0, 0);
+                Vector2f loc2 = new Vector2f(tw, 0);
+                Vector2f loc3 = new Vector2f(tw, th);
+                Vector2f loc4 = new Vector2f(0, th);
+                for (var i = 0; i < lverts.Length; i += 4)
+                {
+                    int tile = l.GetTile((int)loc1.X / tw, (int)loc1.Y / th);
+                    if (tile >= 0)
+                    {
+                        IntRect source = tileatlas.Sources[tile];
+                        int w = source.Left + source.Width;
+                        int h = source.Top + source.Height;
+                        lverts[i] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
+                        lverts[i + 1] = new Vertex(loc2, new Vector2f(w, source.Top));
+                        lverts[i + 2] = new Vertex(loc3, new Vector2f(w, h));
+                        lverts[i + 3] = new Vertex(loc4, new Vector2f(source.Left, h));
+                    }
+
+                    loc1.X += tw;
+                    loc2.X += tw;
+                    loc3.X += tw;
+                    loc4.X += tw;
+                    if (loc1.X == l.Width * tw)
+                    {
+                        loc1.Y += th;
+                        loc2.Y += th;
+                        loc3.Y += th;
+                        loc4.Y += th;
+                        loc1.X = loc4.X = 0;
+                        loc2.X = loc3.X = tw;
+                    }
+                }
+                vertices.Add(lverts);
+            }
+
+            RenderStates states = new RenderStates(BlendMode.Alpha, Transform.Identity, tileatlas.Texture, null);
+            return new Tuple<List<Vertex[]>, RenderStates>(vertices, states);
         }
 
         /// <summary>

@@ -33,7 +33,7 @@ function game()
 		AttachCamera("player");
 		SetUpdateScript("Update();");
 		SetRenderScript("Render();");
-		MapEngine("village.rmp", 60);
+		MapEngine("LargeTest.rmp", 60);
 	});
 	menu.addOption("Exit", Exit);
 	

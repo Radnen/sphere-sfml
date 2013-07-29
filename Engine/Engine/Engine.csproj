@@ -190,6 +190,12 @@
     <None Include="icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="startup\maps\westwoods.rts">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="startup\maps\LargeTest.rmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="csfml-audio-2.dll">
@@ -270,6 +276,7 @@
     <Compile Include="Objects\Commands.cs" />
     <Compile Include="Objects\BlendModes.cs" />
     <Compile Include="Objects\PersonCommand.cs" />
+    <Compile Include="Objects\FunctionScript.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
