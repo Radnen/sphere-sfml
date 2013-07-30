@@ -7,9 +7,10 @@ namespace Engine
     public class TextureAtlas
     {
         private Image _canvas;
-        private uint _size = 0;
+        public uint _size { get; private set; }
         public Texture Texture { get; private set; }
         public IntRect[] Sources { get; private set; }
+        private bool _modified = false; 
 
         public TextureAtlas(uint size)
         {
@@ -67,6 +68,22 @@ namespace Engine
             Image image = new Image((uint)Sources[index].Width, (uint)Sources[index].Height);
             image.Copy(_canvas, 0, 0, Sources[index]);
             return image;
+        }
+
+        public void SetImageAt(uint index, Image img)
+        {
+            IntRect dest = Sources[index];
+            _canvas.Copy(img, (uint)dest.Left, (uint)dest.Top);
+            _modified = true;
+        }
+
+        public void Update()
+        {
+            if (_modified)
+            {
+                Texture.Update(_canvas);
+                _modified = false;
+            }
         }
     }
 }

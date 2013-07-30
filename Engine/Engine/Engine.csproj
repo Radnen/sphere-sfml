@@ -277,6 +277,8 @@
     <Compile Include="Objects\BlendModes.cs" />
     <Compile Include="Objects\PersonCommand.cs" />
     <Compile Include="Objects\FunctionScript.cs" />
+    <Compile Include="Objects\TileAnimHandler.cs" />
+    <Compile Include="Objects\FastTextureAtlas.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

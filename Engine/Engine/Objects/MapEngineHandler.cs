@@ -10,7 +10,7 @@ namespace Engine.Objects
     public static class MapEngineHandler
     {
         private static Map _map;
-        private static TextureAtlas _tileAtlas;
+        private static TextureAtlas _tileatlas = new TextureAtlas(1024);
         private static bool _ended = false;
         private static int _fps = 0;
 
@@ -18,9 +18,11 @@ namespace Engine.Objects
         private static RenderStates _layerstates;
         private static List<Vertex[]> _layerverts;
 
-        private static FunctionScript _updateScript;
-        private static FunctionScript _renderScript;
-        private static string[] _layerScripts;
+        private static List<TileAnimHandler> _tileanims = new List<TileAnimHandler>();
+        private static FunctionScript _updatescripts;
+        private static FunctionScript _renderscripts;
+        private static string[] _layerscripts;
+        private static FastTextureAtlas _fastatlas;
 
         private static string camera_ent = "";
         private static string input_ent = "";
@@ -135,23 +137,23 @@ namespace Engine.Objects
         private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
         {
             _ended = false;
-            //SetMapEngineFrameRate(fps);
+            SetMapEngineFrameRate(fps);
 
             View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
             LoadMap(filename);
 
             while (!_ended) {
-                if (_updateScript != null)
-                    _updateScript.Execute();
+                if (_updatescripts != null)
+                    _updatescripts.Execute();
 
                 UpdateMapEngine();
                 RenderMap();
 
                 View camera = new View(Program._window.GetView());
                 Program._window.SetView(v);
-                if (_renderScript != null)
-                    _renderScript.Execute();
+                if (_renderscripts != null)
+                    _renderscripts.Execute();
                 Program._window.SetView(camera);
 
                 Program.FlipScreen();
@@ -167,14 +169,34 @@ namespace Engine.Objects
 
             _map = new Map();
             _map.Load(filename);
- 
-            if (_tileAtlas == null)
-                _tileAtlas = new TextureAtlas(1024);
 
             Image[] sources = new Image[_map.Tileset.Tiles.Count];
             for (var i = 0; i < _map.Tileset.Tiles.Count; ++i)
                 sources[i] = _map.Tileset.Tiles[i].Graphic;
-            _tileAtlas.Update(sources);
+            _tileatlas.Update(sources);
+            _fastatlas = new FastTextureAtlas(_tileatlas);
+
+            _tileanims.Clear();
+            List<int> handled = new List<int>();
+            int count = _map.Tileset.Tiles.Count;
+            for (var i = 0; i < count; ++i)
+            {
+                Tile t = _map.Tileset.Tiles[i];
+                if (!t.Animated || handled.Contains(i))
+                    continue;
+
+                var animated = t.Animated;
+                TileAnimHandler handler = new TileAnimHandler(_fastatlas);
+                int index = i;
+                while (animated && !handled.Contains(index))
+                {
+                    handled.Add(index);
+                    handler.AddTile(index, _map.Tileset.Tiles[index].Delay);
+                    index = _map.Tileset.Tiles[index].NextAnim;
+                    animated = _map.Tileset.Tiles[index].Animated;
+                }
+                _tileanims.Add(handler);
+            }
 
             int w = GlobalProps.Width / _map.Tileset.TileWidth + 1;
             int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
@@ -184,13 +206,14 @@ namespace Engine.Objects
                 _cutout.Initialize();
             }
 
-            _layerScripts = new string[_map.Layers.Count];
-            _layerScripts.Initialize();
+            _layerscripts = new string[_map.Layers.Count];
+            _layerscripts.Initialize();
 
             Tuple<List<Vertex[]>, RenderStates> tuple;
-            tuple = _map.GetTileMap(_tileAtlas);
+            tuple = _map.GetTileMap(_tileatlas);
 
             _layerstates = tuple.Item2;
+            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
             _layerverts = tuple.Item1;
 
             Vector2f def_pos = new Vector2f(_map.StartX, _map.StartY);
@@ -290,6 +313,11 @@ namespace Engine.Objects
 
         private static void RenderMap()
         {
+            foreach (TileAnimHandler h in _tileanims)
+                h.Animate(_map.Tileset);
+
+            _fastatlas.Update();
+
             int length = _map.Layers.Count;
             for (var i = 0; i < length; ++i)
             {
@@ -341,18 +369,18 @@ namespace Engine.Objects
 
         private static void SetUpdateScript(object code)
         {
-            _updateScript = new FunctionScript(code);
+            _updatescripts = new FunctionScript(code);
         }
 
         private static void SetRenderScript(object code)
         {
-            _renderScript = new FunctionScript(code);
+            _renderscripts = new FunctionScript(code);
         }
 
         private static void SetLayerRenderer(int layer, string code)
         {
-            if (layer < _layerScripts.Length)
-                _layerScripts[layer] = code;
+            if (layer < _layerscripts.Length)
+                _layerscripts[layer] = code;
         }
     }
 }
