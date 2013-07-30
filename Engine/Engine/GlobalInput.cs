@@ -32,6 +32,8 @@ namespace Engine
 
             if (e.Code == Keyboard.Key.F10)
                 ToggleFullScreen();
+            if (e.Code == Keyboard.Key.F1)
+                GlobalProps.ToggleMap = true;
         }
 
         public static void window_KeyReleased(object sender, KeyEventArgs e) {

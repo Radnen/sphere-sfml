@@ -11,8 +11,9 @@ namespace Engine.Objects
     {
         private static Map _map;
         private static TextureAtlas _tileatlas = new TextureAtlas(1024);
-        private static bool _ended = false;
+        private static bool _ended = false, _toggled;
         private static int _fps = 0;
+        private static double _delta = 0;
 
         private static Vertex[] _cutout;
         private static RenderStates _layerstates;
@@ -111,6 +112,7 @@ namespace Engine.Objects
         private static void SetMapEngineFrameRate(int rate)
         {
             Program._window.SetFramerateLimit((uint)rate);
+            _delta = 1000.0 / rate; // for use later on...
             _fps = rate;
         }
 
@@ -142,8 +144,20 @@ namespace Engine.Objects
             View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
             LoadMap(filename);
+            double time = Program.GetTime();
 
-            while (!_ended) {
+            while (!_ended)
+            {
+                if (GlobalProps.ToggleMap)
+                {
+                    _toggled = !_toggled;
+                    if (_toggled)
+                        Program._window.SetFramerateLimit(0);
+                    else
+                        Program._window.SetFramerateLimit((uint)_fps);
+                    GlobalProps.ToggleMap = false;
+                }
+
                 if (_updatescripts != null)
                     _updatescripts.Execute();
 
@@ -314,7 +328,7 @@ namespace Engine.Objects
         private static void RenderMap()
         {
             foreach (TileAnimHandler h in _tileanims)
-                h.Animate(_map.Tileset);
+                h.Animate();
 
             _fastatlas.Update();
 

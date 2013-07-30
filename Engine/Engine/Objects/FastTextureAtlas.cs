@@ -46,7 +46,7 @@ namespace Engine
             IntRect destRect = Sources[dest];
             _atlas.Position = new SFML.Window.Vector2f(destRect.Left, destRect.Top);
             _atlas.TextureRect = sourceRect;
-            RenderTexture.Draw(_atlas);
+            RenderTexture.Draw(_atlas, _replace);
             _modified = true;
         }
 
