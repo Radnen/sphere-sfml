@@ -267,7 +267,7 @@ namespace Engine
 
         public static void SetPersonFrameRevert(string name, int r)
         {
-            _people[name].Frame = r;
+            _people[name].FrameRevert = r;
         }
 
         public static ObjectInstance GetPersonData(string name)

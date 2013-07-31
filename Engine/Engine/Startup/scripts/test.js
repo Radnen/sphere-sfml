@@ -30,10 +30,11 @@ function game()
 	menu.addOption("Map Engine", function() {
 		CreatePerson("player", "test.rss", false);
 		AttachInput("player");
+		SetPersonFrameRevert("player", 8);
 		AttachCamera("player");
 		SetUpdateScript("Update();");
 		SetRenderScript("Render();");
-		MapEngine("LargeTest.rmp", 60);
+		MapEngine("test.rmp", 60);
 	});
 	menu.addOption("Exit", Exit);
 	

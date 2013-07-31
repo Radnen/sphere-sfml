@@ -191,16 +191,17 @@ namespace Engine.Objects
             _fastatlas = new FastTextureAtlas(_tileatlas);
 
             _tileanims.Clear();
-            List<int> handled = new List<int>();
             int count = _map.Tileset.Tiles.Count;
+            List<int> handled = new List<int>();
             for (var i = 0; i < count; ++i)
             {
                 Tile t = _map.Tileset.Tiles[i];
-                if (!t.Animated || handled.Contains(i))
+                if (!t.Animated)
                     continue;
 
                 var animated = t.Animated;
                 TileAnimHandler handler = new TileAnimHandler(_fastatlas);
+                handled.Clear();
                 int index = i;
                 while (animated && !handled.Contains(index))
                 {

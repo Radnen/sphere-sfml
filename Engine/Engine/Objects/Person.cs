@@ -16,7 +16,7 @@ namespace Engine.Objects
         Queue<PersonCommand> _commandQueue = new Queue<PersonCommand>();
 
         string _direction;
-        int _frame, _image, _delay, _toNextDelay;
+        int _frame, _image, _delay, _toNextDelay, _revert;
 
         public Person(string name, SpritesetInstance spriteset, bool destroy)
         {
@@ -188,11 +188,20 @@ namespace Engine.Objects
                 move.Y *= Speed.Y;
                 Position += move;
 
+                _revert = 0;
                 _toNextDelay += (update ? 1 : 0);
                 if (_toNextDelay == _delay)
                 {
                     Frame = Frame + 1;
                     _toNextDelay = 0;
+                }
+            }
+
+            if (FrameRevert > 0) {
+                _revert++;
+                if (_revert >= FrameRevert) {
+                    Frame = 0;
+                    _revert = 0;
                 }
             }
         }
