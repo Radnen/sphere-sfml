@@ -2,12 +2,9 @@
 
 A .NET Sphere implementation using SFML for graphics, input, etc.
 
-**Downloads:**
- - v0.75: Comming soon.
- - v0.65: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.65.zip
- - v0.60: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.60.zip
- - v0.55: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.55.zip
- - v0.50: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.50.zip
+**Alpha Downloads:**
+ - v0.75: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.75.zip
+ - older: http://radnen.tengudev.com/spheresfml/
 
 Parity with Sphere v1.5
 =======================
@@ -25,7 +22,7 @@ Parity with Sphere v1.5
  - Persons: 66%
  - Surfaces: 66%
  - Primitives: 65%
- - Map Engine: 60%
+ - Map Engine: 65%
 
 **To Do**
  - Networking: 0%
