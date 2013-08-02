@@ -27,19 +27,25 @@ function game()
 	menu.addOption("Surfaces", TestSurfaces);
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
-	menu.addOption("Map Engine", function() {
+	menu.addOption("Test Map Anims", function() {
+		SetUpdateScript("Update();");
+		if (DoesPersonExist("player")) DestroyPerson("player");
+		SetRenderScript("");
+		MapEngine("test.rmp", 60);
+	});
+	menu.addOption("Test Village map", function() {
 		CreatePerson("player", "test.rss", false);
 		AttachInput("player");
 		SetPersonFrameRevert("player", 8);
 		AttachCamera("player");
 		SetUpdateScript("Update();");
 		SetRenderScript("Render();");
-		MapEngine("test.rmp", 60);
+		MapEngine("village.rmp", 60);
 	});
 	menu.addOption("Exit", Exit);
 	
 	while (!done) {
-		menu.draw(16, 16, 96, 160);
+		menu.draw(16, 16, 128, 176);
 		
 		FlipScreen();
 		while (AreKeysLeft()) {

@@ -22,8 +22,6 @@ namespace Engine.Objects
         {
             Name = name;
             DestroyOnMap = destroy;
-            Position = new Vector2f(-1, -1);
-            Mask = new Color(255, 255, 255);
             Speed = new Vector2f(1, 1);
             _innerSS = spriteset;
 
@@ -35,11 +33,15 @@ namespace Engine.Objects
             Image[] images = new Image[s_images.Length];
             for (var i = 0; i < s_images.Length; ++i)
                 images[i] = ((ImageInstance)s_images[i]).GetImage();
-
             _innerAtlas.Update(images);
             _sprite = new Sprite(_innerAtlas.Texture);
+            Mask = new Color(255, 255, 255);
 
-            Direction = "south";
+            Scripts = new FunctionScript[5];
+
+            string d = GetDirectionAt(0);
+            if (!String.IsNullOrEmpty(d))
+                Direction = d;
         }
 
         public string Name { get; set; }
@@ -48,10 +50,28 @@ namespace Engine.Objects
         public Vector2f Offset { get; set; }
         public Vector2f Position { get; set; }
         public Vector2f Speed { get; set; }
-        public Color Mask { get; set; }
+
+        public Color Mask
+        {
+            get { return _sprite.Color; }
+            set { _sprite.Color = value; }
+        }
+
         public int FrameRevert { get; set; }
         public int Layer { get; set; }
         public ObjectInstance Data { get; set; }
+        public FunctionScript[] Scripts { get; private set; }
+
+        public void CallScript(PersonScripts script)
+        {
+            if (Scripts[(int)script] != null)
+                Scripts[(int)script].Execute();
+        }
+
+        public void SetScript(PersonScripts script, object instance)
+        {
+            Scripts[(int)script] = new FunctionScript(instance);
+        }
 
         public ObjectInstance Base
         {
@@ -73,11 +93,9 @@ namespace Engine.Objects
                 ArrayInstance frames = dir["frames"] as ArrayInstance;
                 _frame = (int)(value % frames.Length);
                 ObjectInstance frame = frames[_frame] as ObjectInstance;
-                if (frame != null)
-                {
-                    _image = (int)frame["index"];
-                    _delay = (int)frame["delay"];
-                }
+                _image = (int)frame["index"];
+                _delay = (int)frame["delay"];
+                _sprite.TextureRect = _innerAtlas.Sources[_image];
             }
         }
 
@@ -112,15 +130,16 @@ namespace Engine.Objects
             Vector2f point = new Vector2f();
             int t = -1;
 
-            int sx = (int)Math.Floor(Position.X / tiles.TileWidth);
-            int sy = (int)Math.Floor(Position.Y / tiles.TileHeight);
+            int sx = (int)Math.Floor(Position.X / tiles.TileWidth) - 1;
+            int sy = (int)Math.Floor(Position.Y / tiles.TileHeight) - 1;
 
-            for (int x = sx; x < sx+3; ++x)
+            for (int x = sx; x < sx + 3; ++x)
             {
                 point.X = x * 16;
-                for (int y = sy; y < sy+3; ++y)
+                for (int y = sy; y < sy + 3; ++y)
                 {
-                    if ((t = layer.GetTile(x, y)) < 0)
+                    t = layer.GetTile(x, y);
+                    if (t < 0)
                         continue;
                     Tile tile = tiles.Tiles[t];
                 }
@@ -129,9 +148,7 @@ namespace Engine.Objects
 
         public void Draw()
         {
-            _sprite.TextureRect = _innerAtlas.Sources[_image];
             _sprite.Position = new Vector2f(Position.X - _base.Left + Offset.X, Position.Y - _base.Top + Offset.Y);
-            _sprite.Color = Mask;
             Program._window.Draw(_sprite);
         }
 
@@ -214,6 +231,18 @@ namespace Engine.Objects
         public void ClearComands()
         {
             _commandQueue.Clear();
+        }
+
+        private string GetDirectionAt(int index)
+        {
+            ArrayInstance directions = _innerSS["directions"] as ArrayInstance;
+            if (index < 0 || index >= directions.Length)
+                return "";
+            ObjectInstance dir = directions[index] as ObjectInstance;
+            if (dir != null)
+                return (string)dir["name"];
+            else
+                return "";
         }
 
         private ObjectInstance GetDirection(string name)

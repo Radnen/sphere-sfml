@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using System.Text;
-using SFML.Graphics;
-using SFML.Window;
 using Jurassic;
 using Jurassic.Library;
+using SFML.Graphics;
+using SFML.Window;
 
 namespace Engine.Objects
 {

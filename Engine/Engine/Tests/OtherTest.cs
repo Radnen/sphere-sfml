@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System;
 using Jurassic.Library;
+using Engine.Objects;
 
 namespace Engine
 {

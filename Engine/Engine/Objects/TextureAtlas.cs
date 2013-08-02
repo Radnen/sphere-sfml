@@ -2,7 +2,7 @@ using System;
 using SFML.Graphics;
 using SFML.Window;
 
-namespace Engine
+namespace Engine.Objects
 {
     public class TextureAtlas
     {

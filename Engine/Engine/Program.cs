@@ -24,29 +24,6 @@ namespace Engine
 
         static GameFile _game = new GameFile();
 
-        public static ArrayInstance Create(ScriptEngine e)
-        {
-            object[] names = new object[4] { "north", "south", "east", "west" };
-            object[] dirs = new object[4];
-
-            for (int i = 0; i < dirs.Length; ++i)
-            {
-                ObjectInstance test = ObjectConstructor.Create(e, e.Object.InstancePrototype);
-                test["name"] = names[i];
-                dirs[i] = test;
-            }
-
-            return e.Array.New(dirs);
-        }
-
-        public static void Test(ArrayInstance a) {
-            for (var i = 0; i < a.Length; ++i) {
-                ObjectInstance o = a[i] as ObjectInstance;
-                string name = (string)o["name"];
-                Console.WriteLine(name);
-            }
-        }
-
         static void Main(string[] args)
         {
             string filename;
@@ -291,8 +268,8 @@ namespace Engine
             engine.SetGlobalFunction("RemoveDirectory", new Action<string>(RemoveDirectory));
             engine.SetGlobalFunction("RemoveFile", new Action<string>(RemoveFile));
             engine.SetGlobalFunction("Rename", new Func<string, string, bool>(Rename));
-            engine.SetGlobalFunction("HashFromFile", new Func<string, string>(HashFromFile));
-            engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, string>(HashByteArray));
+            engine.SetGlobalFunction("HashFromFile", new Func<string, bool, string>(HashFromFile));
+            engine.SetGlobalFunction("HashByteArray", new Func<ByteArrayInstance, bool, string>(HashByteArray));
             engine.SetGlobalFunction("CreateStringFromCode", new Func<int, string>(CreateStringFromCode));
             engine.SetGlobalFunction("SetScaled", new Action<bool>(SetScaled));
             engine.SetGlobalFunction("GetGameList", new Func<ArrayInstance>(GetGameList));
@@ -752,20 +729,26 @@ namespace Engine
             return _engine.Array.New(names);
         }
 
-        static string HashFromFile(string filename)
+        static string HashFromFile(string filename, [DefaultParameterValue(false)] bool sha = false)
         {
             if (!File.Exists(filename))
                 return "";
 
-            using (MD5 mdHash = MD5.Create())
+            HashAlgorithm hash;
+            if (sha)
+                hash = SHA1.Create();
+            else
+                hash = MD5.Create();
+
+            using (hash)
             {
-                return GetMd5Hash(mdHash, File.ReadAllBytes(filename));
+                return GetHash(hash, File.ReadAllBytes(filename));
             }
         }
 
-        static string GetMd5Hash(MD5 md5Hash, byte[] content)
+        static string GetHash(HashAlgorithm algorithm, byte[] content)
         {
-            byte[] data = md5Hash.ComputeHash(content);
+            byte[] data = algorithm.ComputeHash(content);
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
 
             for (int i = 0; i < data.Length; i++)
@@ -775,11 +758,17 @@ namespace Engine
             return builder.ToString();
         }
 
-        static string HashByteArray(ByteArrayInstance array)
+        static string HashByteArray(ByteArrayInstance array, [DefaultParameterValue(false)] bool sha = false)
         {
-            using (MD5 mdHash = MD5.Create())
+            HashAlgorithm hash;
+            if (sha)
+                hash = SHA1.Create();
+            else
+                hash = MD5.Create();
+
+            using (hash)
             {
-                return GetMd5Hash(mdHash, array.GetBytes());
+                return GetHash(hash, array.GetBytes());
             }
         }
 

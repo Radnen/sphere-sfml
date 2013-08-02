@@ -1,7 +1,10 @@
 using System;
 
-namespace Engine
+namespace Engine.Objects
 {
+    /// <summary>
+    /// The queueable command types used by person objects.
+    /// </summary>
     public enum Commands
     {
         Wait = 0,

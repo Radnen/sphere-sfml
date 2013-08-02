@@ -33,7 +33,7 @@ namespace Engine
             if (e.Code == Keyboard.Key.F10)
                 ToggleFullScreen();
             if (e.Code == Keyboard.Key.F1)
-                GlobalProps.ToggleMap = true;
+                Engine.Objects.MapEngineHandler.ToggleFPSThrottle();
         }
 
         public static void window_KeyReleased(object sender, KeyEventArgs e) {

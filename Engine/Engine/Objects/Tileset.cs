@@ -169,6 +169,18 @@ namespace Engine.Objects
         }
 
         /// <summary>
+        /// Gets the tiles as an array of tile images only.
+        /// </summary>
+        /// <returns>The array list.</returns>
+        public Image[] GetImageArray()
+        {
+            Image[] images = new Image[Tiles.Count];
+            for (var i = 0; i < Tiles.Count; ++i)
+                images[i] = Tiles[i].Graphic;
+            return images;
+        }
+
+        /// <summary>
         /// Disposes and clears this Tileset.
         /// </summary>
         public void Dispose()

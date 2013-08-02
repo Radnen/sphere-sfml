@@ -1,7 +1,7 @@
 using System;
 using SFML.Graphics;
 
-namespace Engine
+namespace Engine.Objects
 {
     /// <summary>
     /// Wraps a texture atlas to perform fast hardware-accelerated

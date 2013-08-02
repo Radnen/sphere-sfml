@@ -9,10 +9,10 @@ namespace Engine
 {
     public static class PersonManager
     {
-        private static SortedDictionary<string, Person> _people = new SortedDictionary<string, Person>();
+        private static Dictionary<string, Person> _people = new Dictionary<string, Person>();
         private static List<string> _personlist = new List<string>();
+        public static List<Person> People { get; private set; }
 
-        public static SortedDictionary<string, Person> People { get { return _people; } }
         public static string _current = "";
 
         public static void BindToEngine(ScriptEngine engine)
@@ -59,6 +59,8 @@ namespace Engine
             engine.SetGlobalFunction("SetPersonData", new Action<string, ObjectInstance>(SetPersonData));
             engine.SetGlobalFunction("SetPersonValue", new Action<string, string, object>(SetPersonValue));
             engine.SetGlobalFunction("GetPersonValue", new Func<string, string, object>(GetPersonValue));
+            engine.SetGlobalFunction("SetPersonScript", new Action<string, int, object>(SetPersonScript));
+            engine.SetGlobalFunction("CallPersonScript", new Action<string, int>(CallPersonScript));
         }
 
         public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
@@ -71,12 +73,34 @@ namespace Engine
             _personlist.Add(name);
         }
 
+        public static void CreatePerson(Entity person) {
+            if (_people.ContainsKey(person.Name))
+                return;
+
+            //string ss = GlobalProps.BasePath + "/spritesets/" + person.Spriteset;
+            //SpritesetInstance sprite = new SpritesetInstance(Program._engine, ss);
+            SpritesetInstance sprite = AssetManager.GetSpriteset(person.Spriteset);
+            Person p = new Person(person.Name, sprite, true);
+            p.Layer = person.Layer;
+            int w = (int)p.Base["x2"] - (int)p.Base["x1"];
+            int h = (int)p.Base["y2"] - (int)p.Base["y1"];
+            p.Position = new Vector2f(person.X - w/2, person.Y - h/2);
+            for (var i = 0; i < person.Scripts.Count; ++i)
+                p.SetScript((PersonScripts)i, person.Scripts[i]);
+
+            _people.Add(person.Name, p);
+            _personlist.Add(person.Name);
+        }
+
         public static void DestroyPerson(string name)
         {
             _people.Remove(name);
             _personlist.Remove(name);
         }
 
+        /// <summary>
+        /// Removes the non-essential person objects on a map.
+        /// </summary>
         public static void RemoveNonEssential()
         {
             for (var i = 0; i < _personlist.Count; ++i)
@@ -290,6 +314,17 @@ namespace Engine
         public static object GetPersonValue(string name, string key)
         {
             return _people[name].Data[key];
+        }
+
+        public static void CallPersonScript(string name, int type)
+        {
+            _current = name;
+            _people[name].CallScript((PersonScripts)type);
+        }
+
+        public static void SetPersonScript(string name, int type, object script)
+        {
+            _people[name].SetScript((PersonScripts)type, script);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
-using SFML.Window;
-using SFML.Graphics;
 using Jurassic;
 using Jurassic.Library;
+using SFML.Graphics;
+using SFML.Window;
 
 namespace Engine.Objects
 {
@@ -19,7 +19,7 @@ namespace Engine.Objects
 		public ImageInstance(ScriptEngine parent, string filename)
             : base(parent)
         {
-            _image = new Texture(filename);
+            _image = AssetManager.GetTexture(filename);
             Init();
         }
 

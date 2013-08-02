@@ -2,7 +2,7 @@ using System;
 using Jurassic;
 using Jurassic.Library;
 
-namespace Engine
+namespace Engine.Objects
 {
     public class ByteArrayInstance : ObjectInstance
     {

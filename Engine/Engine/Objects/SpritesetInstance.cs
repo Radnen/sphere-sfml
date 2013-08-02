@@ -12,6 +12,7 @@ namespace Engine.Objects
         short _version;
         short _width, _height;
         short _bx1, _by1, _bx2, _by2;
+        string _filename = "";
 
         public SpritesetInstance(ScriptEngine parent)
             : base(parent)
@@ -22,6 +23,7 @@ namespace Engine.Objects
         public SpritesetInstance(ScriptEngine parent, string filename)
             : base (parent)
         {
+            _filename = filename;
             ReadFromFile(filename);
             PopulateFunctions();
         }
@@ -77,7 +79,9 @@ namespace Engine.Objects
         private void ReadFromFile(string filename)
         {
             if (!File.Exists(filename))
-                throw new FileNotFoundException();
+            {
+                new SpritesetException(filename, "can't find file");
+            }
 
             using (BinaryReader reader = new BinaryReader(File.OpenRead(filename)))
             {
@@ -199,6 +203,7 @@ namespace Engine.Objects
             instance._by1 = _by1; instance._by2 = _by2;
             instance._width = _width;
             instance._height = _height;
+            instance._filename = _filename;
 
             ArrayInstance my_images = this["images"] as ArrayInstance;
             object[] images = new object[my_images.Length];
@@ -242,7 +247,7 @@ namespace Engine.Objects
     public class SpritesetException : Exception
     {
         public SpritesetException(string filename, string msg)
-            : base(string.Format("Invalid WindowStyle at {0}: {1}", filename, msg))
+            : base(string.Format("Invalid Spriteset [{0}]: {1}", filename, msg))
         {
         }
     }

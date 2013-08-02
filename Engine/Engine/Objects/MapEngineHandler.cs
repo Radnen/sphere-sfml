@@ -10,7 +10,7 @@ namespace Engine.Objects
     public static class MapEngineHandler
     {
         private static Map _map;
-        private static TextureAtlas _tileatlas = new TextureAtlas(1024);
+        private static TextureAtlas _tileatlas;
         private static bool _ended = false, _toggled;
         private static int _fps = 0;
         private static double _delta = 0;
@@ -19,14 +19,20 @@ namespace Engine.Objects
         private static RenderStates _layerstates;
         private static List<Vertex[]> _layerverts;
 
-        private static List<TileAnimHandler> _tileanims = new List<TileAnimHandler>();
-        private static FunctionScript _updatescripts;
-        private static FunctionScript _renderscripts;
-        private static string[] _layerscripts;
+        private static List<TileAnimHandler> _tileanims;
+        private static FunctionScript _updatescript;
+        private static FunctionScript _renderscript;
+        private static FunctionScript[] _renderers;
         private static FastTextureAtlas _fastatlas;
 
         private static string camera_ent = "";
         private static string input_ent = "";
+
+        static MapEngineHandler()
+        {
+            _tileanims = new List<TileAnimHandler>();
+            _tileatlas = new TextureAtlas(1024);
+        }
 
         public static void BindToEngine(ScriptEngine engine)
         {
@@ -148,26 +154,16 @@ namespace Engine.Objects
 
             while (!_ended)
             {
-                if (GlobalProps.ToggleMap)
-                {
-                    _toggled = !_toggled;
-                    if (_toggled)
-                        Program._window.SetFramerateLimit(0);
-                    else
-                        Program._window.SetFramerateLimit((uint)_fps);
-                    GlobalProps.ToggleMap = false;
-                }
-
-                if (_updatescripts != null)
-                    _updatescripts.Execute();
+                if (_updatescript != null)
+                    _updatescript.Execute();
 
                 UpdateMapEngine();
                 RenderMap();
 
                 View camera = new View(Program._window.GetView());
                 Program._window.SetView(v);
-                if (_renderscripts != null)
-                    _renderscripts.Execute();
+                if (_renderscript != null)
+                    _renderscript.Execute();
                 Program._window.SetView(camera);
 
                 Program.FlipScreen();
@@ -177,32 +173,95 @@ namespace Engine.Objects
             Program.SetFrameRate(Program.GetFrameRate());
         }
 
+        /// <summary>
+        /// Toggles the FPS throttle.
+        /// </summary>
+        public static void ToggleFPSThrottle()
+        {
+            _toggled = !_toggled;
+            if (_toggled)
+                Program._window.SetFramerateLimit(0);
+            else
+                Program._window.SetFramerateLimit((uint)_fps);
+        }
+
         private static void LoadMap(string filename)
         {
             PersonManager.RemoveNonEssential();
-
             _map = new Map();
             _map.Load(filename);
 
-            Image[] sources = new Image[_map.Tileset.Tiles.Count];
-            for (var i = 0; i < _map.Tileset.Tiles.Count; ++i)
-                sources[i] = _map.Tileset.Tiles[i].Graphic;
-            _tileatlas.Update(sources);
-            _fastatlas = new FastTextureAtlas(_tileatlas);
+            Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
+            foreach (Person p in PersonManager.People)
+            {
+                p.Position = start_pos;
+                p.Layer = _map.StartLayer;
+            }
 
+            AddPersons();
+
+            ConstructFastAtlas();
+            ParseAnimations();
+            UpdateCutout();
+
+            _renderers = new FunctionScript[_map.Layers.Count];
+
+            Tuple<List<Vertex[]>, RenderStates> tuple;
+            tuple = _map.GetTileMap(_tileatlas);
+
+            _layerstates = tuple.Item2;
+            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
+            _layerverts = tuple.Item1;
+        }
+
+        /// <summary>
+        /// Adds the persons in this map instance to the person handler.
+        /// </summary>
+        private static void AddPersons()
+        {
+            foreach (Entity e in _map.Entities)
+            {
+                if (e.Type == Entity.EntityType.Person) {
+                    PersonManager.CreatePerson(e);
+                    PersonManager.CallPersonScript(e.Name, (int)PersonScripts.Create);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Turns the tileset into a tile atlas and then put it into
+        /// a wrapper for fast tetxure manipulation.
+        /// </summary>
+        private static void ConstructFastAtlas()
+        {
+            _tileatlas.Update(_map.Tileset.GetImageArray());
+            _fastatlas = new FastTextureAtlas(_tileatlas);
+        }
+
+        /// <summary>
+        /// Goes through the tiles and finds those that animate and
+        /// Puts their index references into an easily managed class.
+        /// </summary>
+        private static void ParseAnimations()
+        {
             _tileanims.Clear();
+
             int count = _map.Tileset.Tiles.Count;
-            List<int> handled = new List<int>();
+            List<int> handled = new List<int>(); // tile anims can be cyclical, this stops it.
             for (var i = 0; i < count; ++i)
             {
                 Tile t = _map.Tileset.Tiles[i];
                 if (!t.Animated)
                     continue;
 
-                var animated = t.Animated;
-                TileAnimHandler handler = new TileAnimHandler(_fastatlas);
                 handled.Clear();
-                int index = i;
+                var animated = t.Animated;
+                var handler = new TileAnimHandler(_fastatlas);
+                var index = i;
+
+                // If we found a tile animation, go through it's 
+                // 'linked list' of next-tile animations.
+
                 while (animated && !handled.Contains(index))
                 {
                     handled.Add(index);
@@ -212,31 +271,21 @@ namespace Engine.Objects
                 }
                 _tileanims.Add(handler);
             }
+        }
 
+        /// <summary>
+        /// Updates the max num of vertices that the size of the screen
+        /// can handle.
+        /// </summary>
+        private static void UpdateCutout()
+        {
             int w = GlobalProps.Width / _map.Tileset.TileWidth + 1;
             int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
             int length = w * h * 4;
-            if (_cutout == null || _cutout.Length != length) {
+            if (_cutout == null)
                 _cutout = new Vertex[length];
-                _cutout.Initialize();
-            }
-
-            _layerscripts = new string[_map.Layers.Count];
-            _layerscripts.Initialize();
-
-            Tuple<List<Vertex[]>, RenderStates> tuple;
-            tuple = _map.GetTileMap(_tileatlas);
-
-            _layerstates = tuple.Item2;
-            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
-            _layerverts = tuple.Item1;
-
-            Vector2f def_pos = new Vector2f(_map.StartX, _map.StartY);
-            foreach (Person p in PersonManager.People.Values)
-            {
-                if (p.Position.X < 0 || p.Position.Y < 0)
-                    p.Position = def_pos;
-            }
+            else if (_cutout.Length != length)
+                Array.Resize(ref _cutout, length);
         }
 
         private static void UpdateMapEngine()
@@ -295,7 +344,7 @@ namespace Engine.Objects
                 }
             }
 
-            foreach (Person p in PersonManager.People.Values)
+            foreach (Person p in PersonManager.People)
                 p.UpdateCommandQueue();
 
             if (IsCameraAttached())
@@ -338,8 +387,9 @@ namespace Engine.Objects
             {
                 CutoutVerts(_layerverts[i], GetCameraX(), GetCameraY(), _map.Layers[i].Width);
                 Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
-                if (i == _map.StartLayer)
-                    DrawPersons();
+                DrawPersons(i);
+                if (_renderers[i] != null)
+                    _renderers[i].Execute();
             }
         }
 
@@ -348,10 +398,15 @@ namespace Engine.Objects
             _ended = true;
         }
 
-        private static void DrawPersons()
+        /// <summary>
+        /// Draws the persons for the requested layer.
+        /// </summary>
+        /// <param name="layer">Layer.</param>
+        private static void DrawPersons(int layer)
         {
-            foreach (Person p in PersonManager.People.Values)
-                p.Draw();
+            foreach (Person p in PersonManager.People)
+                if (p.Layer == layer)
+                    p.Draw();
         }
 
         private static void SetCameraX(int x) {
@@ -384,18 +439,29 @@ namespace Engine.Objects
 
         private static void SetUpdateScript(object code)
         {
-            _updatescripts = new FunctionScript(code);
+            if (code == null || (code is string && (string)code == ""))
+                _updatescript = null;
+            else
+                _updatescript = new FunctionScript(code);
         }
 
         private static void SetRenderScript(object code)
         {
-            _renderscripts = new FunctionScript(code);
+            if (code == null || (code is string && (string)code == ""))
+                _renderscript = null;
+            else
+                _renderscript = new FunctionScript(code);
         }
 
-        private static void SetLayerRenderer(int layer, string code)
+        private static void SetLayerRenderer(int layer, object code)
         {
-            if (layer < _layerscripts.Length)
-                _layerscripts[layer] = code;
+            if (layer > 0 && layer < _renderers.Length)
+            {
+                if (code == null || (code is string && (string)code == ""))
+                    _renderers[layer] = null;
+                else
+                    _renderers[layer] = new FunctionScript(code);
+            }
         }
     }
 }

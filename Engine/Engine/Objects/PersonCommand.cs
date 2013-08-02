@@ -4,8 +4,8 @@ namespace Engine.Objects
 {
     public struct PersonCommand
     {
-        public int command;
-        public bool immediate;
+        public readonly int command;
+        public readonly bool immediate;
 
         public PersonCommand(int cmd, bool imm)
         {
