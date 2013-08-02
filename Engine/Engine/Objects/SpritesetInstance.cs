@@ -187,8 +187,8 @@ namespace Engine.Objects
 
                     writer.Write((short)frames.Length);
                     writer.Write(new Byte[6]);
-                    writer.Write((short)((string)direction["name"]).Length);
-                    writer.Write(((string)direction["name"]).ToCharArray());
+                    writer.Write((short)(((string)direction["name"]).Length + 1));
+                    writer.Write((((string)direction["name"]) + "\0").ToCharArray());
 
                     for (var f = 0; f < frames.Length; ++f)
                     {

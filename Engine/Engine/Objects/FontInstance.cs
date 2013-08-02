@@ -18,6 +18,7 @@ namespace Engine.Objects
         Image[] _glyphs;
         uint _height = 0;
         short _version = 0;
+        bool _updated = false;
 
         public Image GetGlyph(int num) {
             return _glyphs[num];
@@ -66,9 +67,17 @@ namespace Engine.Objects
             _fontSprite = new Sprite(_atlas.Texture);
         }
 
+        private void CheckUpdate() {
+            if (_updated) {
+                _atlas.Update(_glyphs);
+                _updated = false;
+            }
+        }
+
         [JSFunction(Name = "drawText")]
         public void DrawText(double x, double y, string text)
         {
+            CheckUpdate();
             Vector2f start = new Vector2f((float)x, (float)y);
             Vector2f offset = new Vector2f(0, 0);
 
@@ -87,6 +96,7 @@ namespace Engine.Objects
         [JSFunction(Name = "drawZoomedText")]
         public void DrawZoomedText(double x, double y, double zoom, string text)
         {
+            CheckUpdate();
             Vector2f start = new Vector2f((float)x, (float)y);
             Vector2f offset = new Vector2f(0, 0);
             Vector2f scale = new Vector2f((float)zoom, (float)zoom);
@@ -106,6 +116,7 @@ namespace Engine.Objects
         [JSFunction(Name = "drawTextBox")]
         public void DrawTextBox(double x, double y, double w, double h, int spacing, string text)
         {
+            CheckUpdate();
             ArrayInstance array = Wrap(text, (int)w);
             spacing += (int)_height;
             for (var i = 0; i < array.Length; ++i) {
@@ -118,16 +129,13 @@ namespace Engine.Objects
         {
             _glyphs[ch].Dispose();
             _glyphs[ch] = image.GetImage();
-            _atlas.Update(_glyphs);
+            _updated = true;
         }
 
         [JSFunction(Name = "getCharacterImage")]
         public ImageInstance GetCharacterImage(int ch)
         {
-            using (Image img = _atlas.GetImageAt((uint)ch))
-            {
-                return new ImageInstance(Program._engine, new Texture(img), false);
-            }
+            return new ImageInstance(Engine, new Texture(_glyphs[ch]), false);
         }
 
         private StringBuilder word = new StringBuilder(), current = new StringBuilder();
@@ -155,7 +163,7 @@ namespace Engine.Objects
                     }
                     else
                     {
-                        current.Append(word).Append(ws); // else add it to current line.
+                        current.Append(word).Append(ws); // ... else add it to current line.
                         x += word_w + white_w;
                     }
 
@@ -164,7 +172,7 @@ namespace Engine.Objects
                 }
                 else if (c == '\n')
                 {
-                    array.Push(current.Append(word).ToString()); // On \n just push current line,
+                    array.Push(current.Append(word).ToString()); // On \n just push current line.
                     current.Clear();
                     word.Clear();
                     word_w = x = 0;
@@ -172,7 +180,7 @@ namespace Engine.Objects
                 else
                 {
                     int char_w = _atlas.Sources[c].Width;
-                    if (word_w + char_w > width && x == 0) // break up long lines
+                    if (word_w + char_w > width && x == 0) // break up long lines.
                     {
                         array.Push(current.Append(word).ToString());
                         current.Clear();
@@ -186,8 +194,8 @@ namespace Engine.Objects
                         x = 0;
                     }
 
-                    word.Append(c);        // Append character...
-                    word_w += char_w; // and add to consumed width.
+                    word.Append(c);   // Append character ...
+                    word_w += char_w; // ... and add to consumed width.
                 }
             }
             array.Push(current.Append(word).ToString());
@@ -199,9 +207,7 @@ namespace Engine.Objects
         {
             int w = 0;
             for (var i = 0; i < text.Length; ++i)
-            {
-                w += _atlas.Sources[(int)text[i]].Width;
-            }
+                w += _atlas.Sources[text[i]].Width;
             return w;
         }
 
@@ -239,13 +245,14 @@ namespace Engine.Objects
         public FontInstance Clone()
         {
             FontInstance font = new FontInstance(Engine);
-            font._atlas = new TextureAtlas(_atlas);
+            font._atlas = new TextureAtlas(_atlas.Size);
             font._fontSprite = new Sprite(font._atlas.Texture);
             font._glyphs = new Image[_glyphs.Length];
             for (var i = 0; i < _glyphs.Length; ++i)
                 font._glyphs[i] = new Image(_glyphs[i]);
             font._height = _height;
             font._version = _version;
+            font._updated = true;
             return font;
         }
 

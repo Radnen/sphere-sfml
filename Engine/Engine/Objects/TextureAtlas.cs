@@ -7,49 +7,54 @@ namespace Engine.Objects
     public class TextureAtlas
     {
         private Image _canvas;
-        public uint _size { get; private set; }
+        public uint Size { get; private set; }
         public Texture Texture { get; private set; }
         public IntRect[] Sources { get; private set; }
         private bool _modified = false; 
 
         public TextureAtlas(uint size)
         {
-            _size = size;
+            Size = size;
             _canvas = new Image(size, size, new Color(0, 0, 0, 0));
             Texture = new Texture(_canvas);
         }
 
         public TextureAtlas(TextureAtlas copy)
         {
-            _size = copy._size;
+            Size = copy.Size;
             _canvas = new Image(copy._canvas);
             Texture = new Texture(_canvas);
             Sources = new IntRect[copy.Sources.Length];
             copy.Sources.CopyTo(Sources, 0);
         }
 
-        public void Update(Image[] sources)
+        /// <summary>
+        /// Packs the images in the image list into a single texture.
+        /// </summary>
+        /// <param name="sources">Sources.</param>
+        public void Update(Image[] images, bool clear = false)
         {
-            _canvas.Clear(new Color(0, 0, 0, 0));
+            if (clear)
+                _canvas.Clear(new Color(0, 0, 0, 0));
 
-            Sources = new IntRect[sources.Length];
+            Sources = new IntRect[images.Length];
             uint x = 0, y = 0, height = 0;
 
             // construct a packed atlas:
-            for (var i = 0; i < sources.Length; ++i)
+            for (var i = 0; i < images.Length; ++i)
             {
-                uint width = sources[i].Size.X;
+                uint width = images[i].Size.X;
 
-                if (x + width >= _size)
+                if (x + width >= Size)
                 {
                     x = 0;
                     y += height;
                 }
 
-                height = Math.Max(height, sources[i].Size.Y);
+                height = Math.Max(height, images[i].Size.Y);
 
                 Sources[i] = new IntRect((int)x, (int)y, (int)width, (int)height);
-                _canvas.Copy(sources[i], x, y);
+                _canvas.Copy(images[i], x, y);
 
                 x += width;
             }
@@ -64,6 +69,10 @@ namespace Engine.Objects
             return image;
         }
 
+        /// <summary>
+        /// This will clip the image, replacing the atlas graohic.
+        /// In order to change the physical bounds, see <see cref="update(image[])"/>.
+        /// </summary>
         public void SetImageAt(uint index, Image img)
         {
             IntRect dest = Sources[index];
@@ -71,7 +80,7 @@ namespace Engine.Objects
             _modified = true;
         }
 
-        public void Update()
+        public void Refresh()
         {
             if (_modified)
             {

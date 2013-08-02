@@ -381,7 +381,7 @@ namespace Engine.Objects
             foreach (TileAnimHandler h in _tileanims)
                 h.Animate();
 
-            _fastatlas.Update();
+            _fastatlas.Refresh();
 
             int length = _map.Layers.Count;
             for (var i = 0; i < length; ++i)

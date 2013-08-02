@@ -28,7 +28,7 @@ namespace Engine.Objects
         {
             TextureAtlas = atlas;
             _atlas = new Sprite(TextureAtlas.Texture);
-            RenderTexture = new RenderTexture(atlas._size, atlas._size);
+            RenderTexture = new RenderTexture(atlas.Size, atlas.Size);
             RenderTexture.Draw(_atlas);
             RenderTexture.Display();
             _replace = new RenderStates(BlendMode.None, Transform.Identity, null, null);
@@ -44,7 +44,7 @@ namespace Engine.Objects
             _modified = true;
         }
 
-        public void Update()
+        public void Refresh()
         {
             if (_modified)
             {
