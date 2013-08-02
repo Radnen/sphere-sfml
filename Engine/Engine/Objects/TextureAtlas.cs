@@ -51,13 +51,7 @@ namespace Engine.Objects
                 Sources[i] = new IntRect((int)x, (int)y, (int)width, (int)height);
                 _canvas.Copy(sources[i], x, y);
 
-                if (x + width >= _size)
-                {
-                    x = 0;
-                    y += height;
-                }
-                else
-                    x += width;
+                x += width;
             }
 
             Texture.Update(_canvas);

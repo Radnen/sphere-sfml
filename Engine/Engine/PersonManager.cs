@@ -9,11 +9,18 @@ namespace Engine
 {
     public static class PersonManager
     {
-        private static Dictionary<string, Person> _people = new Dictionary<string, Person>();
-        private static List<string> _personlist = new List<string>();
+        private static Dictionary<string, Person> _people;
+        private static List<string> _personlist;
         public static List<Person> People { get; private set; }
 
         public static string _current = "";
+
+        static PersonManager()
+        {
+            People = new List<Person>();
+            _personlist = new List<string>();
+            _people = new Dictionary<string, Person>();
+        }
 
         public static void BindToEngine(ScriptEngine engine)
         {
@@ -61,16 +68,18 @@ namespace Engine
             engine.SetGlobalFunction("GetPersonValue", new Func<string, string, object>(GetPersonValue));
             engine.SetGlobalFunction("SetPersonScript", new Action<string, int, object>(SetPersonScript));
             engine.SetGlobalFunction("CallPersonScript", new Action<string, int>(CallPersonScript));
+            engine.SetGlobalFunction("DoesPersonExist", new Func<string, bool>(DoesPersonExist));
         }
 
         public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
         {
             if (_people.ContainsKey(name))
                 return;
-            ss = GlobalProps.BasePath + "/spritesets/" + ss;
-            SpritesetInstance sprite = new SpritesetInstance(Program._engine, ss);
-            _people.Add(name, new Person(name, sprite, destroy));
+            SpritesetInstance sprite = AssetManager.GetSpriteset(ss);
+            Person p = new Person(name, sprite, destroy);
+            _people.Add(name, p);
             _personlist.Add(name);
+            People.Add(p);
         }
 
         public static void CreatePerson(Entity person) {
@@ -90,12 +99,17 @@ namespace Engine
 
             _people.Add(person.Name, p);
             _personlist.Add(person.Name);
+            People.Add(p);
         }
 
         public static void DestroyPerson(string name)
         {
-            _people.Remove(name);
-            _personlist.Remove(name);
+            if (_people.ContainsKey(name))
+            {
+                People.Remove(_people[name]);
+                _people.Remove(name);
+                _personlist.Remove(name);
+            }
         }
 
         /// <summary>
@@ -107,8 +121,7 @@ namespace Engine
             {
                 if (_people[_personlist[i]].DestroyOnMap)
                 {
-                    _people.Remove(_personlist[i]);
-                    _personlist.RemoveAt(i);
+                    DestroyPerson(_personlist[i]);
                     i--;
                 }
             }
@@ -187,6 +200,11 @@ namespace Engine
         public static ArrayInstance GetPersonList()
         {
             return Program._engine.Array.New(_personlist.ToArray());
+        }
+
+        public static bool DoesPersonExist(string name)
+        {
+            return _people.ContainsKey(name);
         }
 
         public static void SetPersonMask(string name, ColorInstance color)

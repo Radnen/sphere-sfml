@@ -29,14 +29,8 @@ namespace Engine.Objects
             TextureAtlas = atlas;
             _atlas = new Sprite(TextureAtlas.Texture);
             RenderTexture = new RenderTexture(atlas._size, atlas._size);
-
-            foreach (IntRect r in atlas.Sources)
-            {
-                _atlas.TextureRect = r;
-                _atlas.Position = new SFML.Window.Vector2f(r.Left, r.Top);
-                RenderTexture.Draw(_atlas);
-            }
-
+            RenderTexture.Draw(_atlas);
+            RenderTexture.Display();
             _replace = new RenderStates(BlendMode.None, Transform.Identity, null, null);
         }
 

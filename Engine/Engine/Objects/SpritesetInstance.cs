@@ -13,6 +13,7 @@ namespace Engine.Objects
         short _width, _height;
         short _bx1, _by1, _bx2, _by2;
         string _filename = "";
+        public TextureAtlas TextureAtlas { get; private set; }
 
         public SpritesetInstance(ScriptEngine parent)
             : base(parent)
@@ -54,6 +55,14 @@ namespace Engine.Objects
 
             this["directions"] = Program._engine.Array.New(directions);
             this["base"] = CreateBase();
+        }
+
+        private void ConstructTextureAtlas(Image[] list)
+        {
+            if (TextureAtlas == null)
+                TextureAtlas = new TextureAtlas(1024);
+
+            TextureAtlas.Update(list);
         }
 
         public ObjectInstance CreateBase()
@@ -102,12 +111,16 @@ namespace Engine.Objects
                 else
                 {
                     object[] images = new object[num_images];
+                    Image[] list = new Image[num_images];
                     for (var i = 0; i < num_images; ++i)
                     {
                         int size = _width * _height * 4;
-                        Image frame = new Image((uint)_width, (uint)_height, reader.ReadBytes(size));
-                        images[i] = new ImageInstance(Program._engine, new Texture(frame), false);
+                        Image img = new Image((uint)_width, (uint)_height, reader.ReadBytes(size));
+                        images[i] = new ImageInstance(Engine, new Texture(img), false);
+                        list[i] = img;
                     }
+                    ConstructTextureAtlas(list);
+
                     this["images"] = Program._engine.Array.New(images);
 
                     object[] dirs = new object[num_dir];
@@ -212,6 +225,7 @@ namespace Engine.Objects
                 images[i] = ((ImageInstance)my_images[i]).Clone();
             }
             instance["images"] = Program._engine.Array.New(images);
+            instance.TextureAtlas = new TextureAtlas(TextureAtlas);
 
             ArrayInstance directions = this["directions"] as ArrayInstance;
             object[] dirs = new object[directions.Length];

@@ -87,12 +87,12 @@ namespace Engine.Objects
 
         private static bool IsInputAttached()
         {
-            return input_ent != "";
+            return input_ent != "" && PersonManager.DoesPersonExist(input_ent);
         }
 
         private static bool IsCameraAttached()
         {
-            return camera_ent != "";
+            return camera_ent != "" && PersonManager.DoesPersonExist(camera_ent);
         }
 
         private static void DetachInput()
@@ -147,10 +147,11 @@ namespace Engine.Objects
             _ended = false;
             SetMapEngineFrameRate(fps);
 
+            double time = Program.GetTime();
             View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
             LoadMap(filename);
-            double time = Program.GetTime();
+            Console.WriteLine(Program.GetTime() - time);
 
             while (!_ended)
             {

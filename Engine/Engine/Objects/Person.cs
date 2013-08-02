@@ -9,7 +9,6 @@ namespace Engine.Objects
     public class Person
     {
         SpritesetInstance _innerSS;
-        TextureAtlas _innerAtlas;
         Sprite _sprite;
         IntRect _base;
 
@@ -26,15 +25,9 @@ namespace Engine.Objects
             _innerSS = spriteset;
 
             Data = Program.CreateObject();
-            _innerAtlas = new TextureAtlas(1024);
             _base = _innerSS.GetBase();
 
-            ArrayInstance s_images = _innerSS["images"] as ArrayInstance;
-            Image[] images = new Image[s_images.Length];
-            for (var i = 0; i < s_images.Length; ++i)
-                images[i] = ((ImageInstance)s_images[i]).GetImage();
-            _innerAtlas.Update(images);
-            _sprite = new Sprite(_innerAtlas.Texture);
+            _sprite = new Sprite(_innerSS.TextureAtlas.Texture);
             Mask = new Color(255, 255, 255);
 
             Scripts = new FunctionScript[5];
@@ -70,7 +63,10 @@ namespace Engine.Objects
 
         public void SetScript(PersonScripts script, object instance)
         {
-            Scripts[(int)script] = new FunctionScript(instance);
+            if (instance == null || (instance is string && (string)instance == ""))
+                Scripts[(int)script] = null;
+            else
+                Scripts[(int)script] = new FunctionScript(instance);
         }
 
         public ObjectInstance Base
@@ -95,7 +91,7 @@ namespace Engine.Objects
                 ObjectInstance frame = frames[_frame] as ObjectInstance;
                 _image = (int)frame["index"];
                 _delay = (int)frame["delay"];
-                _sprite.TextureRect = _innerAtlas.Sources[_image];
+                _sprite.TextureRect = _innerSS.TextureAtlas.Sources[_image];
             }
         }
 
