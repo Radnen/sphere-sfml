@@ -153,6 +153,11 @@ namespace Engine.Objects
             _commandQueue.Enqueue(new PersonCommand(command, imm));
         }
 
+        public void QueueScript(object script, bool imm)
+        {
+            _commandQueue.Enqueue(new PersonCommand((int)Commands.Wait, imm, script));
+        }
+
         public void UpdateCommandQueue()
         {
             bool imm = true;
@@ -165,6 +170,11 @@ namespace Engine.Objects
                 PersonCommand c = _commandQueue.Dequeue();
                 Commands command = (Commands)c.command;
                 imm = c.immediate;
+
+                if (c.script != null) {
+                    c.script.Execute();
+                    continue;
+                }
 
                 bool update = ((command == Commands.Animate || (int)command > 9) && !imm);
 

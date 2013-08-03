@@ -24,14 +24,22 @@ namespace Engine.Objects
         private static FunctionScript _renderscript;
         private static FunctionScript[] _renderers;
         private static FastTextureAtlas _fastatlas;
+        private static List<Entity> _triggers;
+        //private static List<Zone> _zones;
+        private static FunctionScript[] _scripts;
+        private static FunctionScript[] _defscripts;
 
         private static string camera_ent = "";
         private static string input_ent = "";
+        private static string _current = "";
 
         static MapEngineHandler()
         {
             _tileanims = new List<TileAnimHandler>();
             _tileatlas = new TextureAtlas(1024);
+            _triggers = new List<Entity>();
+            _scripts = new FunctionScript[6];
+            _defscripts = new FunctionScript[6];
         }
 
         public static void BindToEngine(ScriptEngine engine)
@@ -63,6 +71,9 @@ namespace Engine.Objects
             engine.SetGlobalFunction("GetTileHeight", new Func<int>(GetTileHeight));
             engine.SetGlobalFunction("GetLayerWidth", new Func<int, int>(GetLayerWidth));
             engine.SetGlobalFunction("GetLayerHeight", new Func<int, int>(GetLayerHeight));
+            engine.SetGlobalFunction("SetDefaultMapScript", new Action<int, object>(SetDefaultMapScript));
+            engine.SetGlobalFunction("CallDefaultMapScript", new Action<int>(CallDefaultMapScript));
+            engine.SetGlobalFunction("GetCurrentMap", new Func<string>(GetCurrentMap));
         }
 
         private static void AttachInput(string name)
@@ -150,7 +161,7 @@ namespace Engine.Objects
             double time = Program.GetTime();
             View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
-            LoadMap(filename);
+            LoadMap(filename, false);
             Console.WriteLine(Program.GetTime() - time);
 
             while (!_ended)
@@ -188,9 +199,19 @@ namespace Engine.Objects
 
         private static void LoadMap(string filename)
         {
-            PersonManager.RemoveNonEssential();
+            LoadMap(filename, true);
+        }
+
+        private static void LoadMap(string filename, bool remove_people)
+        {
+            if (remove_people)
+                PersonManager.RemoveNonEssential();
+
             _map = new Map();
             _map.Load(filename);
+            _current = filename;
+
+            AddScripts();
 
             Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
             foreach (Person p in PersonManager.People)
@@ -213,19 +234,40 @@ namespace Engine.Objects
             _layerstates = tuple.Item2;
             _layerstates.Texture = _fastatlas.RenderTexture.Texture;
             _layerverts = tuple.Item1;
+
+            CallDefaultMapScript((int)MapScripts.Enter);
+            CallLocalMapScript(MapScripts.Enter);
         }
 
         /// <summary>
-        /// Adds the persons in this map instance to the person handler.
+        /// Adds the persons and triggers in this map instance to the person handler.
         /// </summary>
         private static void AddPersons()
         {
+            _triggers.Clear();
             foreach (Entity e in _map.Entities)
             {
                 if (e.Type == Entity.EntityType.Person) {
                     PersonManager.CreatePerson(e);
                     PersonManager.CallPersonScript(e.Name, (int)PersonScripts.Create);
                 }
+                else if (e.Type == Entity.EntityType.Trigger) {
+                    _triggers.Add(e);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds map scripts to this map engine instance.
+        /// </summary>
+        private static void AddScripts()
+        {
+            for (var i = 3; i < _map.Scripts.Count; ++i)
+            {
+                if (!String.IsNullOrEmpty(_map.Scripts[i]))
+                    _scripts[i - 3] = new FunctionScript(_map.Scripts[i]);
+                else
+                    _scripts[i - 3] = null;
             }
         }
 
@@ -346,7 +388,18 @@ namespace Engine.Objects
             }
 
             foreach (Person p in PersonManager.People)
+            {
                 p.UpdateCommandQueue();
+                foreach (Entity e in _triggers)
+                {
+                    int x = (int)p.Position.X / _map.Tileset.TileWidth;
+                    int y = (int)p.Position.Y / _map.Tileset.TileHeight;
+                    int tx = e.X / _map.Tileset.TileWidth;
+                    int ty = e.Y / _map.Tileset.TileHeight;
+                    if (x == tx && y == ty)
+                        e.ExecuteTrigger();
+                }
+            }
 
             if (IsCameraAttached())
             {
@@ -397,6 +450,31 @@ namespace Engine.Objects
         private static void ExitMapEngine()
         {
             _ended = true;
+        }
+
+        private static string GetCurrentMap()
+        {
+            return _current;
+        }
+
+        private static void SetDefaultMapScript(int type, object code)
+        {
+            if (code == null || (code is string && code.Equals("")))
+                _defscripts[type] = null;
+            else
+                _defscripts[type] = new FunctionScript(code);
+        }
+
+        private static void CallDefaultMapScript(int type)
+        {
+            if (_defscripts[type] != null)
+                _defscripts[type].Execute();
+        }
+
+        private static void CallLocalMapScript(MapScripts type)
+        {
+            if (_scripts[(int)type] != null)
+                _scripts[(int)type].Execute();
         }
 
         /// <summary>

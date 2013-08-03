@@ -19,7 +19,7 @@ namespace Engine
         public static IntRect _clipper = new IntRect(0, 0, 0, 0);
 
         private static int _internal_fps = 0;
-        private static bool SCALED = false;
+        public static bool Scaled { get; set; }
         private static readonly bool DEBUG = false;
 
         static GameFile _game = new GameFile();
@@ -143,7 +143,7 @@ namespace Engine
             GlobalProps.Width = width;
             GlobalProps.Height = height;
 
-            if (SCALED)
+            if (Scaled)
             {
                 width *= 2;
                 height *= 2;
@@ -161,7 +161,7 @@ namespace Engine
             _clipper.Width = (int)width;
             _clipper.Height = (int)height;
 
-            if (SCALED)
+            if (Scaled)
             {
                 View v = _window.GetView();
                 v.Size = new Vector2f(GlobalProps.Width, GlobalProps.Height);
@@ -376,8 +376,8 @@ namespace Engine
             proc.Kill();
 		}
 
-        private static void SetScaled(bool v) {
-            SCALED = v;
+        public static void SetScaled(bool v) {
+            Scaled = v;
             if (_window != null)
             {
                 GlobalInput.RemoveWindowHandlers(_window);
@@ -469,10 +469,10 @@ namespace Engine
 
         static ImageInstance GrabImage(int x, int y, int w, int h)
         {
-            x *= (SCALED ? 2 : 1);
-            y *= (SCALED ? 2 : 1);
-            w *= (SCALED ? 2 : 1);
-            h *= (SCALED ? 2 : 1);
+            x *= (Scaled ? 2 : 1);
+            y *= (Scaled ? 2 : 1);
+            w *= (Scaled ? 2 : 1);
+            h *= (Scaled ? 2 : 1);
             Texture tex = new Texture((uint)w, (uint)h);
             tex.Update(_window);
             return new ImageInstance(_engine, tex, false);
@@ -480,10 +480,10 @@ namespace Engine
 
         static SurfaceInstance GrabSurface(int x, int y, int w, int h)
         {
-            x *= (SCALED ? 2 : 1);
-            y *= (SCALED ? 2 : 1);
-            w *= (SCALED ? 2 : 1);
-            h *= (SCALED ? 2 : 1);
+            x *= (Scaled ? 2 : 1);
+            y *= (Scaled ? 2 : 1);
+            w *= (Scaled ? 2 : 1);
+            h *= (Scaled ? 2 : 1);
             using (Image window = _window.Capture())
             {
                 Image section = new Image((uint)w, (uint)h);

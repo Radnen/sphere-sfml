@@ -39,6 +39,7 @@ namespace Engine
             engine.SetGlobalFunction("SetPersonVisible", new Action<string, bool>(SetPersonVisible));
             engine.SetGlobalFunction("IsPersonVisible", new Func<string, bool>(IsPersonVisible));
             engine.SetGlobalFunction("QueuePersonCommand", new Action<string, int, bool>(QueuePersonCommand));
+            engine.SetGlobalFunction("QueuePersonScript", new Action<string, object, bool>(QueuePersonScript));
             engine.SetGlobalFunction("IsCommandQueueEmpty", new Func<string, bool>(IsCommandQueueEmpty));
             engine.SetGlobalFunction("GetPersonMask", new Func<string, ColorInstance>(GetPersonMask));
             engine.SetGlobalFunction("SetPersonMask", new Action<string, ColorInstance>(SetPersonMask));
@@ -190,6 +191,11 @@ namespace Engine
         public static void QueuePersonCommand(string name, int command, bool immediate)
         {
             _people[name].QueueCommand(command, immediate);
+        }
+
+        public static void QueuePersonScript(string name, object script, bool immediate)
+        {
+            _people[name].QueueScript(script, immediate);
         }
 
         public static bool IsCommandQueueEmpty(string name)

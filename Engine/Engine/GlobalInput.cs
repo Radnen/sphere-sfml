@@ -34,6 +34,8 @@ namespace Engine
                 ToggleFullScreen();
             if (e.Code == Keyboard.Key.F1)
                 Engine.Objects.MapEngineHandler.ToggleFPSThrottle();
+            if (e.Code == Keyboard.Key.F2)
+                Program.SetScaled(!Program.Scaled);
         }
 
         public static void window_KeyReleased(object sender, KeyEventArgs e) {
@@ -85,12 +87,15 @@ namespace Engine
 
         public static bool IsKeyPressed(int code)
         {
-            if (code == (int)Keyboard.Key.LControl)
-                code = (int)Keyboard.Key.RControl;
-            if (code == (int)Keyboard.Key.LShift)
-                code = (int)Keyboard.Key.LShift;
-            if (code == (int)Keyboard.Key.LAlt)
-                code = (int)Keyboard.Key.RAlt;
+            if (code == (int)Keyboard.Key.RControl)
+                return Keyboard.IsKeyPressed(Keyboard.Key.RControl) ||
+                    Keyboard.IsKeyPressed(Keyboard.Key.LControl);
+            if (code == (int)Keyboard.Key.RShift)
+                return Keyboard.IsKeyPressed(Keyboard.Key.RShift) ||
+                    Keyboard.IsKeyPressed(Keyboard.Key.LShift);
+            if (code == (int)Keyboard.Key.RAlt)
+                return Keyboard.IsKeyPressed(Keyboard.Key.RAlt) ||
+                    Keyboard.IsKeyPressed(Keyboard.Key.LAlt);
 
             return Keyboard.IsKeyPressed((Keyboard.Key)code);
         }

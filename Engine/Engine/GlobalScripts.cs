@@ -4,6 +4,7 @@ using System.IO;
 using Jurassic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace Engine
 {
@@ -70,7 +71,10 @@ namespace Engine
             }
             catch (Exception e)
             {
-                Console.WriteLine("Fatal Error: " + e.Message);
+                var st = new StackTrace(e);
+                var frame = st.GetFrame(0);
+                Console.WriteLine("Fatal Error: " + e.Message + " @ " + frame.GetFileLineNumber());
+                Console.WriteLine(frame.GetFileName());
             }
         }
     }

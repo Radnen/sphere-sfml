@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Jurassic;
 using SFML.Graphics;
 using SFML.Window;
 
@@ -41,6 +42,8 @@ namespace Engine.Objects
         /// Gets or sets the JS function of this Entity.
         /// </summary>
         public string Function { get; set; }
+
+        public CompiledMethod Trigger { get; set; }
 
         /// <summary>
         /// Gets the list of string associated with this Entity.
@@ -123,6 +126,7 @@ namespace Engine.Objects
             {
                 len = stream.ReadInt16();
                 Function = new string(stream.ReadChars(len));
+                Trigger = new CompiledMethod(Program._engine, Function);
             }
         }
 
@@ -199,6 +203,15 @@ namespace Engine.Objects
             }
 
             Name = name;
+        }
+
+        /// <summary>
+        /// Executes the trigger.
+        /// </summary>
+        public void ExecuteTrigger()
+        {
+            if (Type == EntityType.Person) return;
+            Trigger.Execute();
         }
 
         /// <summary>

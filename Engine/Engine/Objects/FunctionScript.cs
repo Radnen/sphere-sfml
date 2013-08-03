@@ -10,22 +10,27 @@ namespace Engine
     public class FunctionScript
     {
         private bool _isFunc = false;
-        private CompiledMethod _compilede;
+        private CompiledMethod _compiled;
         private FunctionInstance _func;
 
         public FunctionScript(object item)
         {
             _isFunc = item is FunctionInstance;
-            if (item is string)
-            {
-                _compilede = new CompiledMethod(Program._engine, (string)item);
-            }
+            string source = null;
+            if (item is Jurassic.ConcatenatedString) // I think this is a jurassic parse error.
+                source = item.ToString();
+            else if (item is string)
+                source = item.ToString();
             else if (item is FunctionInstance)
-            {
-                _func = (FunctionInstance)item;
-            }
+                _func = item as FunctionInstance;
             else
-                throw new InvalidCastException("Parameter not of type string or function.");
+                throw new InvalidCastException("Parameter not of type string or function: " + item.GetType());
+
+            if (!_isFunc)
+            {
+                _compiled = new CompiledMethod(Program._engine, source);
+                Console.WriteLine("Compiled Script: \"{0}\"", source);
+            }
         }
 
         public void Execute()
@@ -33,7 +38,7 @@ namespace Engine
             if (_isFunc)
                 _func.Call(Program._engine.Global);
             else
-                _compilede.Execute();
+                _compiled.Execute();
         }
     }
 }
