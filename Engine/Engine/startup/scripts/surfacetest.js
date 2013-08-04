@@ -11,6 +11,7 @@ function TestSurfaces()
 	SetClippingRectangle(0, 0, 1, 1);
 	var surf = CreateSurface(48, 48, white);
 	surf.rectangle(12, 12, 24, 24, green);
+	surf.line(0, 0, 48, 48, red);
 	surf.setPixel(47, 47, red);
 	
 	var surf2 = CreateSurface(50, 50, black);

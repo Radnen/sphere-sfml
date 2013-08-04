@@ -161,7 +161,10 @@ namespace Engine.Objects
             double time = Program.GetTime();
             View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
+
+            // It seems Sphere keeps non-essential npc's created prior to MapEngine.
             LoadMap(filename, false);
+
             Console.WriteLine(Program.GetTime() - time);
 
             while (!_ended)
@@ -181,6 +184,7 @@ namespace Engine.Objects
                 Program.FlipScreen();
             }
 
+            PersonManager.RemoveNonEssential();
             Program._window.SetView(v);
             Program.SetFrameRate(Program.GetFrameRate());
         }
@@ -202,9 +206,14 @@ namespace Engine.Objects
             LoadMap(filename, true);
         }
 
-        private static void LoadMap(string filename, bool remove_people)
+        /// <summary>
+        /// Loads the map, and optionally removes those that may die when changing map.
+        /// </summary>
+        /// <param name="filename">Filename.</param>
+        /// <param name="remove_people">If set to <c>true</c> remove people.</param>
+        private static void LoadMap(string filename, bool removePeople)
         {
-            if (remove_people)
+            if (removePeople)
                 PersonManager.RemoveNonEssential();
 
             _map = new Map();
@@ -213,6 +222,7 @@ namespace Engine.Objects
 
             AddScripts();
 
+            // do this before AddPersons() to reset essential NPC's to map defaults.
             Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
             foreach (Person p in PersonManager.People)
             {
@@ -220,6 +230,7 @@ namespace Engine.Objects
                 p.Layer = _map.StartLayer;
             }
 
+            // add non-essential NPC's to the map.
             AddPersons();
 
             ConstructFastAtlas();
@@ -388,12 +399,16 @@ namespace Engine.Objects
             }
 
             foreach (Person p in PersonManager.People)
-            {
                 p.UpdateCommandQueue();
+
+            PersonManager.OrderPeople();
+
+            if (IsInputAttached())
+            {
                 foreach (Entity e in _triggers)
                 {
-                    int x = (int)p.Position.X / _map.Tileset.TileWidth;
-                    int y = (int)p.Position.Y / _map.Tileset.TileHeight;
+                    int x = PersonManager.GetPersonX(input_ent) / _map.Tileset.TileWidth;
+                    int y = PersonManager.GetPersonY(input_ent) / _map.Tileset.TileHeight;
                     int tx = e.X / _map.Tileset.TileWidth;
                     int ty = e.Y / _map.Tileset.TileHeight;
                     if (x == tx && y == ty)

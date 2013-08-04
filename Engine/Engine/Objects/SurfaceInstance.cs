@@ -8,59 +8,80 @@ namespace Engine.Objects
 {
     public class SurfaceInstance : ObjectInstance
     {
-        private Image _image;
         private Texture _tex;
         private bool _changed;
         private Sprite _sprite;
         private BlendModes _mode;
+        private byte[] _bytes;
+        private uint _width, _height;
+        private Action<int, int, Color> _draw;
 
         public SurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
             : base(parent)
         {
             if (width <= 0)
                 throw new ArgumentOutOfRangeException("width", "Width must be > 0.");
+            _width = (uint)width;
 
             if (height <= 0)
                 throw new ArgumentOutOfRangeException("height", "Height must be > 0.");
+            _height = (uint)height;
 
-            _image = new Image((uint)width, (uint)height, bg_color);
-            Init();
-        }
+            _bytes = new byte[width * height * 4];
+            for (int i = 0; i < _bytes.Length; i += 4)
+            {
+                _bytes[i + 0] = bg_color.R;
+                _bytes[i + 1] = bg_color.G;
+                _bytes[i + 2] = bg_color.B;
+                _bytes[i + 3] = bg_color.A;
+            }
 
-        public SurfaceInstance(ScriptEngine parent, Image copy, bool clone = true)
-            : base(parent)
-        {
-            _image = (clone) ? new Image(copy) : copy;
             Init();
         }
 
         public SurfaceInstance(ScriptEngine parent, string filename)
             : base(parent)
         {
-            _image = new Image(filename);
+            using (Image img = new Image(filename))
+            {
+                _bytes = img.Pixels;
+                _width = img.Size.X;
+                _height = img.Size.Y;
+            }
+            Init();
+        }
+
+        public SurfaceInstance(ScriptEngine parent, byte[] contents, uint width, uint height)
+            : base(parent)
+        {
+            _bytes = contents;
+            _width = width;
+            _height = height;
             Init();
         }
 
         private void Init() {
             PopulateFunctions();
-            _tex = new Texture(_image);
+            _tex = new Texture(_width, _height);
+            _tex.Update(_bytes);
             _sprite = new Sprite(_tex);
-            _mode = BlendModes.Blend;
 
-            DefineProperty("width", new PropertyDescriptor((int)_image.Size.X, PropertyAttributes.Sealed), true);
-            DefineProperty("height", new PropertyDescriptor((int)_image.Size.Y, PropertyAttributes.Sealed), true);
+            SetBlendMode((int)BlendModes.Blend);
+
+            DefineProperty("width", new PropertyDescriptor((int)_width, PropertyAttributes.Sealed), true);
+            DefineProperty("height", new PropertyDescriptor((int)_height, PropertyAttributes.Sealed), true);
         }
 
-        public Image GetImageRef()
+        public Byte[] GetBytes()
         {
-            return _image;
+            return _bytes;
         }
 
         [JSFunction(Name = "blit")]
         public void Blit(double x, double y)
         {
             if (_changed)
-                _tex.Update(_image);
+                _tex.Update(_bytes);
 
             _sprite.Position = new Vector2f((float)x, (float)y);
             Program._window.Draw(_sprite);
@@ -69,25 +90,22 @@ namespace Engine.Objects
         [JSFunction(Name = "blitSurface")]
         public void BlitSurface(SurfaceInstance surf, int x, int y)
         {
-            DrawImage(x, y, surf.GetImageRef());
+            DrawImage(x, y, surf.GetBytes(), surf._width, surf._height);
             _changed = true;
         }
 
         [JSFunction(Name = "blitMaskSurface")]
-        public void BlitMaskSurface(SurfaceInstance surf, int x, int y, ColorInstance mask)
+        public void BlitMaskSurface(SurfaceInstance surf, int ox, int oy, ColorInstance mask)
         {
             Color mask_c = mask.GetColor();
-            Image other = surf.GetImageRef();
-            uint w = other.Size.X;
-            uint h = other.Size.Y;
 
-            for (uint xx = 0; xx < w; ++xx)
+            for (int y = 0; y < surf._height; ++y)
             {
-                for (uint yy = 0; yy < h; ++yy)
+                for (int x = 0; x < surf._width; ++x)
                 {
-                    Color dest = other.GetPixel(xx, yy);
+                    Color dest = surf.GetColorAt(x, y);
                     Color final = ColorBlend(ref dest, ref mask_c);
-                    SetPixel((int)(x + xx), (int)(y + yy), ref final);
+                    SetPixel(ox + x, oy + y, ref final);
                 }
             }
 
@@ -95,25 +113,30 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "blitImage")]
-        public void BlitImage(int x, int y, ImageInstance img)
+        public void BlitImage(int x, int y, ImageInstance instance)
         {
-            Image other = img.GetImage();
-            DrawImage(x, y, other);
-            other.Dispose();
+            using (Image img = instance.GetImage())
+            {
+                DrawImage(x, y, img.Pixels, img.Size.X, img.Size.Y);
+            }
             _changed = true;
         }
 
-        private void DrawImage(int x, int y, Image img)
+        private void DrawImage(int ox, int oy, Byte[] pixels, uint width, uint height)
         {
-            uint w = img.Size.X;
-            uint h = img.Size.Y;
-
-            for (int j = 0; j < h; ++j)
+            Color c;
+            for (int y = 0; y < height; ++y)
             {
-                for (int i = 0; i < w; ++i)
+                for (int x = 0; x < width; ++x)
                 {
-                    Color color = img.GetPixel((uint)i, (uint)j);
-                    SetPixel(x + i, y + j, ref color);
+                    int scan0 = (x + y * (int)width) << 2;
+
+                    c.R = pixels[scan0 + 0];
+                    c.G = pixels[scan0 + 1];
+                    c.B = pixels[scan0 + 2];
+                    c.A = pixels[scan0 + 3];
+
+                    SetPixel(ox + x, oy + y, ref c);
                 }
             }
         }
@@ -128,24 +151,18 @@ namespace Engine.Objects
 
         public void SetPixel(int x, int y, ref Color dest)
         {
-            if (x >= _image.Size.X || y >= _image.Size.Y || x < 0 || y < 0)
+            if (x < 0 || y < 0 || x >= _width || y >= _height)
                 return;
-            Color source = _image.GetPixel((uint)x, (uint)y);
-            switch (_mode)
-            {
-                case BlendModes.Replace:
-                    _image.SetPixel((uint)x, (uint)y, dest);
-                    break;
-                case BlendModes.Blend:
-                    _image.SetPixel((uint)x, (uint)y, AlphaBlend(ref source, ref dest));
-                    break;
-                case BlendModes.Add:
-                    _image.SetPixel((uint)x, (uint)y, AddBlend(ref source, ref dest));
-                    break;
-                case BlendModes.Subtract:
-                    _image.SetPixel((uint)x, (uint)y, SubtractBlend(ref source, ref dest));
-                    break;
-            }
+            _draw(x, y, dest);
+        }
+
+        public Color GetColorAt(int x, int y) {
+            int scan0 = (x + y * (int)_width) << 2;
+            byte R = _bytes[scan0 + 0];
+            byte G = _bytes[scan0 + 1];
+            byte B = _bytes[scan0 + 2];
+            byte A = _bytes[scan0 + 3];
+            return new Color(R, G, B, A);
         }
 
         private static Color ColorBlend(ref Color source, ref Color dest)
@@ -155,15 +172,6 @@ namespace Engine.Objects
             byte b = (byte)(source.B * (float)dest.B / 255);
             byte a = (byte)(source.A * (float)dest.A / 255);
             return new Color(r, g, b, a);
-        }
-
-        private static Color AlphaBlend(ref Color source, ref Color dest)
-        {
-            float w0 = (float)dest.A / 255;
-            byte r = (byte)(source.R * (1 - w0) + dest.R * w0);
-            byte g = (byte)(source.G * (1 - w0) + dest.G * w0);
-            byte b = (byte)(source.B * (1 - w0) + dest.B * w0);
-            return new Color(r, g, b, 255);
         }
 
         private static Color WeightedBlend(ref Color source, ref Color dest, double w)
@@ -176,73 +184,114 @@ namespace Engine.Objects
             return new Color(r, g, b, a);
         }
 
-        private static Color AddBlend(ref Color source, ref Color dest)
-        {
-            byte r = (byte)Math.Min(source.R + dest.R, 255);
-            byte g = (byte)Math.Min(source.G + dest.G, 255);
-            byte b = (byte)Math.Min(source.B + dest.B, 255);
-            return new Color(r, g, b, 255);
+        public void SetReplace(int x, int y, Color c) {
+            int scan0 = (x + y * (int)_width) << 2;
+            _bytes[scan0 + 0] = c.R;
+            _bytes[scan0 + 1] = c.G;
+            _bytes[scan0 + 2] = c.B;
+            _bytes[scan0 + 3] = c.A;
         }
 
-        private static Color SubtractBlend(ref Color source, ref Color dest)
+        private void SetAlphaBlend(int x, int y, Color dest)
         {
-            byte r = (byte)Math.Max(source.R - dest.R, 0);
-            byte g = (byte)Math.Max(source.G - dest.G, 0);
-            byte b = (byte)Math.Max(source.B - dest.B, 0);
-            return new Color(r, g, b, 255);
+            Color source = GetColorAt(x, y);
+            int scan0 = (x + y * (int)_width) << 2;
+            float w0 = (float)dest.A / 255;
+            _bytes[scan0 + 0] = (byte)(source.R * (1 - w0) + dest.R * w0);
+            _bytes[scan0 + 1] = (byte)(source.G * (1 - w0) + dest.G * w0);
+            _bytes[scan0 + 2] = (byte)(source.B * (1 - w0) + dest.B * w0);
+            _bytes[scan0 + 3] = 255;
+        }
+
+        private void SetAddBlend(int x, int y, Color dest)
+        {
+            Color source = GetColorAt(x, y);
+            int scan0 = (x + y * (int)_width) << 2;
+            _bytes[scan0 + 0] = (byte)Math.Min(source.R + dest.R, 255);
+            _bytes[scan0 + 1] = (byte)Math.Min(source.G + dest.G, 255);
+            _bytes[scan0 + 2] = (byte)Math.Min(source.B + dest.B, 255);
+            _bytes[scan0 + 3] = 255;
+        }
+
+        private void SetSubtractBlend(int x, int y, Color dest)
+        {
+            Color source = GetColorAt(x, y);
+            int scan0 = (x + y * (int)_width << 2);
+            _bytes[scan0 + 0] = (byte)Math.Max(source.R - dest.R, 0);
+            _bytes[scan0 + 1] = (byte)Math.Max(source.G - dest.G, 0);
+            _bytes[scan0 + 2] = (byte)Math.Max(source.B - dest.B, 0);
+            _bytes[scan0 + 3] = 255; 
         }
 
         [JSFunction(Name = "replaceColor")]
         public void ReplaceColor(ColorInstance colorA, ColorInstance colorB)
         {
-            _image.ReplaceColor(colorA.GetColor(), colorB.GetColor());
+            Color a = colorA.GetColor();
+            Color b = colorB.GetColor();
+            for (var i = 0; i < _bytes.Length; i += 4)
+            {
+                if (_bytes[i] == a.R && _bytes[i + 1] == a.G && _bytes[i + 2] == a.B && _bytes[i + 3] == a.A)
+                {
+                    _bytes[i + 0] = b.R;
+                    _bytes[i + 1] = b.G;
+                    _bytes[i + 2] = b.B;
+                    _bytes[i + 3] = b.A;
+                }
+            }
             _changed = true;
         }
 
         [JSFunction(Name = "resize")]
         public SurfaceInstance Resize(int width, int height)
         {
-            Image copy = new Image((uint)width, (uint)height, new Color(0, 0, 0, 0));
-            copy.Copy(_image, 0, 0);
-            return new SurfaceInstance(Engine, copy, false);
+            Byte[] newbytes = new byte[width * height * 4];
+            Array.Copy(_bytes, newbytes, Math.Min(newbytes.Length, _bytes.Length));
+            return new SurfaceInstance(Engine, newbytes, (uint)width, (uint)height);
         }
 
         [JSFunction(Name = "rescale")]
         public SurfaceInstance Rescale(int width, int height)
         {
-            Image copy = new Image((uint)width, (uint)height, new Color(0, 0, 0, 0));
-            float w = _image.Size.X / (float)width;
-            float h = _image.Size.Y / (float)height;
+            byte[] copy = new byte[width * height * 4];
+            float w = _width / (float)width;
+            float h = _height / (float)height;
 
             for (int y = 0; y < height; ++y) 
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    Color c = _image.GetPixel((uint)(x * w), (uint)(y * h));
-                    copy.SetPixel((uint)x, (uint)y, c);
+                    Color c = GetColorAt((int)(x * w), (int)(y * h));
+                    int scan0 = (x + y * width) << 2;
+                    copy[scan0 + 0] = c.R;
+                    copy[scan0 + 1] = c.G;
+                    copy[scan0 + 2] = c.B;
+                    copy[scan0 + 3] = c.A;
                 }
             }
 
-            return new SurfaceInstance(Engine, copy, false);
+            return new SurfaceInstance(Engine, copy, (uint)width, (uint)height);
         }
 
         [JSFunction(Name = "getPixel")]
         public ColorInstance GetPixel(int x, int y)
         {
-            return new ColorInstance(Program._engine, _image.GetPixel((uint)x, (uint)y));
+            return new ColorInstance(Program._engine, GetColorAt(x, y));
         }
 
         [JSFunction(Name = "flipHorizontally")]
         public void FlipHorizontally()
         {
-            _image.FlipHorizontally();
+            int scan = (int)_width * 4;
+            int size = scan * (int)_height;
+            for (int i = 0; i < size; i += scan)
+                Array.Reverse(_bytes, i, scan);
             _changed = true;
         }
 
         [JSFunction(Name = "flipVertically")]
         public void FlipVertically()
         {
-            _image.FlipVertically();
+            //_image.FlipVertically();
             _changed = true;
         }
 
@@ -250,7 +299,7 @@ namespace Engine.Objects
         public ImageInstance CreateImage()
         {
             if (_changed)
-                _tex.Update(_image);
+                _tex.Update(_bytes);
 
             return new ImageInstance(Program._engine, _tex);
         }
@@ -258,13 +307,30 @@ namespace Engine.Objects
         [JSFunction(Name = "clone")]
         public SurfaceInstance Clone()
         {
-            return new SurfaceInstance(Engine, _image);
+            byte[] bytes = new byte[_width * _height * 4];
+            Array.Copy(_bytes, bytes, _bytes.Length);
+            return new SurfaceInstance(Engine, bytes, _width, _height);
         }
 
         [JSFunction(Name = "setBlendMode")]
         public void SetBlendMode(int mode)
         {
             _mode = (BlendModes)mode;
+            switch (_mode)
+            {
+                case BlendModes.Replace:
+                    _draw = SetReplace;
+                    break;
+                case BlendModes.Blend:
+                    _draw = SetAlphaBlend;
+                    break;
+                case BlendModes.Add:
+                    _draw = SetAddBlend;
+                    break;
+                case BlendModes.Subtract:
+                    _draw = SetSubtractBlend;
+                    break;
+            }
         }
 
         [JSFunction(Name = "pointSeries")]
@@ -368,13 +434,14 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "rectangle")]
-        public void Rectangle(int x, int y, int w, int h, ColorInstance color)
+        public void Rectangle(int ox, int oy, int w, int h, ColorInstance color)
         {
-            w += x;
-            h += y;
+            h += oy;
+            w += ox;
             Color c = color.GetColor();
-            for (int i = y; i < h; ++i)
-                Line(x, i, w, i, ref c);
+            for (int y = oy; y < h; ++y)
+                for (int x = ox; x < w; ++x)
+                    SetPixel(x, y, ref c);
             _changed = true;
         }
 
@@ -417,6 +484,8 @@ namespace Engine.Objects
             var w = r * 2;
             var h = w;
             Color c = color.GetColor();
+            ox -= r;
+            oy -= r;
 
             if (antialias)
             {
@@ -441,7 +510,7 @@ namespace Engine.Objects
             {
                 for (var y = 0; y < r; ++y)
                 {
-                    int lw = (int)(r * Math.Cos(Math.Asin(1 - y / r)));
+                    int lw = (int)(r * Math.Cos(Math.Asin(1 - (float)y / r)));
                     Line(ox + r - lw, oy + y, ox + r + lw, oy + y, ref c);
                     Line(ox + r - lw, oy + h - y - 1, ox + r + lw, oy + h - y - 1, ref c);
                 }
@@ -501,7 +570,7 @@ namespace Engine.Objects
         {
             for (var i = 0; i < text.Length; ++i) {
                 Image img = font.GetGlyph(text[i]);
-                DrawImage(x, y, img);
+                DrawImage(x, y, img.Pixels, img.Size.X, img.Size.Y);
                 x += (int)img.Size.X;
             }
             _changed = true;
@@ -515,13 +584,22 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "cloneSection")]
-        public SurfaceInstance CloneSection(int x, int y, int w, int h)
+        public SurfaceInstance CloneSection(int ox, int oy, int w, int h)
         {
-            using (Image image = new Image((uint)w, (uint)h))
+            byte[] bytes = new byte[w * h * 4];
+            for (var y = 0; y < h; ++y)
             {
-                image.Copy(_image, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(Engine, image);
+                for (var x = 0; x < w; ++x)
+                {
+                    Color c = GetColorAt(ox + x, oy + y);
+                    int scan0 = x + y * w;
+                    bytes[scan0 + 0] = c.R;
+                    bytes[scan0 + 1] = c.G;
+                    bytes[scan0 + 2] = c.B;
+                    bytes[scan0 + 3] = c.A;
+                }
             }
+            return new SurfaceInstance(Engine, bytes, (uint)w, (uint)h);
         }
 
         [JSFunction(Name = "toString")]

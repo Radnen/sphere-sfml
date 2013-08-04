@@ -114,6 +114,14 @@ namespace Engine
         }
 
         /// <summary>
+        /// Orders the people by the y axis, like in vanilla Sphere.
+        /// </summary>
+        public static void OrderPeople()
+        {
+            People.Sort((A, B) => (int)(A.Position.Y - B.Position.Y));
+        }
+
+        /// <summary>
         /// Removes the non-essential person objects on a map.
         /// </summary>
         public static void RemoveNonEssential()

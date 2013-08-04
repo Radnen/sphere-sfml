@@ -34,8 +34,8 @@ namespace Engine
                     Console.WriteLine("Sphere Objects: 100%");
                     Console.WriteLine("File IO: 80%");
                     Console.WriteLine("Networking: 0%");
-                    Console.WriteLine("Map Engine: 30%");
-                    Console.WriteLine("Other: 88%");
+                    Console.WriteLine("Map Engine: 60%");
+                    Console.WriteLine("Other: 90%");
                     return;
                 }
                 else if (args[0] == "-games")
@@ -184,6 +184,12 @@ namespace Engine
             return ObjectConstructor.Create(_engine, _engine.Object.InstancePrototype);
         }
 
+        private static void SetGlobalConst(ScriptEngine engine, params string[] values) {
+            for (int i = 0; i < values.Length; ++i) {
+                engine.SetGlobalValue(values[i], i);
+            }
+        }
+
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
@@ -282,50 +288,33 @@ namespace Engine
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
             string[] n = Enum.GetNames(typeof(Keyboard.Key));
+            Dictionary<string, string> keymaps = new Dictionary<string, string>();
+            keymaps["RETURN"] = "ENTER";
+            keymaps["RSHIFT"] = "SHIFT";
+            keymaps["RCONTROL"] = "CTRL";
+            keymaps["RALT"] = "ALT";
+            keymaps["BACK"] = "BACKSPACE";
+            keymaps["SUBTRACT"] = "MINUS";
+            keymaps["EQUAL"] = "EQUALS";
             for (var i = 0; i < a.Length; ++i)
             {
                 string key = n[i].ToUpper();
-                switch (key) {
-                    case "RETURN":
-                        key = "ENTER";
-                        break;
-                    case "RSHIFT":
-                        key = "SHIFT";
-                        break;
-                    case "RCONTROL":
-                        key = "CTRL";
-                        break;
-                    case "RALT":
-                        key = "ALT";
-                        break;
-                    case "BACK":
-                        key = "BACKSPACE";
-                        break;
-                    case "SUBTRACT":
-                        key = "MINUS";
-                        break;
-                    case "EQUAL":
-                        key = "EQUALS";
-                        break;
-                }
-                if (key.StartsWith("NUM"))
+                if (keymaps.ContainsKey(key))
+                    key = keymaps[key];
+                else if (key.StartsWith("NUM"))
                     key = key[3].ToString();
+
                 engine.SetGlobalValue("KEY_" + key, (int)a.GetValue(i));
             }
 
-            engine.SetGlobalValue("BLEND", 0);
-            engine.SetGlobalValue("REPLACE", 1);
-            engine.SetGlobalValue("RGB_ONLY", 2);
-            engine.SetGlobalValue("ALPHA_ONLY", 3);
-            engine.SetGlobalValue("ADD", 4);
-            engine.SetGlobalValue("SUBTRACT", 5);
-            engine.SetGlobalValue("MULTIPLY", 6);
-            engine.SetGlobalValue("AVERAGE", 7);
+            SetGlobalConst(engine, "BLEND", "REPLACE", "RGB_ONLY", "ALPHA_ONLY", "ADD", "SUBTRACT", "MULTPLY", "AVERAGE");
+
             engine.SetGlobalValue("MOUSE_LEFT", (int)Mouse.Button.Left);
             engine.SetGlobalValue("MOUSE_RIGHT", (int)Mouse.Button.Right);
             engine.SetGlobalValue("MOUSE_MIDDLE", (int)Mouse.Button.Middle);
             engine.SetGlobalValue("MOUSE_EX1", (int)Mouse.Button.XButton1);
             engine.SetGlobalValue("MOUSE_EX2", (int)Mouse.Button.XButton2);
+
 
             engine.SetGlobalValue("COMMAND_WAIT", 0);
             engine.SetGlobalValue("COMMAND_ANIMATE", 1);
@@ -342,18 +331,13 @@ namespace Engine
             engine.SetGlobalValue("COMMAND_MOVE_SOUTH", 12);
             engine.SetGlobalValue("COMMAND_MOVE_WEST", 13);
 
-            engine.SetGlobalValue("SCRIPT_ON_ENTER_MAP", 0);
-            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP", 1);
-            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_NORTH", 2);
-            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_EAST", 3);
-            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_SOUTH", 4);
-            engine.SetGlobalValue("SCRIPT_ON_LEAVE_MAP_WEST", 5);
+            SetGlobalConst(engine, "SCRIPT_ON_ENTER_MAP", "SCRIPT_ON_LEAVE_MAP", "SCRIPT_ON_LEAVE_MAP_NORTH",
+                           "SCRIPT_ON_LEAVE_MAP_EAST", "SCRIPT_ON_LEAVE_MAP_SOUTH", "SCRIPT_ON_LEAVE_MAP_WEST");
 
-            engine.SetGlobalValue("SCRIPT_ON_CREATE", 0);
-            engine.SetGlobalValue("SCRIPT_ON_DESTROY", 1);
-            engine.SetGlobalValue("SCRIPT_ON_ACTIVATE_TOUCH", 2);
-            engine.SetGlobalValue("SCRIPT_ON_ACTIVATE_TALK", 3);
-            engine.SetGlobalValue("SCRIPT_COMMAND_GENERATOR", 4);
+            SetGlobalConst(engine, "SCRIPT_ON_CREATE", "SCRIPT_ON_DESTROY", "SCRIPT_ON_ACTIVATE_TOUCH",
+                           "SCRIPT_ON_ACTIVATE_TALK", "SCRIPT_COMMAND_GENERATOR");
+
+            SetGlobalConst(engine, "JOYSTICK_AXIS_X", "JOYSTICK_AXIS_Y", "JOYSTICK_AXIS_Z", "JOYSTICK_AXIS_R");
 
             return engine;
         }
@@ -488,7 +472,7 @@ namespace Engine
             {
                 Image section = new Image((uint)w, (uint)h);
                 section.Copy(window, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(_engine, section, false);
+                return new SurfaceInstance(_engine, section.Pixels, (uint)w, (uint)h);
             }
         }
 

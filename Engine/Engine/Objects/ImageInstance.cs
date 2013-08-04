@@ -172,7 +172,10 @@ namespace Engine.Objects
         [JSFunction(Name = "createSurface")]
         public SurfaceInstance CreateSurface()
         {
-            return new SurfaceInstance(Program._engine, _image.CopyToImage(), false);
+            using (Image img = _image.CopyToImage())
+            {
+                return new SurfaceInstance(Program._engine, img.Pixels, img.Size.X, img.Size.Y);
+            }
         }
 
         [JSFunction(Name = "clone")]
