@@ -15,6 +15,7 @@ namespace Engine.Objects
         private static int _fps = 0;
         private static double _delta = 0;
 
+        private static Vector2f _camera;
         private static Vertex[] _cutout;
         private static RenderStates _layerstates;
         private static List<Vertex[]> _layerverts;
@@ -74,6 +75,18 @@ namespace Engine.Objects
             engine.SetGlobalFunction("SetDefaultMapScript", new Action<int, object>(SetDefaultMapScript));
             engine.SetGlobalFunction("CallDefaultMapScript", new Action<int>(CallDefaultMapScript));
             engine.SetGlobalFunction("GetCurrentMap", new Func<string>(GetCurrentMap));
+            engine.SetGlobalFunction("GetTile", new Func<int, int, int, int>(GetTile));
+            engine.SetGlobalFunction("SetTile", new Action<int, int, int, int>(SetTile));
+            engine.SetGlobalFunction("GetNumTiles", new Func<int>(GetNumTiles));
+            engine.SetGlobalFunction("GetNumLayers", new Func<int>(GetNumLayers));
+            engine.SetGlobalFunction("GetLayerName", new Func<int, string>(GetLayerName));
+            engine.SetGlobalFunction("GetTileName", new Func<int, string>(GetTileName));
+            engine.SetGlobalFunction("GetTileDelay", new Func<int, int>(GetTileDelay));
+            engine.SetGlobalFunction("SetLayerVisible", new Action<int, bool>(SetLayerVisible));
+            engine.SetGlobalFunction("MapToScreenX", new Func<int, int, int>(MapToScreenX));
+            engine.SetGlobalFunction("MapToScreenY", new Func<int, int, int>(MapToScreenY));
+            engine.SetGlobalFunction("ScreenToMapX", new Func<int, int, int>(ScreenToMapX));
+            engine.SetGlobalFunction("ScreenToMapY", new Func<int, int, int>(ScreenToMapY));
         }
 
         private static void AttachInput(string name)
@@ -219,6 +232,9 @@ namespace Engine.Objects
             _map = new Map();
             _map.Load(filename);
             _current = filename;
+
+            SetCameraX(_map.StartX);
+            SetCameraY(_map.StartY);
 
             AddScripts();
 
@@ -419,8 +435,8 @@ namespace Engine.Objects
             if (IsCameraAttached())
             {
                 View v = Program._window.GetView();
-                SetCameraX(PersonManager.GetPersonX(camera_ent) - (int)(v.Size.X / 2));
-                SetCameraY(PersonManager.GetPersonY(camera_ent) - (int)(v.Size.Y / 2));
+                SetCameraX(PersonManager.GetPersonX(camera_ent));
+                SetCameraY(PersonManager.GetPersonY(camera_ent));
             }
         }
 
@@ -437,7 +453,7 @@ namespace Engine.Objects
             int height = offset + h * scan;
             int index = 0;
 
-            for (var i = offset; i < height; i += scan)
+            for (var i = offset; i < height && i < in_verts.Length; i += scan)
             {
                 Array.Copy(in_verts, i, local, index, length);
                 index += length;
@@ -451,10 +467,11 @@ namespace Engine.Objects
 
             _fastatlas.Refresh();
 
+            Vector2f camera = GetClampedCamera();
             int length = _map.Layers.Count;
             for (var i = 0; i < length; ++i)
             {
-                CutoutVerts(_layerverts[i], GetCameraX(), GetCameraY(), _map.Layers[i].Width);
+                CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
                 Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
                 DrawPersons(i);
                 if (_renderers[i] != null)
@@ -503,32 +520,42 @@ namespace Engine.Objects
                     p.Draw();
         }
 
+        private static Vector2f GetClampedCamera()
+        {
+            Vector2f v = Program._window.GetView().Center;
+            v.X -= GlobalProps.Width / 2;
+            v.Y -= GlobalProps.Height / 2;
+            return v;
+        }
+
         private static void SetCameraX(int x) {
+            _camera.X = x;
             View v = Program._window.GetView();
-            if (x < 0 || v.Size.X + x >= _map.Layers[0].Width * _map.Tileset.TileWidth)
+            int w = (_map.Layers[_map.StartLayer].Width) * _map.Tileset.TileWidth;
+            if (x < GlobalProps.Width / 2 || x >= w - GlobalProps.Width / 2)
                 return;
-            v.Center = new Vector2f(v.Size.X / 2 + x, v.Center.Y);
+            v.Center = new Vector2f(x, v.Center.Y);
             Program._window.SetView(v);
         }
 
         private static int GetCameraX()
         {
-            View v = Program._window.GetView();
-            return (int)(v.Center.X - v.Size.X / 2);
+            return (int)_camera.X;
         }
 
         private static void SetCameraY(int y) {
+            _camera.Y = y;
             View v = Program._window.GetView();
-            if (y < 0 || v.Size.Y + y >= _map.Layers[0].Height * _map.Tileset.TileHeight)
+            int h = _map.Layers[0].Height * _map.Tileset.TileHeight;
+            if (y < GlobalProps.Height / 2 || y >= h - GlobalProps.Height / 2)
                 return;
-            v.Center = new Vector2f(v.Center.X, v.Size.Y / 2 + y);
+            v.Center = new Vector2f(v.Center.X, y);
             Program._window.SetView(v);
         }
 
         private static int GetCameraY()
         {
-            View v = Program._window.GetView();
-            return (int)(v.Center.Y - v.Size.Y / 2);
+            return (int)_camera.Y;
         }
 
         private static void SetUpdateScript(object code)
@@ -556,6 +583,66 @@ namespace Engine.Objects
                 else
                     _renderers[layer] = new FunctionScript(code);
             }
+        }
+
+        private static int GetNumLayers()
+        {
+            return _map.Layers.Count;
+        }
+
+        private static void SetLayerVisible(int layer, bool visible)
+        {
+            _map.Layers[layer].Visible = visible;
+        }
+
+        private static int GetTile(int x, int y, int layer)
+        {
+            return _map.Layers[layer].GetTile(x, y);
+        }
+
+        private static void SetTile(int x, int y, int layer, int tile)
+        {
+            _map.Layers[layer].SetTile(x, y, (short)tile);
+        }
+
+        private static string GetTileName(int tile)
+        {
+            return _map.Tileset.Tiles[tile].Name;
+        }
+
+        private static int GetTileDelay(int tile)
+        {
+            return _map.Tileset.Tiles[tile].Delay;
+        }
+
+        private static int GetNumTiles()
+        {
+            return _map.Tileset.Tiles.Count;
+        }
+
+        private static string GetLayerName(int layer)
+        {
+            return _map.Layers[layer].Name;
+        }
+
+        private static int MapToScreenX(int layer, int x)
+        {
+            return x - GetCameraX() + GlobalProps.Width / 2;
+        }
+
+        private static int MapToScreenY(int layer, int y)
+        {
+            return y - GetCameraY() + GlobalProps.Height / 2;
+        }
+
+        private static int ScreenToMapX(int layer, int x)
+        {
+            return x + GetCameraX() - GlobalProps.Width / 2;
+        }
+
+        private static int ScreenToMapY(int layer, int y)
+        {
+            return y + GetCameraY() - GlobalProps.Height / 2;
         }
     }
 }

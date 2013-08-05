@@ -32,9 +32,9 @@ function game()
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
 	menu.addOption("Test Map Anims", function() {
-		SetUpdateScript("Update();");
+		SetUpdateScript("Update2();");
 		if (DoesPersonExist("player")) DestroyPerson("player");
-		SetRenderScript("");
+		SetRenderScript("Render2();");
 		MapEngine("test.rmp", 60);
 	});
 	menu.addOption("Test Village map", function() {
@@ -74,7 +74,12 @@ function TestJSON()
 
 function Render()
 {
-	sys_font.drawText(0, 0, GetPersonFrame("player"));
+	sys_font.drawText(MapToScreenX(0, 0), MapToScreenY(0, 0), GetPersonFrame("player"));
+}
+
+function Render2()
+{
+	sys_font.drawText(0, 0, GetCameraX() + ", " + GetCameraY());
 }
 
 function Update()
@@ -84,6 +89,20 @@ function Update()
 			case KEY_ESCAPE: ExitMapEngine(); break;
 		}
 	}
+}
+
+function Update2()
+{
+	Update();
+	
+	if (IsKeyPressed(KEY_RIGHT))
+		SetCameraX(GetCameraX() + 2);
+	if (IsKeyPressed(KEY_LEFT))
+		SetCameraX(GetCameraX() - 2);
+	if (IsKeyPressed(KEY_UP))
+		SetCameraY(GetCameraY() - 2);
+	if (IsKeyPressed(KEY_DOWN))
+		SetCameraY(GetCameraY() + 2);
 }
 
 function Menu()

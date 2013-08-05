@@ -88,7 +88,7 @@ namespace Engine
             {
                 GlobalScripts.RequireScript(filename);
                 GlobalScripts.RunCode(new StringScriptSource("game();", filename));
-                GlobalScripts.RunCode(new StringScriptSource("GetKey();", filename));
+                GlobalScripts.RunCode(new StringScriptSource("while(true) { while(AreKeysLeft()) { if (GetKey() == KEY_ENTER) Exit(); } FlipScreen(); }", filename));
             }
             else
                 Console.WriteLine("Invalid script file in game.sgm");

@@ -112,6 +112,10 @@ namespace Engine
 
         public static int GetMouseWheelEvent()
         {
+            while (_wheelQueue.Count == 0)
+            {
+                Program._window.DispatchEvents();
+            }
             return _wheelQueue.Dequeue();
         }
 
