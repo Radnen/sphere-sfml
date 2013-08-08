@@ -89,8 +89,10 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "drawWindow")]
-        public void DrawWindow(int x, int y, int width, int height)
+        public void DrawWindow(double dx, double dy, double dwidth, double dheight)
         {
+            float x = (float)dx, y = (float)dy;
+            int width = (int)dwidth, height = (int)dheight;
             _sprites[0].Position = new Vector2f(x - (float)_textures[0].Size.X, y - (float)_textures[0].Size.Y);
             _sprites[1].Position = new Vector2f(x, y - (float)_textures[1].Size.Y);
             _sprites[1].TextureRect = new IntRect(0, 0, width, (int)_textures[1].Size.Y);

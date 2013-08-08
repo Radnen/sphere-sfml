@@ -12,6 +12,7 @@ namespace Engine.Objects
         short _version;
         short _width, _height;
         short _bx1, _by1, _bx2, _by2;
+        Line[] _baselines = null;
         string _filename = "";
         public TextureAtlas TextureAtlas { get; private set; }
 
@@ -73,6 +74,20 @@ namespace Engine.Objects
             obj["y1"] = (int)_by1;
             obj["y2"] = (int)_by2;
             return obj;
+        }
+
+        public Line[] GetLineBase()
+        {
+            if (_baselines == null)
+            {
+                _baselines = new Line[4];
+                _baselines[0] = new Line(_bx1, _by1, _bx2, _by1);
+                _baselines[1] = new Line(_bx2, _by1, _bx2, _by2);
+                _baselines[2] = new Line(_bx2, _by2, _bx1, _by2);
+                _baselines[3] = new Line(_bx1, _by2, _bx1, _by1);
+            }
+
+            return _baselines;
         }
 
         public IntRect GetBase()

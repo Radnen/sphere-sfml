@@ -8,6 +8,10 @@ namespace Engine.Objects
 {
     public class Person
     {
+#if(DEBUG)
+        private static ColorInstance debug_color;
+#endif
+
         SpritesetInstance _innerSS;
         Sprite _sprite;
         IntRect _base;
@@ -19,6 +23,11 @@ namespace Engine.Objects
 
         public Person(string name, SpritesetInstance spriteset, bool destroy)
         {
+#if(DEBUG)
+            if (debug_color == null)
+                debug_color = new ColorInstance(Program._engine, Color.Red);
+#endif
+
             Name = name;
             DestroyOnMap = destroy;
             Speed = new Vector2f(1, 1);
@@ -112,40 +121,40 @@ namespace Engine.Objects
             }
         }
 
-        private FloatRect GetBounds()
+        public Line[] GetBounds()
         {
-            IntRect b = _innerSS.GetBase();
-            float x = b.Left + Position.X;
-            float y = b.Top + Position.Y;
-            return new FloatRect(x, y, b.Width, b.Height);
+            return _innerSS.GetLineBase();
         }
 
-        public void CheckObstructions(Layer layer, Tileset tiles)
+        public bool CheckObstructions(Vector2f offset, Tile tile)
         {
-            FloatRect a = GetBounds();
-            Vector2f point = new Vector2f();
-            int t = -1;
-
-            int sx = (int)Math.Floor(Position.X / tiles.TileWidth) - 1;
-            int sy = (int)Math.Floor(Position.Y / tiles.TileHeight) - 1;
-
-            for (int x = sx; x < sx + 3; ++x)
+            Vector2f off = new Vector2f(_base.Left, _base.Top);
+            Vector2f pos = Position - off;
+            Line[] baselines = _innerSS.GetLineBase();
+            foreach (Line b in baselines)
             {
-                point.X = x * 16;
-                for (int y = sy; y < sy + 3; ++y)
+                var lineA = b.Offset(pos);
+                foreach (Line l in tile.Obstructions)
                 {
-                    t = layer.GetTile(x, y);
-                    if (t < 0)
-                        continue;
-                    Tile tile = tiles.Tiles[t];
+                    var lineB = l.Offset(offset);
+                    return Line.Intersects(lineA, lineB);
                 }
             }
+            return false;
         }
 
         public void Draw()
         {
             _sprite.Position = new Vector2f(Position.X - _base.Left + Offset.X, Position.Y - _base.Top + Offset.Y);
             Program._window.Draw(_sprite);
+#if(DEBUG)
+            Line[] lines = _innerSS.GetLineBase();
+            double x = Position.X + _base.Left - lines[0].Start.X;
+            double y = Position.Y + _base.Top - lines[0].Start.Y;
+            double w = lines[0].End.X - lines[0].Start.X;
+            double h = lines[1].End.Y - lines[0].Start.Y;
+            GlobalPrimitives.OutlinedRectangle(x, y, w, h, debug_color);
+#endif
         }
 
         public void QueueCommand(int command, bool imm)
@@ -210,6 +219,11 @@ namespace Engine.Objects
                 move.X *= Speed.X;
                 move.Y *= Speed.Y;
                 Position += move;
+
+                if (!MapEngineHandler.CheckTileObstruction(this))
+                {
+                    Position -= move;
+                }
 
                 _revert = 0;
                 _toNextDelay += (update ? 1 : 0);

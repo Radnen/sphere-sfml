@@ -17,8 +17,18 @@ namespace Engine.Objects
             End = end;
         }
 
+        public Line(Line line)
+            : this(line.Start, line.End)
+        {
+        }
+
         public Vector2f Start { get; set; }
         public Vector2f End { get; set; }
+
+        public Line Offset(Vector2f offset)
+        {
+            return new Line(Start + offset, End + offset);
+        }
 
         public static bool Intersects(Line A, Line B)
         {

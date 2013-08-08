@@ -39,6 +39,7 @@ function TestFonts()
 		font.drawTextBox(34, 130, 200, height, 0, text);
 		
 		glyph.blit(0, 96);
+		font.drawText(64, 96, "Hello All".substr(0, 5));
 		
 		FlipScreen();
 	

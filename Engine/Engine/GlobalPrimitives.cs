@@ -28,10 +28,8 @@ namespace Engine
         public static Vector2f GetVector(ObjectInstance obj)
         {
             Vector2f vect = new Vector2f(0, 0);
-            if (obj.HasProperty("x"))
-                vect.X = (int)obj.GetPropertyValue("x");
-            if (obj.HasProperty("y"))
-                vect.Y = (int)obj.GetPropertyValue("y");
+            vect.X = Convert.ToSingle(obj["x"]);
+            vect.Y = Convert.ToSingle(obj["y"]);
             return vect;
         }
 

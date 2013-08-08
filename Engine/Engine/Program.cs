@@ -281,6 +281,7 @@ namespace Engine
             engine.SetGlobalFunction("GetGameList", new Func<ArrayInstance>(GetGameList));
             engine.SetGlobalFunction("SetClippingRectangle", new Action<int, int, int, int>(SetClippingRectangle));
             engine.SetGlobalFunction("GetClippingRectangle", new Func<ObjectInstance>(GetClippingRectangle));
+            engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
@@ -507,6 +508,16 @@ namespace Engine
         {
             Print(msg);
             Exit();
+        }
+
+        static bool LineIntersects(ObjectInstance a1, ObjectInstance b1, ObjectInstance a2, ObjectInstance b2)
+        {
+            Vector2f start1 = GlobalPrimitives.GetVector(a1);
+            Vector2f end1 = GlobalPrimitives.GetVector(b1);
+            Vector2f start2 = GlobalPrimitives.GetVector(a2);
+            Vector2f end2 = GlobalPrimitives.GetVector(b2);
+
+            return Line.Intersects(new Line(start1, end1), new Line(start2, end2));
         }
 
         static double GetVersion()

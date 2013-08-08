@@ -11,7 +11,7 @@ namespace Engine.Objects
     {
         private static Map _map;
         private static TextureAtlas _tileatlas;
-        private static bool _ended = false, _toggled;
+        private static bool _ended = true, _toggled;
         private static int _fps = 0;
         private static double _delta = 0;
 
@@ -477,6 +477,30 @@ namespace Engine.Objects
                 if (_renderers[i] != null)
                     _renderers[i].Execute();
             }
+        }
+
+        public static bool CheckTileObstruction(Person person)
+        {
+            Vector2f point = new Vector2f();
+            int t = -1;
+
+            int sx = (int)Math.Floor(person.Position.X / _map.Tileset.TileWidth) + 2;
+            int sy = (int)Math.Floor(person.Position.Y / _map.Tileset.TileHeight) + 2;
+
+            for (int x = sx - 3; x < sx; ++x)
+            {
+                point.X = x * _map.Tileset.TileWidth;
+                for (int y = sy - 3; y < sy; ++y)
+                {
+                    t = _map.Layers[person.Layer].GetTile(x, y);
+                    if (t < 0)
+                        continue;
+                    point.Y = y * _map.Tileset.TileHeight;
+                    return person.CheckObstructions(point, _map.Tileset.Tiles[t]);
+                }
+            }
+
+            return false;
         }
 
         private static void ExitMapEngine()
