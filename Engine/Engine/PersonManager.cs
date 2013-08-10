@@ -14,6 +14,7 @@ namespace Engine
         public static List<Person> People { get; private set; }
 
         public static string _current = "";
+        private static int _talk_dist = 8;
 
         static PersonManager()
         {
@@ -75,6 +76,18 @@ namespace Engine
             engine.SetGlobalFunction("IgnorePersonObstructions", new Action<string, bool>(IgnorePersonObstructions));
             engine.SetGlobalFunction("IgnoreTileObstructions", new Action<string, bool>(IgnoreTileObstructions));
             engine.SetGlobalFunction("IsPersonObstructed", new Func<string, double, double, bool>(IsPersonObstructed));
+            engine.SetGlobalFunction("SetTalkDistance", new Action<int>(SetTalkDistance));
+            engine.SetGlobalFunction("GetTalkDistance", new Func<int>(GetTalkDistance));
+        }
+
+        private static void SetTalkDistance(int dist)
+        {
+            _talk_dist = dist;
+        }
+
+        private static int GetTalkDistance()
+        {
+            return _talk_dist;
         }
 
         public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
@@ -124,6 +137,27 @@ namespace Engine
         public static void OrderPeople()
         {
             People.Sort((A, B) => (int)(A.Position.Y - B.Position.Y));
+        }
+
+        /// <summary>
+        /// Gets the closest person within talking range.
+        /// </summary>
+        /// <returns>The closest person.</returns>
+        /// <param name="name">Compare all others to this one.</param>
+        public static string GetClosest(string name)
+        {
+            List<Person> closest = new List<Person>();
+            Person compare = _people[name];
+            foreach (Person p in People)
+            {
+                if (name == p.Name)
+                    continue;
+                float dx = compare.Position.X - p.Position.X;
+                float dy = compare.Position.Y - p.Position.Y;
+                if ((int)Math.Sqrt(dx * dx + dy * dy) <= _talk_dist*2)
+                    return p.Name;
+            }
+            return null;
         }
 
         /// <summary>

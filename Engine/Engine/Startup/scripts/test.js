@@ -74,7 +74,7 @@ function TestJSON()
 
 function Render()
 {
-	sys_font.drawText(0, 0, GetPersonX("player") + "," + GetPersonY("player"));
+	sys_font.drawText(0, 0, GetPersonX("player") + "," + GetPersonY("player") + "  " + GetTalkDistance());
 }
 
 function Render2()
@@ -86,7 +86,7 @@ function Update()
 {
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
-			case KEY_ESCAPE: ExitMapEngine(); break;
+			case KEY_ENTER: ExitMapEngine(); break;
 		}
 	}
 }
@@ -136,5 +136,21 @@ Menu.prototype.update = function(key) {
 		case KEY_ENTER:
 			this.items[this.index].callback();
 		break;
+	}
+}
+
+function ShowText(text)
+{
+	var done = false;
+    while (!done) {
+		RenderMap();
+		sys_window.drawWindow(16, 16, GetScreenWidth()-32, 48);
+		sys_font.drawText(16, 16, text);
+		
+		FlipScreen();
+		
+		while (AreKeysLeft()) {
+		    if (GetKey() == KEY_ENTER) done = true; 
+		}
 	}
 }

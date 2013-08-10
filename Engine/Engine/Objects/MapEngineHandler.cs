@@ -15,6 +15,7 @@ namespace Engine.Objects
         private static int _fps = 0;
         private static double _delta = 0;
 
+        private static View _cameraView;
         private static Vector2f _camera;
         private static Vertex[] _cutout;
         private static RenderStates _layerstates;
@@ -171,8 +172,8 @@ namespace Engine.Objects
             _ended = false;
             SetMapEngineFrameRate(fps);
 
+            _cameraView = new View(GetDefaultView());
             double time = Program.GetTime();
-            View v = new View(Program._window.GetView());
             filename = GlobalProps.BasePath + "/maps/" + filename;
 
             // It seems Sphere keeps non-essential npc's created prior to MapEngine.
@@ -188,18 +189,30 @@ namespace Engine.Objects
                 UpdateMapEngine();
                 RenderMap();
 
-                View camera = new View(Program._window.GetView());
-                Program._window.SetView(v);
-                if (_renderscript != null)
-                    _renderscript.Execute();
-                Program._window.SetView(camera);
-
                 Program.FlipScreen();
+
+                while (GlobalInput.AreKeysLeft())
+                {
+                    var key = GlobalInput.GetKey();
+                    if (key == GlobalInput.TalkKey)
+                        DoTalk();
+                }
             }
 
             PersonManager.RemoveNonEssential();
-            Program._window.SetView(v);
             Program.SetFrameRate(Program.GetFrameRate());
+        }
+
+        private static View _defaultView;
+        public static View GetDefaultView()
+        {
+            if (_defaultView == null)
+            {
+                Vector2f size = new Vector2f(GlobalProps.Width, GlobalProps.Height);
+                Vector2f center = new Vector2f(GlobalProps.Width / 2, GlobalProps.Height / 2);
+                _defaultView = new View(center, size);
+            }
+            return _defaultView;
         }
 
         /// <summary>
@@ -212,6 +225,15 @@ namespace Engine.Objects
                 Program._window.SetFramerateLimit(0);
             else
                 Program._window.SetFramerateLimit((uint)_fps);
+        }
+
+        public static void DoTalk()
+        {
+            if (!IsInputAttached())
+                return;
+            string person = PersonManager.GetClosest(input_ent);
+            if (person != null)
+                PersonManager.CallPersonScript(person, (int)PersonScripts.Talk);
         }
 
         private static void LoadMap(string filename)
@@ -368,6 +390,11 @@ namespace Engine.Objects
 
         private static void UpdateMapEngine()
         {
+            foreach (TileAnimHandler h in _tileanims)
+                h.Animate();
+
+            _fastatlas.Refresh();
+
             if (IsInputAttached() && PersonManager.IsCommandQueueEmpty(input_ent))
             {
                 int x = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.X) + 0.5f);
@@ -470,10 +497,7 @@ namespace Engine.Objects
 
         private static void RenderMap()
         {
-            foreach (TileAnimHandler h in _tileanims)
-                h.Animate();
-
-            _fastatlas.Refresh();
+            Program._window.SetView(_cameraView);
 
             Vector2f camera = GetClampedCamera();
             int length = _map.Layers.Count;
@@ -488,6 +512,11 @@ namespace Engine.Objects
                 if (_renderers[i] != null)
                     _renderers[i].Execute();
             }
+
+            Program._window.SetView(GetDefaultView());
+
+            if (_renderscript != null)
+                _renderscript.Execute();
         }
 
         public static bool CheckTileObstruction(ref Vector2f position, Person person)
@@ -571,12 +600,10 @@ namespace Engine.Objects
 
         private static void SetCameraX(int x) {
             _camera.X = x;
-            View v = Program._window.GetView();
             int w = (_map.Layers[_map.StartLayer].Width) * _map.Tileset.TileWidth;
             if (x < GlobalProps.Width / 2 || x >= w - GlobalProps.Width / 2)
                 return;
-            v.Center = new Vector2f(x, v.Center.Y);
-            Program._window.SetView(v);
+            _cameraView.Center = new Vector2f(x, _cameraView.Center.Y);
         }
 
         private static int GetCameraX()
@@ -586,12 +613,10 @@ namespace Engine.Objects
 
         private static void SetCameraY(int y) {
             _camera.Y = y;
-            View v = Program._window.GetView();
             int h = _map.Layers[0].Height * _map.Tileset.TileHeight;
             if (y < GlobalProps.Height / 2 || y >= h - GlobalProps.Height / 2)
                 return;
-            v.Center = new Vector2f(v.Center.X, y);
-            Program._window.SetView(v);
+            _cameraView.Center = new Vector2f(_cameraView.Center.X, y);
         }
 
         private static int GetCameraY()
