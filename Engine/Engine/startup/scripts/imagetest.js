@@ -31,7 +31,7 @@ function TestImages()
 			image.blit(i * 48, 52);
 		}
 		
-		image.rotateBlitMask(5 * 48, 0, rad, blue);		
+		image.rotateBlitMask(5 * 48, 0, rad, blue);
 		
 		if (time + 10 < GetTime())
 		{

@@ -258,7 +258,7 @@ namespace Engine.Objects
                         IntRect source = tileatlas.Sources[tile];
                         int w = source.Left + source.Width;
                         int h = source.Top + source.Height;
-                        lverts[i] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
+                        lverts[i + 0] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
                         lverts[i + 1] = new Vertex(loc2, new Vector2f(w, source.Top));
                         lverts[i + 2] = new Vertex(loc3, new Vector2f(w, h));
                         lverts[i + 3] = new Vertex(loc4, new Vector2f(source.Left, h));

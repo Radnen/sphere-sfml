@@ -52,6 +52,8 @@ namespace Engine.Objects
         public Vector2f Offset { get; set; }
         public Vector2f Position { get; set; }
         public Vector2f Speed { get; set; }
+        public bool IgnorePersons { get; set; }
+        public bool IgnoreTiles { get; set; }
 
         public Color Mask
         {
@@ -126,19 +128,52 @@ namespace Engine.Objects
             return _innerSS.GetLineBase();
         }
 
-        public bool CheckObstructions(Vector2f offset, Tile tile)
+        public bool CheckObstructions(ref Vector2f position, ref Vector2f tileOffset, Tile tile)
         {
-            Vector2f off = new Vector2f(_base.Left, _base.Top);
-            Vector2f pos = Position - off;
             Line[] baselines = _innerSS.GetLineBase();
+            Vector2f pos = position - new Vector2f(_base.Left, _base.Top);
             foreach (Line b in baselines)
             {
                 var lineA = b.Offset(pos);
                 foreach (Line l in tile.Obstructions)
                 {
-                    var lineB = l.Offset(offset);
-                    return Line.Intersects(lineA, lineB);
+                    var lineB = l.Offset(tileOffset);
+                    if (Line.Intersects(lineA, lineB))
+                        return true;
                 }
+            }
+            return false;
+        }
+
+        public bool CheckObstructions(ref Vector2f pos, Person other)
+        {
+            Line[] baselines1 = _innerSS.GetLineBase();
+            Line[] baselines2 = other._innerSS.GetLineBase();
+            Vector2f pos1 = pos - new Vector2f(_base.Left, _base.Top);
+            Vector2f pos2 = other.Position - new Vector2f(other._base.Left, other._base.Top);
+
+            foreach (Line l1 in baselines1)
+            {
+                Line A = l1.Offset(pos1);
+                foreach (Line l2 in baselines2)
+                {
+                    Line B = l2.Offset(pos2);
+                    if (Line.Intersects(A, B))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public bool CheckObstructions(ref Vector2f position, Line line)
+        {
+            Line[] baselines = _innerSS.GetLineBase();
+            Vector2f pos = position - new Vector2f(_base.Left, _base.Top);
+            foreach (Line b in baselines)
+            {
+                var baseline = b.Offset(pos);
+                if (Line.Intersects(baseline, line))
+                    return true;
             }
             return false;
         }
@@ -149,11 +184,16 @@ namespace Engine.Objects
             Program._window.Draw(_sprite);
 #if(DEBUG)
             Line[] lines = _innerSS.GetLineBase();
-            double x = Position.X + _base.Left - lines[0].Start.X;
-            double y = Position.Y + _base.Top - lines[0].Start.Y;
+            double x = ((int)Position.X/16)*16;
+            double y = ((int)Position.Y/16)*16;
             double w = lines[0].End.X - lines[0].Start.X;
             double h = lines[1].End.Y - lines[0].Start.Y;
-            GlobalPrimitives.OutlinedRectangle(x, y, w, h, debug_color);
+
+            for (var yy = y; yy < y +32; yy+=16) {
+                for (var xx = x; xx < x + 32; xx+=16) {
+                    GlobalPrimitives.OutlinedRectangle(xx, yy, w + 1, h + 1, debug_color);
+                }
+            }
 #endif
         }
 
@@ -220,7 +260,7 @@ namespace Engine.Objects
                 move.Y *= Speed.Y;
                 Position += move;
 
-                if (!MapEngineHandler.CheckTileObstruction(this))
+                if (IsObstructedAt(Position))
                 {
                     Position -= move;
                 }
@@ -241,6 +281,13 @@ namespace Engine.Objects
                     _revert = 0;
                 }
             }
+        }
+
+        public bool IsObstructedAt(Vector2f pos)
+        {
+            return (!IgnorePersons && MapEngineHandler.CheckTileObstruction(ref pos, this)) ||
+                (!IgnoreTiles && PersonManager.CheckPersonObstructions(ref pos, this)) ||
+                (MapEngineHandler.CheckLineObstruction(ref pos, this));
         }
 
         public bool IsQueueEmpty()

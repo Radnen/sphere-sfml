@@ -306,6 +306,14 @@ namespace Engine.Objects
         {
             _tileatlas.Update(_map.Tileset.GetImageArray());
             _fastatlas = new FastTextureAtlas(_tileatlas);
+
+#if(DEBUG)
+            for (int i = 0; i < _map.Tileset.Tiles.Count; ++i) {
+                Tile t = _map.Tileset.Tiles[i];
+                foreach (Line l in t.Obstructions)
+                    _fastatlas.Line((uint)i, l);
+            }
+#endif
         }
 
         /// <summary>
@@ -471,35 +479,44 @@ namespace Engine.Objects
             int length = _map.Layers.Count;
             for (var i = 0; i < length; ++i)
             {
-                CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
-                Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
+                if (_map.Layers[i].Visible)
+                {
+                    CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
+                    Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
+                }
                 DrawPersons(i);
                 if (_renderers[i] != null)
                     _renderers[i].Execute();
             }
         }
 
-        public static bool CheckTileObstruction(Person person)
+        public static bool CheckTileObstruction(ref Vector2f position, Person person)
         {
-            Vector2f point = new Vector2f();
-            int t = -1;
-
-            int sx = (int)Math.Floor(person.Position.X / _map.Tileset.TileWidth) + 2;
-            int sy = (int)Math.Floor(person.Position.Y / _map.Tileset.TileHeight) + 2;
-
-            for (int x = sx - 3; x < sx; ++x)
+            int tw = _map.Tileset.TileWidth, th = _map.Tileset.TileHeight;
+            int sx = (int)position.X / tw + 2;
+            int sy = (int)position.Y / th + 2;
+            Vector2f pos = new Vector2f();
+            for (var y = sy - 2; y < sy; ++y)
             {
-                point.X = x * _map.Tileset.TileWidth;
-                for (int y = sy - 3; y < sy; ++y)
+                pos.Y = y * th;
+                for (var x = sx - 2; x < sx; ++x)
                 {
-                    t = _map.Layers[person.Layer].GetTile(x, y);
-                    if (t < 0)
-                        continue;
-                    point.Y = y * _map.Tileset.TileHeight;
-                    return person.CheckObstructions(point, _map.Tileset.Tiles[t]);
+                    pos.X = x * tw;
+                    int t = _map.Layers[person.Layer].GetTile(x, y);
+                    if (t >= 0 && person.CheckObstructions(ref position, ref pos, _map.Tileset.Tiles[t]))
+                        return true;
                 }
             }
+            return false;
+        }
 
+        public static bool CheckLineObstruction(ref Vector2f position, Person person)
+        {
+            foreach (Segment s in _map.Layers[person.Layer].Segments)
+            {
+                if (person.CheckObstructions(ref position, s.Line))
+                    return true;
+            }
             return false;
         }
 

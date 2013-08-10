@@ -305,6 +305,7 @@
     <Compile Include="Objects\PersonScripts.cs" />
     <Compile Include="AssetManager.cs" />
     <Compile Include="Objects\MapScripts.cs" />
+    <Compile Include="Objects\TwoArray.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

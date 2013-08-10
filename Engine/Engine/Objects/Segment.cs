@@ -19,6 +19,18 @@ namespace Engine.Objects
         public Segment() { }
 
         /// <summary>
+        /// Gets the line representation of this segment.
+        /// </summary>
+        /// <value>The line.</value>
+        public Line Line
+        {
+            get
+            {
+                return new Line(new Vector2f(_x1, _y1), new Vector2f(_x2, _y2));
+            }
+        }
+
+        /// <summary>
         /// Creates a segment with supplied values.
         /// </summary>
         /// <param name="x1">The upper left x.</param>

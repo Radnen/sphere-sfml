@@ -10,7 +10,8 @@ namespace Engine.Objects
     public class Layer
     {
         #region attributes
-        private short[,] _tiles;
+        private TwoArray<short> _tiles;
+
         /// <summary>
         /// Gets the width of this Layer in tiles.
         /// </summary>
@@ -102,9 +103,8 @@ namespace Engine.Objects
             writer.Write(Name.ToCharArray());
 
             // save tiles:
-            for (int y = 0; y < Height; ++y)
-                for (int x = 0; x < Width; ++x)
-                    writer.Write(_tiles[x, y]);
+            for (int i = 0, size = Width * Height; i < size; ++i)
+                writer.Write(_tiles.Array[i]);
 
             // save segments:
             foreach (Segment segment in Segments)
@@ -138,12 +138,11 @@ namespace Engine.Objects
             short length = reader.ReadInt16();
             layer.Name = new string(reader.ReadChars(length));
 
-            layer._tiles = new short[layer.Width,layer.Height];
-            for (int y = 0; y < layer.Height; ++y)
-                for (int x = 0; x < layer.Width; ++x)
-                    layer._tiles[x, y] = reader.ReadInt16();
+            layer._tiles = new TwoArray<short>(layer.Width, layer.Height);
+            for (int i = 0, size = layer.Width*layer.Height; i < size; ++i)
+                layer._tiles.Array[i] = reader.ReadInt16();
 
-            while (segs-- > 0) layer.Segments.Add(new Segment(reader));
+            for (int i = 0; i < segs; ++i) layer.Segments.Add(new Segment(reader));
             return layer;
         }
 
@@ -158,7 +157,7 @@ namespace Engine.Objects
             Height = height;
             Name = "Untitled";
 
-            _tiles = new short[width, height];
+            _tiles = new TwoArray<short>(width, height);
         }
 
         /// <summary>
@@ -170,12 +169,7 @@ namespace Engine.Objects
         /// <returns>True if the tile had been set.</returns>
         public bool SetTile(int x, int y, short index)
         {
-            if (index < 0) return false;
-            if (x < 0 || x >= Width) return false;
-            if (y < 0 || y >= Height) return false;
-
-            _tiles[x, y] = index;
-            return true;
+            return _tiles.TrySet(x, y, index);
         }
 
         /// <summary>
@@ -187,15 +181,11 @@ namespace Engine.Objects
         public bool Validate(int max)
         {
             bool retVal = true;
-            for (int y = 0; y < Height; ++y)
+            for (int i = 0, size = Width*Height; i < size; ++i)
             {
-                for (int x = 0; x < Width; ++x)
-                {
-                    short index = _tiles[x, y];
-                    if (index < max) continue;
-                    _tiles[x, y] = 0;
-                    retVal = false;
-                }
+                if (_tiles.Array[i] < max) continue;
+                _tiles.Array[i] = 0;
+                retVal = false;
             }
             return retVal;
         }
@@ -204,26 +194,20 @@ namespace Engine.Objects
         /// Pump in a 2D array to replace current tiles with.
         /// </summary>
         /// <param name="tiles">New array of tile indicies to use.</param>
-        public void SetTiles(short[,] tiles)
+        public void SetTiles(short[] tiles)
         {
-            int w = _tiles.GetLength(0);
-            int h = _tiles.GetLength(1);
-
-            _tiles = new short[w, h];
-            for (int x = 0; x < w; ++x)
-                for (int y = 0; y < h; ++y)
-                    _tiles[x, y] = tiles[x, y];
+            _tiles.Set(tiles);
         }
 
         /// <summary>
         /// Creates a hard copy of the data.
         /// </summary>
         /// <returns>A clone of the layers tiles.</returns>
-        public short[,] CloneTiles()
+        public short[] CloneTiles()
         {
-            short[,] copy = new short[_tiles.GetLength(0), _tiles.GetLength(1)];
-            Array.Copy(_tiles, copy, _tiles.Length);
-            return copy;
+            short[] array = new short[Width * Height];
+            Array.Copy(_tiles.Array, array, array.Length);
+            return array;
         }
 
         /// <summary>
@@ -233,13 +217,15 @@ namespace Engine.Objects
         /// <param name="delta">How much of a shift to make.</param>
         public void AdjustTiles(short startindex, short delta)
         {
-            for (int y = 0; y < Height; ++y)
-                for (int x = 0; x < Width; ++x)
-                    if (_tiles[x, y] > startindex)
-                    {
-                        _tiles[x, y] += delta;
-                        if (_tiles[x, y] < 0) _tiles[x, y] = 0;
-                    }
+            for (int i = 0, size = Width*Height; i < size; ++i)
+            {
+                short v = _tiles.Array[i];
+                if (v > startindex)
+                {
+                    v += delta;
+                    _tiles.Array[i] = Math.Max((short)0, v);
+                }
+            }
         }
 
         /// <summary>
@@ -250,8 +236,9 @@ namespace Engine.Objects
         /// <returns>The zero based tile index.</returns>
         public short GetTile(int x, int y)
         {
-            if (x < 0 || y < 0 || x >= Width || y >= Height) return -1;
-            return _tiles[x, y];
+            short v = -1;
+            _tiles.Get(x, y, ref v);
+            return v;
         }
 
         /// <summary>
@@ -261,18 +248,7 @@ namespace Engine.Objects
         /// <param name="height">New height of the field.</param>
         public void Resize(short width, short height)
         {
-            short[,] newTiles = new short[width, height];
-
-            int w = Math.Min(width, Width);
-            int h = Math.Min(height, Height);
-
-            for (int x = 0; x <  w; ++x)
-                for (int y = 0; y < h; ++y)
-                    newTiles[x, y] = _tiles[x, y];
-
-            Width = width;
-            Height = height;
-            _tiles = newTiles;
+            _tiles.Resize(width, height);
         }
     }
 }

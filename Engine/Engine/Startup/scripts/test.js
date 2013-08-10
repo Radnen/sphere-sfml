@@ -74,7 +74,7 @@ function TestJSON()
 
 function Render()
 {
-	sys_font.drawText(MapToScreenX(0, 0), MapToScreenY(0, 0), GetPersonFrame("player"));
+	sys_font.drawText(0, 0, GetPersonX("player") + "," + GetPersonY("player"));
 }
 
 function Render2()

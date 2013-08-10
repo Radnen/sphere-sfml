@@ -70,6 +70,11 @@ namespace Engine
             engine.SetGlobalFunction("SetPersonScript", new Action<string, int, object>(SetPersonScript));
             engine.SetGlobalFunction("CallPersonScript", new Action<string, int>(CallPersonScript));
             engine.SetGlobalFunction("DoesPersonExist", new Func<string, bool>(DoesPersonExist));
+            engine.SetGlobalFunction("IsIgnoringPersonObstructions", new Func<string, bool>(IsIgnoringPersonObstructions));
+            engine.SetGlobalFunction("IsIgnoringTileObstructions", new Func<string, bool>(IsIgnoringTileObstructions));
+            engine.SetGlobalFunction("IgnorePersonObstructions", new Action<string, bool>(IgnorePersonObstructions));
+            engine.SetGlobalFunction("IgnoreTileObstructions", new Action<string, bool>(IgnoreTileObstructions));
+            engine.SetGlobalFunction("IsPersonObstructed", new Func<string, double, double, bool>(IsPersonObstructed));
         }
 
         public static void CreatePerson(string name, string ss, [DefaultParameterValue(true)] bool destroy = true)
@@ -134,6 +139,18 @@ namespace Engine
                     i--;
                 }
             }
+        }
+
+        public static bool CheckPersonObstructions(ref Vector2f position, Person person)
+        {
+            foreach (Person b in People)
+            {
+                if (b.Name == person.Name)
+                    continue;
+                if (person.CheckObstructions(ref position, b))
+                    return true;
+            }
+            return false;
         }
 
         public static void SetPersonX(string name, int x)
@@ -357,6 +374,32 @@ namespace Engine
         public static void SetPersonScript(string name, int type, object script)
         {
             _people[name].SetScript((PersonScripts)type, script);
+        }
+
+        public static void IgnorePersonObstructions(string name, bool value)
+        {
+            _people[name].IgnorePersons = value;
+        }
+
+        public static bool IsIgnoringPersonObstructions(string name)
+        {
+            return _people[name].IgnorePersons;
+        }
+
+        public static void IgnoreTileObstructions(string name, bool value)
+        {
+            _people[name].IgnoreTiles = value;
+        }
+
+        public static bool IsIgnoringTileObstructions(string name)
+        {
+            return _people[name].IgnoreTiles;
+        }
+
+        public static bool IsPersonObstructed(string name, double x, double y)
+        {
+            Vector2f pos = new Vector2f((float)x, (float)y);
+            return _people[name].IsObstructedAt(pos);
         }
     }
 }
