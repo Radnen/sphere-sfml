@@ -158,8 +158,8 @@ namespace Engine
                 float dx = p.Position.X - compare.Position.X;
                 float dy = p.Position.Y - compare.Position.Y;
                 double a = Math.Atan2(dy, dx);
-                dx -= (float)(Math.Cos(a) * w);
-                dy -= (float)(Math.Sin(a) * h);
+                dx -= (float)(Math.Cos(a) * w/2);
+                dy -= (float)(Math.Sin(a) * h/2);
 
                 if ((int)Math.Sqrt(dx * dx + dy * dy) <= _talk_dist)
                     return p.Name;
