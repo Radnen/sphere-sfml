@@ -152,9 +152,16 @@ namespace Engine
             {
                 if (name == p.Name)
                     continue;
-                float dx = compare.Position.X - p.Position.X;
-                float dy = compare.Position.Y - p.Position.Y;
-                if ((int)Math.Sqrt(dx * dx + dy * dy) <= _talk_dist*2)
+                Line[] pBase = p.GetBounds();
+                int w = (int)(pBase[0].End.X - pBase[0].Start.X);
+                int h = (int)(pBase[1].End.Y - pBase[1].Start.Y);
+                float dx = p.Position.X - compare.Position.X;
+                float dy = p.Position.Y - compare.Position.Y;
+                double a = Math.Atan2(dy, dx);
+                dx -= (float)(Math.Cos(a) * w);
+                dy -= (float)(Math.Sin(a) * h);
+
+                if ((int)Math.Sqrt(dx * dx + dy * dy) <= _talk_dist)
                     return p.Name;
             }
             return null;
