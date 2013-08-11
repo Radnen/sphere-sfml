@@ -41,6 +41,7 @@ function game()
 		CreatePerson("player", "test.rss", false);
 		AttachInput("player");
 		SetPersonFrameRevert("player", 8);
+		SetTalkDistance(16);
 		AttachCamera("player");
 		SetUpdateScript("Update();");
 		SetRenderScript("Render();");

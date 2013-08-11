@@ -146,20 +146,24 @@ namespace Engine
         /// <param name="name">Compare all others to this one.</param>
         public static string GetClosest(string name)
         {
-            List<Person> closest = new List<Person>();
-            Person compare = _people[name];
+            int talk_x = GetPersonX(name), talk_y = GetPersonY(name);
+            string direction = GetPersonDirection(name);
+
+            if (direction.Contains("north"))
+                talk_y -= _talk_dist;
+            if (direction.Contains("south"))
+                talk_y += _talk_dist;
+            if (direction.Contains("east"))
+                talk_x += _talk_dist;
+            if (direction.Contains("west"))
+                talk_x -= _talk_dist;
+
             foreach (Person p in People)
             {
                 if (name == p.Name)
                     continue;
-                Line[] pBase = p.GetBounds();
-                int w = (int)(pBase[0].End.X - pBase[0].Start.X);
-                int h = (int)(pBase[1].End.Y - pBase[1].Start.Y);
-                float dx = p.Position.X - compare.Position.X;
-                float dy = p.Position.Y - compare.Position.Y;
-                double a = Math.Atan2(dy, dx);
-                dx -= (float)(Math.Cos(a) * w/2);
-                dy -= (float)(Math.Sin(a) * h/2);
+                float dx = p.Position.X - talk_x;
+                float dy = p.Position.Y - talk_y;
 
                 if ((int)Math.Sqrt(dx * dx + dy * dy) <= _talk_dist)
                     return p.Name;

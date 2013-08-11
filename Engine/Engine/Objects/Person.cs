@@ -184,16 +184,12 @@ namespace Engine.Objects
             Program._window.Draw(_sprite);
 #if(DEBUG)
             Line[] lines = _innerSS.GetLineBase();
-            double x = ((int)Position.X/16)*16;
-            double y = ((int)Position.Y/16)*16;
+            double x = Position.X;
+            double y = Position.Y;
             double w = lines[0].End.X - lines[0].Start.X;
             double h = lines[1].End.Y - lines[0].Start.Y;
 
-            for (var yy = y; yy < y +32; yy+=16) {
-                for (var xx = x; xx < x + 32; xx+=16) {
-                    GlobalPrimitives.OutlinedRectangle(xx, yy, w + 1, h + 1, debug_color);
-                }
-            }
+            GlobalPrimitives.OutlinedRectangle(x, y, w + 1, h + 1, debug_color);
 #endif
         }
 
