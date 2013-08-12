@@ -88,6 +88,8 @@ namespace Engine.Objects
             engine.SetGlobalFunction("MapToScreenY", new Func<int, int, int>(MapToScreenY));
             engine.SetGlobalFunction("ScreenToMapX", new Func<int, int, int>(ScreenToMapX));
             engine.SetGlobalFunction("ScreenToMapY", new Func<int, int, int>(ScreenToMapY));
+            engine.SetGlobalFunction("IsTriggerAt", new Func<double, double, int, bool>(IsTriggerAt));
+            engine.SetGlobalFunction("ExecuteTrigger", new Action<double, double, int>(ExecuteTrigger));
         }
 
         private static void AttachInput(string name)
@@ -177,7 +179,7 @@ namespace Engine.Objects
             filename = GlobalProps.BasePath + "/maps/" + filename;
 
             // It seems Sphere keeps non-essential npc's created prior to MapEngine.
-            LoadMap(filename, false);
+            LoadMap(filename, false, true);
 
             Console.WriteLine(Program.GetTime() - time);
 
@@ -240,7 +242,7 @@ namespace Engine.Objects
 
         private static void ChangeMap(string filename)
         {
-            LoadMap(Program.ParseSpherePath(filename, "maps"), true);
+            LoadMap(Program.ParseSpherePath(filename, "maps"), true, false);
         }
 
         /// <summary>
@@ -248,7 +250,7 @@ namespace Engine.Objects
         /// </summary>
         /// <param name="filename">Filename.</param>
         /// <param name="remove_people">If set to <c>true</c> remove people.</param>
-        private static void LoadMap(string filename, bool removePeople)
+        private static void LoadMap(string filename, bool removePeople, bool useBase)
         {
             if (removePeople)
                 PersonManager.RemoveNonEssential();
@@ -266,7 +268,8 @@ namespace Engine.Objects
             Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
             foreach (Person p in PersonManager.People)
             {
-                p.Position = start_pos;
+                Vector2f basevect = new Vector2f(p.BaseWidth / 2, p.BaseHeight / 2);
+                p.Position = useBase ? start_pos - basevect : start_pos;
                 p.Layer = _map.StartLayer;
             }
 
@@ -452,8 +455,9 @@ namespace Engine.Objects
                 }
             }
 
-            foreach (Person p in PersonManager.People)
-                p.UpdateCommandQueue();
+            var i = PersonManager.People.Count;
+            while (i-- > 0)
+                PersonManager.People[i].UpdateCommandQueue();
 
             PersonManager.OrderPeople();
 
@@ -467,19 +471,39 @@ namespace Engine.Objects
             if (IsInputAttached())
             {
                 Person player = PersonManager.PeopleTable[input_ent];
-                int x = ((int)player.Position.X + player.BaseWidth / 2) / _map.Tileset.TileWidth;
-                int y = ((int)player.Position.Y + player.BaseHeight / 2) / _map.Tileset.TileHeight;
-                foreach (Entity e in _triggers)
-                {
-                    int tx = e.X / _map.Tileset.TileWidth;
-                    int ty = e.Y / _map.Tileset.TileHeight;
-                    if (x == tx && y == ty)
-                    {
-                        e.ExecuteTrigger();
-                        break;
-                    }
-                }
+                double x = player.Position.X + player.BaseWidth / 2;
+                double y = player.Position.Y + player.BaseHeight / 2;
+                Entity trigger = GetTriggerAt(x, y);
+                if (trigger != null)
+                    trigger.ExecuteTrigger();
             }
+        }
+
+        private static Entity GetTriggerAt(double x, double y)
+        {
+            x = (int)x / _map.Tileset.TileWidth;
+            y = (int)y / _map.Tileset.TileHeight;
+            foreach (Entity e in _triggers)
+            {
+                int tx = e.X / _map.Tileset.TileWidth;
+                int ty = e.Y / _map.Tileset.TileHeight;
+                if (tx == x && ty == y)
+                    return e;
+            }
+            return null;
+        }
+
+        private static bool IsTriggerAt(double x, double y, int layer)
+        {
+            Entity trigger = GetTriggerAt(x, y);
+            return trigger != null;
+        }
+
+        private static void ExecuteTrigger(double x, double y, int layer)
+        {
+            Entity trigger = GetTriggerAt(x, y);
+            if (trigger != null)
+                trigger.ExecuteTrigger();
         }
 
         private static void CutoutVerts(Vertex[] in_verts, int x, int y, int scan)

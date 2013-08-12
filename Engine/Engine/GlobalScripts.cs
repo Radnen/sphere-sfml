@@ -72,9 +72,10 @@ namespace Engine
             catch (Exception e)
             {
                 var st = new StackTrace(e, true);
-                var frame = st.GetFrame(2);
+                //var frame = st.GetFrame(2);
                 Console.WriteLine("Fatal Error: {0}", e.Message);
-                Console.WriteLine("Line {0}: {1}", frame.GetFileLineNumber(), frame.GetFileName());
+                Console.WriteLine(st.ToString());
+                //Console.WriteLine("Line {0}: {1}", frame.GetFileLineNumber(), frame.GetFileName());
             }
         }
     }
