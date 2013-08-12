@@ -23,6 +23,7 @@ function game()
 
 	var done = false;
 	var menu = new Menu();
+		
 	menu.addOption("Images", TestImages);
 	menu.addOption("Fonts", TestFonts);
 	menu.addOption("Windows", TestWindows);
@@ -83,8 +84,11 @@ function Render2()
 	sys_font.drawText(0, 0, GetCameraX() + ", " + GetCameraY());
 }
 
+var testperson = new MapEntity("barnum");
+
 function Update()
 {
+	testperson.randomMove();
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
 			case KEY_ENTER: ExitMapEngine(); break;
@@ -154,4 +158,52 @@ function ShowText(text)
 		    if (GetKey() == KEY_ENTER) done = true; 
 		}
 	}
+}
+
+function Walk(name, dir, tiles)
+{
+	var face = null;
+	var point = {x: 0, y: 0};
+	switch (dir)
+	{
+	    case COMMAND_MOVE_NORTH: face = COMMAND_FACE_NORTH; point.y = -1; break;
+	    case COMMAND_MOVE_SOUTH: face = COMMAND_FACE_SOUTH; point.y =  1; break;
+	    case COMMAND_MOVE_EAST: face = COMMAND_FACE_EAST; point.x =  1; break;
+	    case COMMAND_MOVE_WEST: face = COMMAND_FACE_WEST; point.x = -1; break;
+	}
+	
+	if (face != null) QueuePersonCommand(name, face, true);
+	for (var i = 0, total = tiles * GetTileWidth(); i < total; ++i) {
+	    QueuePersonCommand(name, dir, false);
+	}
+	
+	return point;
+}
+
+function MapEntity(name)
+{
+	this.name = name;
+	this.distance = 32;
+	this.startX = -1;
+	this.startY = -1;
+}
+
+MapEntity.prototype.randomMove = function()
+{
+	if (!IsCommandQueueEmpty(this.name)) return;
+	
+	var x = GetPersonX(this.name);
+	var y = GetPersonY(this.name);
+	if (this.startX < 0 || this.startY < 0) {
+		this.startX = x;
+		this.startY = y;
+	}
+	
+	var arr = [COMMAND_MOVE_NORTH, COMMAND_MOVE_SOUTH, COMMAND_MOVE_EAST, COMMAND_MOVE_WEST, COMMAND_WAIT];
+	var i = Math.floor(Math.random() * arr.length);
+	var future = Walk(this.name, arr[i], 1 + Math.floor(Math.random()*2));
+
+	var dx = this.startX - (x + future.x * 16);
+	var dy = this.startY - (y + future.y * 16);
+	if (Math.sqrt(dx * dx + dy*dy) > this.distance) { ClearPersonCommands(this.name); }
 }

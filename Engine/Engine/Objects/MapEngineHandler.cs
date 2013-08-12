@@ -11,7 +11,7 @@ namespace Engine.Objects
     {
         private static Map _map;
         private static TextureAtlas _tileatlas;
-        private static bool _ended = true, _toggled;
+        private static bool _ended = true, _toggled, _talkheld;
         private static int _fps = 0;
         private static double _delta = 0;
 
@@ -191,12 +191,14 @@ namespace Engine.Objects
 
                 Program.FlipScreen();
 
-                while (GlobalInput.AreKeysLeft())
+                var keyheld = GlobalInput.IsKeyPressed(GlobalInput.TalkKey);
+                if (!_talkheld && keyheld)
                 {
-                    var key = GlobalInput.GetKey();
-                    if (key == GlobalInput.TalkKey)
-                        DoTalk();
+                    DoTalk();
+                    _talkheld = true;
                 }
+                if (!keyheld)
+                    _talkheld = false;
             }
 
             PersonManager.RemoveNonEssential();
