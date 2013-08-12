@@ -48,7 +48,7 @@ namespace Engine.Objects
         {
             engine.SetGlobalFunction("MapEngine", new Action<string, int>(MapEngine));
             engine.SetGlobalFunction("ExitMapEngine", new Action(ExitMapEngine));
-            engine.SetGlobalFunction("ChangeMap", new Action<string>(LoadMap));
+            engine.SetGlobalFunction("ChangeMap", new Action<string>(ChangeMap));
             engine.SetGlobalFunction("IsMapEngineRunning", new Func<bool>(IsMapEngineRunning));
             engine.SetGlobalFunction("SetCameraX", new Action<int>(SetCameraX));
             engine.SetGlobalFunction("SetCameraY", new Action<int>(SetCameraY));
@@ -238,9 +238,9 @@ namespace Engine.Objects
                 PersonManager.CallPersonScript(person, (int)PersonScripts.Talk);
         }
 
-        private static void LoadMap(string filename)
+        private static void ChangeMap(string filename)
         {
-            LoadMap(filename, true);
+            LoadMap(Program.ParseSpherePath(filename, "maps"), true);
         }
 
         /// <summary>
@@ -332,6 +332,7 @@ namespace Engine.Objects
             _fastatlas = new FastTextureAtlas(_tileatlas);
 
 #if(DEBUG)
+            ColorInstance color = new ColorInstance(Program._engine, Color.Magenta);
             for (int i = 0; i < _map.Tileset.Tiles.Count; ++i) {
                 Tile t = _map.Tileset.Tiles[i];
                 foreach (Line l in t.Obstructions)
@@ -456,24 +457,28 @@ namespace Engine.Objects
 
             PersonManager.OrderPeople();
 
-            if (IsInputAttached())
-            {
-                foreach (Entity e in _triggers)
-                {
-                    int x = PersonManager.GetPersonX(input_ent) / _map.Tileset.TileWidth;
-                    int y = PersonManager.GetPersonY(input_ent) / _map.Tileset.TileHeight;
-                    int tx = e.X / _map.Tileset.TileWidth;
-                    int ty = e.Y / _map.Tileset.TileHeight;
-                    if (x == tx && y == ty)
-                        e.ExecuteTrigger();
-                }
-            }
-
             if (IsCameraAttached())
             {
                 View v = Program._window.GetView();
                 SetCameraX(PersonManager.GetPersonX(camera_ent));
                 SetCameraY(PersonManager.GetPersonY(camera_ent));
+            }
+
+            if (IsInputAttached())
+            {
+                Person player = PersonManager.PeopleTable[input_ent];
+                int x = ((int)player.Position.X + player.BaseWidth / 2) / _map.Tileset.TileWidth;
+                int y = ((int)player.Position.Y + player.BaseHeight / 2) / _map.Tileset.TileHeight;
+                foreach (Entity e in _triggers)
+                {
+                    int tx = e.X / _map.Tileset.TileWidth;
+                    int ty = e.Y / _map.Tileset.TileHeight;
+                    if (x == tx && y == ty)
+                    {
+                        e.ExecuteTrigger();
+                        break;
+                    }
+                }
             }
         }
 
@@ -603,9 +608,13 @@ namespace Engine.Objects
         private static void SetCameraX(int x) {
             _camera.X = x;
             int w = (_map.Layers[_map.StartLayer].Width) * _map.Tileset.TileWidth;
-            if (x < GlobalProps.Width / 2 || x >= w - GlobalProps.Width / 2)
-                return;
-            _cameraView.Center = new Vector2f(x, _cameraView.Center.Y);
+            int w2 = GlobalProps.Width / 2;
+            if (x < w2)
+                _cameraView.Center = new Vector2f(w2, _cameraView.Center.Y);
+            else if (x >= w - w2)
+                _cameraView.Center = new Vector2f(w - w2, _cameraView.Center.Y);
+            else
+                _cameraView.Center = new Vector2f(x, _cameraView.Center.Y);
         }
 
         private static int GetCameraX()
@@ -616,9 +625,13 @@ namespace Engine.Objects
         private static void SetCameraY(int y) {
             _camera.Y = y;
             int h = _map.Layers[0].Height * _map.Tileset.TileHeight;
-            if (y < GlobalProps.Height / 2 || y >= h - GlobalProps.Height / 2)
-                return;
-            _cameraView.Center = new Vector2f(_cameraView.Center.X, y);
+            int h2 = GlobalProps.Height / 2;
+            if (y < h2)
+                _cameraView.Center = new Vector2f(_cameraView.Center.X, h2);
+            else if (y >= h - h2)
+                _cameraView.Center = new Vector2f(_cameraView.Center.X, h - h2);
+            else
+                _cameraView.Center = new Vector2f(_cameraView.Center.X, y);
         }
 
         private static int GetCameraY()

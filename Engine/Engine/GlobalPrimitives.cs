@@ -14,7 +14,7 @@ namespace Engine
         private static CircleShape _ocircle = new CircleShape();
         private static Vertex[] _verts = new Vertex[4];
 
-        public static RenderWindow window;
+        public static RenderTarget Target;
 
         static GlobalPrimitives()
         {
@@ -39,7 +39,7 @@ namespace Engine
             _rect.FillColor = color.GetColor();
             _rect.Texture = null;
             _rect.Size = new Vector2f((float)width, (float)height);
-            window.Draw(_rect);
+            Target.Draw(_rect);
         }
 
         public static void ApplyColorMask(ColorInstance color)
@@ -57,7 +57,7 @@ namespace Engine
             _verts[2].Color = color3.GetColor();
             _verts[3].Position = new Vector2f((float)x, (float)(y + height));
             _verts[3].Color = color4.GetColor();
-            window.Draw(_verts, PrimitiveType.Quads);
+            Target.Draw(_verts, PrimitiveType.Quads);
         }
 
         public static void OutlinedRectangle(double x, double y, double width, double height, ColorInstance color, [DefaultParameterValue(1.0)] double thickness = 1.0)
@@ -67,7 +67,7 @@ namespace Engine
             _orect.OutlineColor = c;
             _orect.Size = new Vector2f((float)width-2, (float)height-2);
             _orect.OutlineThickness = (float)thickness;
-            window.Draw(_orect);
+            Target.Draw(_orect);
         }
 
         public static void OutlinedRectangles(ArrayInstance items, ColorInstance color)
@@ -95,7 +95,7 @@ namespace Engine
             Vertex[] v = { new Vertex(new Vector2f((float)x1, (float)y1), sfml_color),
                 new Vertex(new Vector2f((float)x2, (float)y2), sfml_color),
                 new Vertex(new Vector2f((float)x3, (float)y3), sfml_color) };
-            window.Draw(v, PrimitiveType.Triangles);
+            Target.Draw(v, PrimitiveType.Triangles);
         }
 
         public static void GradientTriangle(ObjectInstance A, ObjectInstance B, ObjectInstance C, ColorInstance color1, ColorInstance color2, ColorInstance color3)
@@ -103,7 +103,7 @@ namespace Engine
             Vertex[] v = { new Vertex(GetVector(A), color1.GetColor()),
                            new Vertex(GetVector(B), color2.GetColor()),
                            new Vertex(GetVector(C), color3.GetColor()) };
-            window.Draw(v, PrimitiveType.Triangles);
+            Target.Draw(v, PrimitiveType.Triangles);
         }
 
         public static void Polygon(ArrayInstance points, ColorInstance color, [DefaultParameterValue(false)] bool inverse = false)
@@ -122,13 +122,13 @@ namespace Engine
                 v[i] = new Vertex(GetVector(obj), sfml_color);
             }
 
-            window.Draw(v, PrimitiveType.TrianglesFan);
+            Target.Draw(v, PrimitiveType.TrianglesFan);
         }
 
         public static void Point(double x, double y, ColorInstance color)
         {
             Vertex[] v = { new Vertex(new Vector2f((float)x, (float)y), color.GetColor()) };
-            window.Draw(v, PrimitiveType.Points);
+            Target.Draw(v, PrimitiveType.Points);
         }
 
         public static void Line(double x1, double y1, double x2, double y2, ColorInstance color)
@@ -136,7 +136,7 @@ namespace Engine
             Color sfml_color = color.GetColor();
             Vertex[] v = { new Vertex(new Vector2f((float)x1, (float)y1), sfml_color),
                 new Vertex(new Vector2f((float)x2, (float)y2), sfml_color) };
-            window.Draw(v, PrimitiveType.Lines);
+            Target.Draw(v, PrimitiveType.Lines);
         }
 
         public static void LineSeries(ArrayInstance points, ColorInstance color)
@@ -156,7 +156,7 @@ namespace Engine
                     throw new Jurassic.JavaScriptException(Program._engine, "Invalid object", "Not a JS object in array.");
             }
 
-            window.Draw(v, PrimitiveType.Lines);
+            Target.Draw(v, PrimitiveType.Lines);
         }
 
         public static void PointSeries(ArrayInstance points, ColorInstance color)
@@ -176,14 +176,14 @@ namespace Engine
                     throw new NullReferenceException();
             }
 
-            window.Draw(v, PrimitiveType.Points);
+            Target.Draw(v, PrimitiveType.Points);
         }
 
         public static void GradientLine(double x1, double y1, double x2, double y2, ColorInstance color1, ColorInstance color2)
         {
             Vertex[] v = { new Vertex(new Vector2f((float)x1, (float)y1), color1.GetColor()),
                 new Vertex(new Vector2f((float)x2, (float)y2), color2.GetColor()) };
-            window.Draw(v, PrimitiveType.Lines);
+            Target.Draw(v, PrimitiveType.Lines);
         }
 
         public static void FilledCircle(double x, double y, double radius, ColorInstance color)
@@ -192,7 +192,7 @@ namespace Engine
             _circle.FillColor = color.GetColor();
             _circle.Position = new Vector2f((float)x, (float)y);
             _circle.Origin = new Vector2f((float)radius, (float)radius);
-            window.Draw(_circle);
+            Target.Draw(_circle);
         }
 
         public static void OutlinedCircle(double x, double y, double radius, ColorInstance color)
@@ -201,7 +201,7 @@ namespace Engine
             _circle.OutlineColor = color.GetColor();
             _circle.Position = new Vector2f((float)x, (float)y);
             _circle.Origin = new Vector2f((float)radius, (float)radius);
-            window.Draw(_circle);
+            Target.Draw(_circle);
         }
     }
 }

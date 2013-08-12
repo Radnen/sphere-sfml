@@ -174,7 +174,7 @@ namespace Engine
             Program._window.SetFramerateLimit((uint)_internal_fps);
             Program._window.SetMouseCursorVisible(false);
 
-            GlobalPrimitives.window = _window;
+            GlobalPrimitives.Target = _window;
             FindIcon();
             return true;
         }

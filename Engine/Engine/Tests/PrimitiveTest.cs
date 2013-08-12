@@ -11,7 +11,7 @@ namespace Engine
         public void Init()
         {
             Program.SetupTestEnvironment();
-            GlobalPrimitives.window = Program._window;
+            GlobalPrimitives.Target = Program._window;
         }
 
         [Test()]

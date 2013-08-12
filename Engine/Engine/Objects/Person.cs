@@ -9,7 +9,7 @@ namespace Engine.Objects
     public class Person
     {
 #if(DEBUG)
-        private static ColorInstance debug_color;
+        private static ColorInstance _debug1, _debug2;
 #endif
 
         SpritesetInstance _innerSS;
@@ -24,8 +24,10 @@ namespace Engine.Objects
         public Person(string name, SpritesetInstance spriteset, bool destroy)
         {
 #if(DEBUG)
-            if (debug_color == null)
-                debug_color = new ColorInstance(Program._engine, Color.Red);
+            if (_debug1 == null)
+                _debug1 = new ColorInstance(Program._engine, Color.Magenta);
+            if (_debug2 == null)
+                _debug2 = new ColorInstance(Program._engine, Color.Red);
 #endif
 
             Name = name;
@@ -186,11 +188,25 @@ namespace Engine.Objects
             Line[] lines = _innerSS.GetLineBase();
             double x = Position.X;
             double y = Position.Y;
-            double w = lines[0].End.X - lines[0].Start.X;
-            double h = lines[1].End.Y - lines[0].Start.Y;
+            double w = BaseWidth + 1;
+            double h = BaseHeight + 1;
 
-            GlobalPrimitives.OutlinedRectangle(x, y, w + 1, h + 1, debug_color);
+            GlobalPrimitives.OutlinedRectangle(((int)(x+lines[0].Start.X/2)/16)*16, ((int)(y+ lines[0].Start.Y/2)/16)*16, w, h, _debug2);
+            GlobalPrimitives.OutlinedRectangle(x, y, w, h, _debug1);
 #endif
+        }
+
+        public int BaseWidth { get {
+                return _base.Width;
+            }
+        }
+
+        public int BaseHeight
+        { 
+            get
+            {
+                return _base.Height;
+            }
         }
 
         public void QueueCommand(int command, bool imm)

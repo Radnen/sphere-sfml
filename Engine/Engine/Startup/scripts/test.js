@@ -92,6 +92,7 @@ function Update()
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
 			case KEY_ENTER: ExitMapEngine(); break;
+			case KEY_SPACE: testperson.start = true; break;
 		}
 	}
 }
@@ -186,10 +187,12 @@ function MapEntity(name)
 	this.distance = 32;
 	this.startX = -1;
 	this.startY = -1;
+	this.start = false;
 }
 
 MapEntity.prototype.randomMove = function()
 {
+	if (!this.start) return;
 	if (!IsCommandQueueEmpty(this.name)) return;
 	
 	var x = GetPersonX(this.name);
