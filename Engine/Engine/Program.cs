@@ -88,7 +88,6 @@ namespace Engine
             {
                 GlobalScripts.RequireScript(filename);
                 GlobalScripts.RunCode(new StringScriptSource("game();", filename));
-                GlobalScripts.RunCode(new StringScriptSource("while(true) { while(AreKeysLeft()) { if (GetKey() == KEY_ENTER) Exit(); } FlipScreen(); }", filename));
             }
             else
                 Console.WriteLine("Invalid script file in game.sgm");
@@ -506,7 +505,7 @@ namespace Engine
 
         public static void Abort(string msg)
         {
-            Print(msg);
+            ShowAbortScreen(msg);
             Exit();
         }
 
@@ -773,6 +772,21 @@ namespace Engine
                 return false;
             File.Move(file1, file2);
             return true;
+        }
+
+        public static void ShowAbortScreen(string message)
+        {
+            FontInstance font = GetSystemFont();
+            _window.SetView(MapEngineHandler.GetDefaultView());
+            var done = false;
+            while (!done)
+            {
+                font.DrawTextBox(0, 0, GlobalProps.Width, GlobalProps.Height, 0, message);
+                FlipScreen();
+
+                while (GlobalInput.AreKeysLeft())
+                    done = GlobalInput.GetKey() >= 0;
+            }
         }
     }
 }

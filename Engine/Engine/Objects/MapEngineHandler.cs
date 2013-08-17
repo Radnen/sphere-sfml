@@ -34,6 +34,9 @@ namespace Engine.Objects
         private static string camera_ent = "";
         private static string input_ent = "";
         private static string _current = "";
+        private static int _mask_frames = 0, _frames = 0;
+        private static int _target_alpha = 0;
+        private static ColorInstance _mask = null;
 
         static MapEngineHandler()
         {
@@ -90,6 +93,7 @@ namespace Engine.Objects
             engine.SetGlobalFunction("ScreenToMapY", new Func<int, int, int>(ScreenToMapY));
             engine.SetGlobalFunction("IsTriggerAt", new Func<double, double, int, bool>(IsTriggerAt));
             engine.SetGlobalFunction("ExecuteTrigger", new Action<double, double, int>(ExecuteTrigger));
+            engine.SetGlobalFunction("SetColorMask", new Action<ColorInstance, int>(SetColorMask));
         }
 
         private static void AttachInput(string name)
@@ -219,6 +223,19 @@ namespace Engine.Objects
             return _defaultView;
         }
 
+        public static void SetColorMask(ColorInstance color, int frames)
+        {
+            Color c = color.GetColor();
+            if (c.Equals(Color.White))
+                _mask = null;
+            else
+            {
+                _mask = color;
+                _target_alpha = c.A;
+                _mask_frames = frames;
+            }
+        }
+
         /// <summary>
         /// Toggles the FPS throttle.
         /// </summary>
@@ -256,7 +273,10 @@ namespace Engine.Objects
                 PersonManager.RemoveNonEssential();
 
             _map = new Map();
-            _map.Load(filename);
+
+            if (!_map.Load(filename))
+                throw new System.IO.FileNotFoundException("Could not locate map file.", filename);
+
             _current = filename;
 
             SetCameraX(_map.StartX);
@@ -512,18 +532,25 @@ namespace Engine.Objects
             y /= _map.Tileset.TileHeight;
             x /= _map.Tileset.TileWidth;
 
+            // initialize some math to make stripping easier.
             Vertex[] local = _cutout;
             int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
             int length = (GlobalProps.Width / _map.Tileset.TileWidth + 1) << 2;
             int offset = (x << 2) + y * scan;
             int height = offset + h * scan;
-            int index = 0;
+            int index = 0, i = 0;
 
-            for (var i = offset; i < height && i < in_verts.Length; i += scan)
+            // strip out slices of the view at a time.
+            for (i = offset; i + length < in_verts.Length && index < local.Length && i < height; i += scan)
             {
                 Array.Copy(in_verts, i, local, index, length);
                 index += length;
             }
+
+            // check to see if we haven't; else pad out the rest. (small maps are affected by this).
+            if (i < in_verts.Length && index < local.Length)
+                Array.Copy(in_verts, i, local, index, in_verts.Length - i);
+
         }
 
         private static void RenderMap()
@@ -545,6 +572,15 @@ namespace Engine.Objects
             }
 
             Program._window.SetView(GetDefaultView());
+
+            if (_mask != null && _frames != _mask_frames)
+            {
+                _mask["alpha"] = (int)(((float)_frames / _mask_frames) * _target_alpha);
+                GlobalPrimitives.ApplyColorMask(_mask);
+                _frames++;
+                if (_frames == _mask_frames)
+                    _mask["alpha"] = _target_alpha;
+            }
 
             if (_renderscript != null)
                 _renderscript.Execute();

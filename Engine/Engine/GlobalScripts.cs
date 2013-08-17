@@ -67,15 +67,13 @@ namespace Engine
             }
             catch (JavaScriptException ex)
             {
-                Console.WriteLine(string.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
+                Program.ShowAbortScreen(String.Format("Script error in \'{0}\', line: {1}\n{2}", ex.SourcePath, ex.LineNumber, ex.Message));
             }
             catch (Exception e)
             {
                 var st = new StackTrace(e, true);
-                //var frame = st.GetFrame(2);
-                Console.WriteLine("Fatal Error: {0}", e.Message);
+                Program.ShowAbortScreen(String.Format("Fatal Error: {0}", e.Message));
                 Console.WriteLine(st.ToString());
-                //Console.WriteLine("Line {0}: {1}", frame.GetFileLineNumber(), frame.GetFileName());
             }
         }
     }

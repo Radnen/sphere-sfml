@@ -89,6 +89,9 @@
     <Content Include="startup\images\ship.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="startup\maps\smalltest.rmp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="startup\windowstyles\main.rws">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

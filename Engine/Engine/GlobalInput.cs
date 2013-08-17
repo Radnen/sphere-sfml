@@ -100,7 +100,7 @@ namespace Engine
             return Keyboard.IsKeyPressed((Keyboard.Key)code);
         }
 
-        public static bool IsAnyKeyPressed(int code)
+        public static bool IsAnyKeyPressed()
         {
             return _anyKey;
         }

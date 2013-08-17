@@ -36,7 +36,7 @@ function game()
 		SetUpdateScript("Update2();");
 		if (DoesPersonExist("player")) DestroyPerson("player");
 		SetRenderScript("Render2();");
-		MapEngine("test.rmp", 60);
+		MapEngine("smalltest.rmp", 60);
 	});
 	menu.addOption("Test Village map", function() {
 		CreatePerson("player", "test.rss", false);
@@ -49,7 +49,7 @@ function game()
 		MapEngine("village.rmp", 60);
 	});
 	menu.addOption("Test JSON", TestJSON);
-	menu.addOption("Exit", Exit);
+	menu.addOption("Exit", function() { Abort("Hello World!"); });
 	
 	while (!done) {
 		menu.draw(16, 16, 128, 192);

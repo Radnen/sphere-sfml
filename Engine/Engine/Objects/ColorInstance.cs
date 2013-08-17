@@ -25,7 +25,7 @@ namespace Engine.Objects
         }
 
         public ColorInstance(ScriptEngine parent, Color color)
-            : this(parent, (int)color.R, (int)color.G, (int)color.B, (int)color.A)
+            : this(parent, color.R, color.G, color.B, color.A)
         {
         }
 
@@ -43,6 +43,7 @@ namespace Engine.Objects
             _color.G = (byte)Double.Parse(this["green"].ToString());
             _color.B = (byte)Double.Parse(this["blue"].ToString());
             _color.A = (byte)Double.Parse(this["alpha"].ToString());
+
             return _color;
         }
 
