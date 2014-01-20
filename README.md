@@ -3,7 +3,7 @@
 A .NET Sphere implementation using SFML for graphics, input, etc.
 
 **Alpha Downloads:**
- - v0.75: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.75.zip
+ - v0.80: http://radnen.tengudev.com/spheresfml/sphere-sfml-0.80.zip
  - older: http://radnen.tengudev.com/spheresfml/
 
 Parity with Sphere v1.5
@@ -15,24 +15,31 @@ Parity with Sphere v1.5
  - Fonts: 100%
  - WindowStyles: 100%
  - Spritesets: 100%
- - Files: 100%
+ - Files: 100% (minus raw files)
 
 **Incomplete**
  - General: 89%
- - Persons: 66%
- - Surfaces: 66%
+ - Persons: 83%
+ - Surfaces: 69%
  - Primitives: 65%
- - Map Engine: 65%
+ - Map Engine: 55%
 
 **To Do**
  - Networking: 0%
+ - Raw files: 0%
 
 **Future**
  - Particle Engine
  - Sound Effect Object
  - Isometric maps
  - 'Infinite' maps
- 
+
+New Features
+============
+I took the liberty of adding some new things to Sphere.
+ - Binary Heap: new BinaryHeap(compare_func): 100%
+ - XML Serialization: new XMLDocument(filename): 50%
+
 How To
 ======
 
