@@ -76,7 +76,7 @@ namespace Engine.Objects
 
         public void SetScript(PersonScripts script, object instance)
         {
-            if (instance == null || (instance is string && (string)instance == ""))
+            if (instance == null || instance.ToString() == "")
                 Scripts[(int)script] = null;
             else
                 Scripts[(int)script] = new FunctionScript(instance);
@@ -120,7 +120,7 @@ namespace Engine.Objects
                 if (direction != null)
                 {
                     _direction = value;
-                    Frame = Frame;
+                    Frame = Frame; // trick to readjust the frame. ;)
                 }
             }
         }
@@ -130,13 +130,13 @@ namespace Engine.Objects
             return _innerSS.GetLineBase();
         }
 
-        public bool CheckObstructions(ref Vector2f position, ref Vector2f tileOffset, Tile tile)
+        public bool CheckObstructions(ref Vector2f pos, ref Vector2f tileOffset, Tile tile)
         {
             Line[] baselines = _innerSS.GetLineBase();
-            Vector2f pos = position - new Vector2f(_base.Left, _base.Top);
+            Vector2f my_pos = pos - new Vector2f(_base.Left, _base.Top);
             foreach (Line b in baselines)
             {
-                var lineA = b.Offset(pos);
+                var lineA = b.Offset(my_pos);
                 foreach (Line l in tile.Obstructions)
                 {
                     var lineB = l.Offset(tileOffset);
@@ -149,6 +149,9 @@ namespace Engine.Objects
 
         public bool CheckObstructions(ref Vector2f pos, Person other)
         {
+            if (IgnorePersons || other.Layer != Layer)
+                return false;
+
             Line[] baselines1 = _innerSS.GetLineBase();
             Line[] baselines2 = other._innerSS.GetLineBase();
             Vector2f pos1 = pos - new Vector2f(_base.Left, _base.Top);
@@ -159,11 +162,11 @@ namespace Engine.Objects
                 Line A = l1.Offset(pos1);
                 foreach (Line l2 in baselines2)
                 {
-                    Line B = l2.Offset(pos2);
-                    if (Line.Intersects(A, B))
+                    if (Line.Intersects(A, l2.Offset(pos2)))
                         return true;
                 }
             }
+
             return false;
         }
 
@@ -196,18 +199,9 @@ namespace Engine.Objects
 #endif
         }
 
-        public int BaseWidth { get {
-                return _base.Width;
-            }
-        }
+        public int BaseWidth { get { return _base.Width; } }
 
-        public int BaseHeight
-        { 
-            get
-            {
-                return _base.Height;
-            }
-        }
+        public int BaseHeight { get { return _base.Height; } }
 
         public void QueueCommand(int command, bool imm)
         {
@@ -233,6 +227,7 @@ namespace Engine.Objects
                 imm = c.immediate;
 
                 if (c.script != null) {
+                    PersonManager._current = Name;
                     c.script.Execute();
                     continue;
                 }
@@ -255,23 +250,20 @@ namespace Engine.Objects
                         Direction = "west";
                         break;
                     case Commands.MoveNorth:
-                        move.Y = -1;
+                        move.Y = -Speed.Y;
                         break;
                     case Commands.MoveEast:
-                        move.X = 1;
+                        move.X = Speed.X;
                         break;
                     case Commands.MoveSouth:
-                        move.Y = 1;
+                        move.Y = Speed.Y;
                         break;
                     case Commands.MoveWest:
-                        move.X = -1;
+                        move.X = -Speed.X;
                         break;
                 }
 
-                move.X *= Speed.X;
-                move.Y *= Speed.Y;
                 Position += move;
-
                 if (IsObstructedAt(Position))
                 {
                     Position -= move;

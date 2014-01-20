@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Jurassic;
 using Jurassic.Library;
 
@@ -9,9 +10,12 @@ namespace Engine.Objects
         GameFile _file = new GameFile();
 
         public FileInstance(ScriptEngine parent, string filename)
-            : base(parent)
+            : base(parent.Object.InstancePrototype)
         {
             PopulateFunctions();
+            var root = Path.GetDirectoryName(filename);
+            if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+            if (!File.Exists(filename)) File.Create(filename).Close();
             _file.ReadFile(filename);
         }
 

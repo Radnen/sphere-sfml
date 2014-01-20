@@ -98,15 +98,20 @@ namespace Engine
             Person p = new Person(name, sprite, destroy);
             PeopleTable.Add(name, p);
             _personlist.Add(name);
-            People.Add(p);
+			People.Add(p);
+
+			Map start = MapEngineHandler.Map;
+			if (start != null)
+			{
+				p.Layer = start.StartLayer;
+				SetPersonXY(p.Name, start.StartX, start.StartY);
+			}
         }
 
         public static void CreatePerson(Entity person) {
             if (PeopleTable.ContainsKey(person.Name))
                 return;
 
-            //string ss = GlobalProps.BasePath + "/spritesets/" + person.Spriteset;
-            //SpritesetInstance sprite = new SpritesetInstance(Program._engine, ss);
             SpritesetInstance sprite = AssetManager.GetSpriteset(person.Spriteset);
             Person p = new Person(person.Name, sprite, true);
             p.Layer = person.Layer;
@@ -118,7 +123,7 @@ namespace Engine
 
             PeopleTable.Add(person.Name, p);
             _personlist.Add(person.Name);
-            People.Add(p);
+			People.Add(p);
         }
 
         public static void DestroyPerson(string name)
@@ -188,11 +193,11 @@ namespace Engine
 
         public static bool CheckPersonObstructions(ref Vector2f position, Person person)
         {
-            foreach (Person b in People)
+			foreach (Person p in People)
             {
-                if (b.Name == person.Name)
-                    continue;
-                if (person.CheckObstructions(ref position, b))
+				if (p.Layer == person.Layer &&
+					p.Name != person.Name &&
+					person.CheckObstructions(ref position, p))
                     return true;
             }
             return false;
@@ -200,51 +205,58 @@ namespace Engine
 
         public static void SetPersonX(string name, int x)
         {
-            PeopleTable[name].Position = new Vector2f(x, PeopleTable[name].Position.Y);
+			x -= PeopleTable[name].BaseWidth / 2;
+			PeopleTable[name].Position = new Vector2f(x, PeopleTable[name].Position.Y);
         }
 
         public static int GetPersonX(string name)
         {
-            return (int)PeopleTable[name].Position.X;
+			return (int)PeopleTable[name].Position.X + PeopleTable[name].BaseWidth / 2;
         }
 
         public static void SetPersonY(string name, int y)
         {
-            PeopleTable[name].Position = new Vector2f(PeopleTable[name].Position.X, y);
+			PeopleTable[name].Position = new Vector2f(PeopleTable[name].Position.X, y - PeopleTable[name].BaseHeight / 2);
         }
 
         public static int GetPersonY(string name)
         {
-            return (int)PeopleTable[name].Position.Y;
+			return (int)PeopleTable[name].Position.Y + PeopleTable[name].BaseHeight / 2;
         }
 
         public static void SetPersonXFloat(string name, double x)
         {
+			x -= PeopleTable[name].BaseWidth / 2;
             PeopleTable[name].Position = new Vector2f((float)x, PeopleTable[name].Position.Y);
         }
 
         public static double GetPersonXFloat(string name)
         {
-            return PeopleTable[name].Position.X;
+			return PeopleTable[name].Position.X + PeopleTable[name].BaseWidth / 2;
         }
 
         public static void SetPersonYFloat(string name, double y)
         {
+			y -= PeopleTable[name].BaseHeight / 2;
             PeopleTable[name].Position = new Vector2f(PeopleTable[name].Position.Y, (float)y);
         }
 
         public static double GetPersonYFloat(string name)
         {
-            return PeopleTable[name].Position.Y;
+			return PeopleTable[name].Position.Y + PeopleTable[name].BaseHeight / 2;
         }
 
         public static void SetPersonXY(string name, int x, int y)
         {
+			x -= PeopleTable[name].BaseWidth / 2;
+			y -= PeopleTable[name].BaseHeight / 2;
             PeopleTable[name].Position = new Vector2f(x, y);
         }
 
         public static void SetPersonXYFloat(string name, double x, double y)
         {
+			x -= PeopleTable[name].BaseWidth / 2;
+			y -= PeopleTable[name].BaseHeight / 2;
             PeopleTable[name].Position = new Vector2f((float)x, (float)y);
         }
 
@@ -270,7 +282,7 @@ namespace Engine
 
         public static bool IsCommandQueueEmpty(string name)
         {
-            return PeopleTable[name].IsQueueEmpty();
+			return PeopleTable[name].IsQueueEmpty();
         }
 
         public static ArrayInstance GetPersonList()
@@ -443,8 +455,9 @@ namespace Engine
 
         public static bool IsPersonObstructed(string name, double x, double y)
         {
-            Vector2f pos = new Vector2f((float)x, (float)y);
-            return PeopleTable[name].IsObstructedAt(pos);
+			x -= PeopleTable[name].BaseWidth / 2;
+			y -= PeopleTable[name].BaseHeight / 2;
+			return PeopleTable[name].IsObstructedAt(new Vector2f((float)x, (float)y));
         }
     }
 }

@@ -16,6 +16,8 @@ function TestSurfaces()
 	
 	var surf2 = CreateSurface(50, 50, black);
 	var surf3 = LoadSurface("blockman.png");
+	var surf4 = LoadSurface("blockman.png");
+	surf4.rotate(Math.PI/4, false);
 	
 	surf2.blitMaskSurface(surf3, 1, 1, green);
 	
@@ -27,6 +29,7 @@ function TestSurfaces()
     while (!done) {
     	surf.blit(0, 16);
     	surf2.blit(48, 16);
+    	surf4.blit(64, 64);
         
         FlipScreen();
 

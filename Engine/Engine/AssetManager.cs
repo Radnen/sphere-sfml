@@ -20,8 +20,8 @@ namespace Engine
         {
             if (!_spritesets.ContainsKey(filename))
             {
-                string test = Program.ParseSpherePath(filename, "spritesets");
-                _spritesets[filename] = new SpritesetInstance(Program._engine, test);
+                string path = Program.ParseSpherePath(filename, "spritesets");
+                _spritesets[filename] = new SpritesetInstance(Program._engine, path);
             }
 
             if (clone)

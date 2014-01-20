@@ -2,8 +2,10 @@
 
 function TestSpritesets()
 {
-	var done = false;
+    var done = false;
+    var time = GetTime();
     var spriteset = LoadSpriteset("test.rss");
+    time = GetTime() - time;
 
 	var dirs = spriteset.directions;
 	var imgs = spriteset.images;
@@ -27,28 +29,35 @@ function TestSpritesets()
 	img_bg = img_bg.createImage();
 	h += 16;
 
+	var yv = 0;
     while (!done) {
-		sys_font.drawText(0, 0, "images: " + imgs.length);
-        
-        for (var d = 0; d < 4; ++d) {
+        sys_font.drawText(0, 0, "images: " + imgs.length + ", loaded in: " + time + "ms");
+        Rectangle(GetScreenWidth() - 8, -(((yv/64)/dirs.length)*GetScreenHeight()), 8, 8, white);
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > GetScreenHeight() || yy < 0) continue;
+
+            sys_font.drawText(0, yy - 16, dirs[d].name);
         	var frames = dirs[d].frames;
-        	sys_font.drawText(0, 16 + d * h, dirs[d].name);
         	for (var f = 0; f < frames.length; ++f) {
-        	    var image = imgs[frames[f].index];
         	    var x = f * w;
-        	    var y = 32 + d * h;
+        	    var image = imgs[frames[f].index];
         	    
-        	    img_bg.blit(x, y);
-        		image.blit(x, y);
-        		base_img.blit(x + ox, y + oy);
-        		sys_font.drawText(x, y, frames[f].delay);
+        	    img_bg.blit(x, yy);
+        		image.blit(x, yy);
+        		base_img.blit(x + ox, yy + oy);
+        		sys_font.drawText(x, yy, frames[f].delay);
         	}
         }
         
         FlipScreen();
 
-		while (AreKeysLeft()) {
-			if (GetKey() == KEY_ENTER) done = true;
-		}
+        while (AreKeysLeft()) {
+            var k = GetKey();
+		    if (k == KEY_ENTER) done = true;
+		    if (k == KEY_UP) yv += 64;
+		    if (k == KEY_DOWN) yv -= 64;
+        }
     }
 }

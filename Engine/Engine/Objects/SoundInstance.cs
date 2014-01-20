@@ -198,8 +198,9 @@ namespace Engine.Objects
         {
             if (_soundType == SoundType.Sound)
                 return (double)_sound.SoundBuffer.Duration;
-            else if (_soundType == SoundType.Music)
+            else if (_soundType == SoundType.Music) {
                 return _music.Duration.TotalMilliseconds;
+            }
             else
                 return -1;
         }

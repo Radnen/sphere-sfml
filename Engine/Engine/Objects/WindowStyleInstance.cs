@@ -41,7 +41,7 @@ namespace Engine.Objects
         byte[] _edgeOffsets = new byte[4];
 
         public WindowStyleInstance(ScriptEngine parent)
-            : base(parent)
+            : base(parent.Object.InstancePrototype)
         {
             this["color"] = new ColorInstance(Program._engine);
             PopulateFunctions();
@@ -130,7 +130,7 @@ namespace Engine.Objects
         public WindowStyleInstance Clone()
         {
             WindowStyleInstance wind = new WindowStyleInstance(Engine);
-            wind["color"] = new ColorInstance(Program._engine, (ColorInstance)this["color"]);
+            wind["color"] = new ColorInstance(Engine, (ColorInstance)this["color"]);
             wind._backgroundMode = _backgroundMode;
             _edgeColors.CopyTo(wind._edgeColors, 0);
             _edgeOffsets.CopyTo(wind._edgeOffsets, 0);
@@ -147,8 +147,10 @@ namespace Engine.Objects
         [JSFunction(Name = "save")]
         public void Save(string filename)
         {
-            filename = GlobalProps.BasePath + "\\windowstyles\\" + filename;
-            using (BinaryWriter writer = new BinaryWriter(File.OpenWrite(filename)))
+            string root = GlobalProps.BasePath + "/windowstyles";
+            if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+
+            using (BinaryWriter writer = new BinaryWriter(File.OpenWrite(root + "/" + filename)))
             {
                 writer.Write(".rws".ToCharArray());
                 writer.Write(_version);

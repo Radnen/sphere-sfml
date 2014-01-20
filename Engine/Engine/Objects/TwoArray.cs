@@ -139,6 +139,16 @@ namespace Engine
         }
 
         /// <summary>
+        /// Clear the data to the specified value.
+        /// </summary>
+        /// <param name="set_to">The value to clear the elements to.</param>
+        public void Clear(T value)
+        {
+            for (int i = 0; i < _data.Length; ++i)
+                _data[i] = value;
+        }
+
+        /// <summary>
         /// Determines whether the specified <see cref="Engine.TwoArray`1[[`0]]"/> is equal to the current <see cref="Engine.TwoArray`1"/>.
         /// </summary>
         /// <param name="array">The <see cref="Engine.TwoArray`1[[`0]]"/> to compare with the current <see cref="Engine.TwoArray`1"/>.</param>

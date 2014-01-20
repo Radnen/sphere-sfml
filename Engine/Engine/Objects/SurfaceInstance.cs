@@ -17,7 +17,7 @@ namespace Engine.Objects
         private Action<int, int, Color> _draw;
 
         public SurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
-            : base(parent)
+            : base(parent.Object.InstancePrototype)
         {
             if (width <= 0)
                 throw new ArgumentOutOfRangeException("width", "Width must be > 0.");
@@ -40,7 +40,7 @@ namespace Engine.Objects
         }
 
         public SurfaceInstance(ScriptEngine parent, string filename)
-            : base(parent)
+            : base(parent.Object.InstancePrototype)
         {
             using (Image img = new Image(filename))
             {
@@ -52,7 +52,7 @@ namespace Engine.Objects
         }
 
         public SurfaceInstance(ScriptEngine parent, byte[] contents, uint width, uint height)
-            : base(parent)
+            : base(parent.Object.InstancePrototype)
         {
             _bytes = contents;
             _width = width;
@@ -200,7 +200,7 @@ namespace Engine.Objects
             _bytes[scan0 + 0] = (byte)(source.R * (1 - w0) + dest.R * w0);
             _bytes[scan0 + 1] = (byte)(source.G * (1 - w0) + dest.G * w0);
             _bytes[scan0 + 2] = (byte)(source.B * (1 - w0) + dest.B * w0);
-            _bytes[scan0 + 3] = 255;
+            _bytes[scan0 + 3] = (byte)(source.A * (1 - w0) + dest.A * w0);
         }
 
         private void SetAddBlend(int x, int y, Color dest)
@@ -241,6 +241,49 @@ namespace Engine.Objects
             _changed = true;
         }
 
+        private static int RotateX(int x, int y, double rad, int m_x, int m_y)
+        {
+            return (int)(Math.Round((x - m_x) * Math.Cos(rad) -
+                     (y - m_y) * Math.Sin(rad)) + m_x);
+        }
+
+        private static int RotateY(int x, int y, double rad, int m_x, int m_y)
+        {
+            return (int)(Math.Round((x - m_x) * Math.Sin(rad) +
+                     (y - m_y) * Math.Cos(rad)) + m_y);
+        }
+
+        [JSFunction(Name = "rotate")]
+        public void Rotate(double radians, bool resize)
+        {
+            byte[] src0 = _bytes;
+            byte[] copy = new byte[_bytes.Length];
+
+            int w2 = (int)(_width / 2);
+            int h2 = (int)(_height / 2);
+
+            for (int x = 0; x < _width; ++x)
+            {
+                for (int y = 0; y < _height; ++y)
+                {
+                    int nx = RotateX(x, y, radians, w2, h2);
+                    int ny = RotateY(x, y, radians, w2, h2);
+                    if (nx < 0 || ny < 0 || nx >= _width || ny >= _height) continue;
+
+                    int scan0 = (x + y * (int)_width) << 2;
+                    int scan1 = (nx + ny * (int)_width) << 2;
+
+                    copy[scan0 + 0] = src0[scan1 + 0];
+                    copy[scan0 + 1] = src0[scan1 + 1];
+                    copy[scan0 + 2] = src0[scan1 + 2];
+                    copy[scan0 + 3] = src0[scan1 + 3];
+                }
+            }
+
+            for (int i = 0; i < copy.Length; ++i) { _bytes[i] = copy[i]; }
+            _changed = true;
+        }
+
         [JSFunction(Name = "resize")]
         public SurfaceInstance Resize(int width, int height)
         {
@@ -252,6 +295,7 @@ namespace Engine.Objects
         [JSFunction(Name = "rescale")]
         public SurfaceInstance Rescale(int width, int height)
         {
+            byte[] src0 = _bytes;
             byte[] copy = new byte[width * height * 4];
             float w = _width / (float)width;
             float h = _height / (float)height;
@@ -260,12 +304,12 @@ namespace Engine.Objects
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    Color c = GetColorAt((int)(x * w), (int)(y * h));
                     int scan0 = (x + y * width) << 2;
-                    copy[scan0 + 0] = c.R;
-                    copy[scan0 + 1] = c.G;
-                    copy[scan0 + 2] = c.B;
-                    copy[scan0 + 3] = c.A;
+                    int scan1 = ((int)(x * w) + (int)(y * h) * (int)_width) << 2;
+                    copy[scan0 + 0] = src0[scan1 + 0];
+                    copy[scan0 + 1] = src0[scan1 + 1];
+                    copy[scan0 + 2] = src0[scan1 + 2];
+                    copy[scan0 + 3] = src0[scan1 + 3];
                 }
             }
 
@@ -302,6 +346,15 @@ namespace Engine.Objects
                 _tex.Update(_bytes);
 
             return new ImageInstance(Program._engine, _tex);
+        }
+
+        [JSFunction(Name = "save")]
+        public void Save(string filename)
+        {
+            if (_changed)
+                _tex.Update(_bytes);
+
+            _tex.CopyToImage().SaveToFile(Program.ParseSpherePath(filename, "images"));
         }
 
         [JSFunction(Name = "clone")]

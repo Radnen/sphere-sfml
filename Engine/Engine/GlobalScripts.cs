@@ -72,8 +72,8 @@ namespace Engine
             catch (Exception e)
             {
                 var st = new StackTrace(e, true);
-                Program.ShowAbortScreen(String.Format("Fatal Error: {0}", e.Message));
                 Console.WriteLine(st.ToString());
+                Program.ShowAbortScreen(String.Format("Fatal Error: {0}", e.Message));
             }
         }
     }

@@ -1,15 +1,19 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
 using SFML.Window;
-using System.Collections.Generic;
 
 namespace Engine.Objects
 {
     public static class MapEngineHandler
     {
         private static Map _map;
+
+        public static Map Map { get { return _map; } }
+
         private static TextureAtlas _tileatlas;
         private static bool _ended = true, _toggled, _talkheld;
         private static int _fps = 0;
@@ -37,6 +41,7 @@ namespace Engine.Objects
         private static int _mask_frames = 0, _frames = 0;
         private static int _target_alpha = 0;
         private static ColorInstance _mask = null;
+        private static Entity _last_trigger = null; // for one trigger at a time.
 
         static MapEngineHandler()
         {
@@ -148,7 +153,7 @@ namespace Engine.Objects
 
         private static void SetMapEngineFrameRate(int rate)
         {
-            Program._window.SetFramerateLimit((uint)rate);
+            //Program._window.SetFramerateLimit((uint)rate);
             _delta = 1000.0 / rate; // for use later on...
             _fps = rate;
         }
@@ -176,19 +181,26 @@ namespace Engine.Objects
         private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
         {
             _ended = false;
+            DateTime time = DateTime.Now;
             SetMapEngineFrameRate(fps);
 
             _cameraView = new View(GetDefaultView());
-            double time = Program.GetTime();
-            filename = GlobalProps.BasePath + "/maps/" + filename;
+            _current = filename;
 
             // It seems Sphere keeps non-essential npc's created prior to MapEngine.
-            LoadMap(filename, false, true);
+            LoadMap(Program.ParseSpherePath(filename, "maps"), false, true);
 
-            Console.WriteLine(Program.GetTime() - time);
+            Console.WriteLine((DateTime.Now - time).TotalMilliseconds);
 
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
             while (!_ended)
             {
+                time = DateTime.Now;
+                while ((DateTime.Now - time).TotalMilliseconds <= _delta)
+                {
+                }
+
                 if (_updatescript != null)
                     _updatescript.Execute();
 
@@ -259,6 +271,7 @@ namespace Engine.Objects
 
         private static void ChangeMap(string filename)
         {
+            _current = filename;
             LoadMap(Program.ParseSpherePath(filename, "maps"), true, false);
         }
 
@@ -276,8 +289,6 @@ namespace Engine.Objects
 
             if (!_map.Load(filename))
                 throw new System.IO.FileNotFoundException("Could not locate map file.", filename);
-
-            _current = filename;
 
             SetCameraX(_map.StartX);
             SetCameraY(_map.StartY);
@@ -475,27 +486,28 @@ namespace Engine.Objects
                 }
             }
 
-            var i = PersonManager.People.Count;
-            while (i-- > 0)
+            for (var i = 0; i < PersonManager.People.Count; ++i)
                 PersonManager.People[i].UpdateCommandQueue();
 
             PersonManager.OrderPeople();
 
             if (IsCameraAttached())
             {
-                View v = Program._window.GetView();
                 SetCameraX(PersonManager.GetPersonX(camera_ent));
                 SetCameraY(PersonManager.GetPersonY(camera_ent));
             }
 
             if (IsInputAttached())
             {
-                Person player = PersonManager.PeopleTable[input_ent];
-                double x = player.Position.X + player.BaseWidth / 2;
-                double y = player.Position.Y + player.BaseHeight / 2;
-                Entity trigger = GetTriggerAt(x, y);
-                if (trigger != null)
-                    trigger.ExecuteTrigger();
+                int px = PersonManager.GetPersonX(input_ent);
+                int py = PersonManager.GetPersonY(input_ent);
+                Entity trigger = GetTriggerAt(px, py);
+                if (trigger != _last_trigger)
+                {
+                    if (trigger != null)
+                        trigger.ExecuteTrigger();
+                    _last_trigger = trigger;
+                }
             }
         }
 
@@ -528,6 +540,9 @@ namespace Engine.Objects
 
         private static void CutoutVerts(Vertex[] in_verts, int x, int y, int scan)
         {
+            if (x < 0 || y < 0)
+                return;
+
             scan <<= 2;
             y /= _map.Tileset.TileHeight;
             x /= _map.Tileset.TileWidth;
@@ -550,7 +565,30 @@ namespace Engine.Objects
             // check to see if we haven't; else pad out the rest. (small maps are affected by this).
             if (i < in_verts.Length && index < local.Length)
                 Array.Copy(in_verts, i, local, index, in_verts.Length - i);
+        }
 
+        private static void DrawVerts(Vertex[] in_verts, int x, int y, uint scan)
+        {
+            if (x < 0 || y < 0)
+                return;
+
+            scan <<= 2;
+            y /= _map.Tileset.TileHeight;
+            x /= _map.Tileset.TileWidth;
+
+            uint height = (uint)(GlobalProps.Height / _map.Tileset.TileHeight + 1) * scan;
+            uint length = (uint)((GlobalProps.Width / _map.Tileset.TileWidth + 1) << 2);
+            uint offset = (uint)((x << 2) + y * scan), i = 0;
+
+            for (; i < height; i += scan)
+            {
+                if (offset + i > in_verts.Length) break;
+                Program._window.Draw(in_verts, offset + i, length, PrimitiveType.Quads, _layerstates);
+            }
+
+            // draw the last line:
+            if (offset + i > in_verts.Length)
+                Program._window.Draw(in_verts, offset + i, (uint)in_verts.Length - (offset + i), PrimitiveType.Quads, _layerstates);
         }
 
         private static void RenderMap()
@@ -563,8 +601,9 @@ namespace Engine.Objects
             {
                 if (_map.Layers[i].Visible)
                 {
-                    CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
-                    Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
+                    DrawVerts(_layerverts[i], (int)camera.X, (int)camera.Y, (uint)_map.Layers[i].Width);
+                    //CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
+                    //Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
                 }
                 DrawPersons(i);
                 if (_renderers[i] != null)
@@ -738,12 +777,24 @@ namespace Engine.Objects
 
         private static int GetTile(int x, int y, int layer)
         {
-            return _map.Layers[layer].GetTile(x, y);
+            if (layer < 0 || layer >= _map.Layers.Count)
+                throw new MapEngineException("RangeError", string.Format("Invalid layer: {0}", layer));
+            var tile = _map.Layers[layer].GetTile(x, y);
+            if (tile < 0 || tile >= _map.Tileset.Tiles.Count)
+                throw new MapEngineException("RangeError", string.Format("Invalid (x, y) coords: ({0},{1})", x, y));
+            return tile;
         }
 
         private static void SetTile(int x, int y, int layer, int tile)
         {
             _map.Layers[layer].SetTile(x, y, (short)tile);
+
+            Tuple<List<Vertex[]>, RenderStates> tuple;
+            tuple = _map.GetTileMap(_tileatlas);
+
+            _layerstates = tuple.Item2;
+            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
+            _layerverts = tuple.Item1;
         }
 
         private static string GetTileName(int tile)

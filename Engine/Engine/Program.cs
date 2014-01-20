@@ -1,14 +1,12 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
-using System.Threading;
-using SFML;
-using SFML.Graphics;
-using SFML.Window;
+using Engine.Objects;
 using Jurassic;
 using Jurassic.Library;
-using Engine.Objects;
+using SFML.Graphics;
+using SFML.Window;
 
 namespace Engine
 {
@@ -16,6 +14,7 @@ namespace Engine
     {
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
+        public static SpriteBatch _batch = new SpriteBatch();
         public static IntRect _clipper = new IntRect(0, 0, 0, 0);
 
         private static int _internal_fps = 0;
@@ -23,6 +22,7 @@ namespace Engine
         private static readonly bool DEBUG = false;
 
         static GameFile _game = new GameFile();
+        static string _name = "";
 
         static void Main(string[] args)
         {
@@ -84,6 +84,7 @@ namespace Engine
             if (!InitEngine())
                 return;
 
+            _game.TryGetData("name", out _name);
             if (_game.TryGetData("script", out filename))
             {
                 GlobalScripts.RequireScript(filename);
@@ -147,6 +148,8 @@ namespace Engine
                 width *= 2;
                 height *= 2;
             }
+            _clipper.Width = width;
+            _clipper.Height = height;
 
             GlobalProps.BasePath = Path.GetDirectoryName(_game.FileName);
 
@@ -156,9 +159,12 @@ namespace Engine
                 return false;
             }
 
+            if (style == Styles.Fullscreen && width < 640 && height < 480)
+            {
+                width = 640;
+                height = 480;
+            }
             _window = new RenderWindow(new VideoMode((uint)width, (uint)height), GlobalProps.GameName, style);
-            _clipper.Width = (int)width;
-            _clipper.Height = (int)height;
 
             if (Scaled)
             {
@@ -281,6 +287,8 @@ namespace Engine
             engine.SetGlobalFunction("SetClippingRectangle", new Action<int, int, int, int>(SetClippingRectangle));
             engine.SetGlobalFunction("GetClippingRectangle", new Func<ObjectInstance>(GetClippingRectangle));
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
+            engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
+            engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
@@ -351,14 +359,14 @@ namespace Engine
             _engine = GetSphereEngine();
         }
 
-		public static void Exit()
-		{
-			_window.Close();
+        public static void Exit()
+        {
+            _window.Close();
 
             // Sadly, it's the only way to kill a while(true){}; in the JS environment.
             System.Diagnostics.Process proc = System.Diagnostics.Process.GetCurrentProcess();
             proc.Kill();
-		}
+        }
 
         public static void SetScaled(bool v) {
             Scaled = v;
@@ -447,9 +455,9 @@ namespace Engine
         }
 
         static ColorInstance CreateColor(int r, int g, int b, [DefaultParameterValue(255)] int a = 255)
-		{
+        {
             return new ColorInstance(_engine, r, g, b, a);
-		}
+        }
 
         static ImageInstance GrabImage(int x, int y, int w, int h)
         {
@@ -480,6 +488,7 @@ namespace Engine
         static int _fps = 0;
         public static void FlipScreen()
         {
+            _batch.Render();
             _window.DispatchEvents();
             _window.Display();
             _window.Clear();
@@ -487,7 +496,7 @@ namespace Engine
             _fps++;
             if ((DateTime.Now - _start).Seconds >= 1)
             {
-                _window.SetTitle("FPS: " + _fps);
+                _window.SetTitle(_name + " (FPS: " + _fps + ")");
                 _fps = 0;
                 _start = DateTime.Now;
             }
@@ -550,7 +559,7 @@ namespace Engine
             return new WindowStyleInstance(_engine, GlobalProps.EnginePath + "/system/system.rws");
         }
 
-        static FontInstance GetSystemFont()
+        public static FontInstance GetSystemFont()
         {
             return new FontInstance(_engine, GlobalProps.EnginePath + "/system/system.rfn");
         }
@@ -580,6 +589,8 @@ namespace Engine
         {
             if (path.StartsWith("~") || path.StartsWith("."))
                 return GlobalProps.BasePath + "/" + path.Substring(path.StartsWith("..") ? 3 : 2);
+            else if (root == "")
+                return GlobalProps.BasePath + "/" + path;
             else
                 return GlobalProps.BasePath + "/" + root + "/" + path;
         }
@@ -606,7 +617,7 @@ namespace Engine
 
         static SpritesetInstance LoadSpriteset(string filename)
         {
-            return new SpritesetInstance(_engine, ParseSpherePath(filename, "spritesets"));
+            return AssetManager.GetSpriteset(filename);
         }
 
         static SpritesetInstance CreateSpriteset(int width, int height, int i, int d, int f)
@@ -779,13 +790,14 @@ namespace Engine
             FontInstance font = GetSystemFont();
             _window.SetView(MapEngineHandler.GetDefaultView());
             var done = false;
+            while (GlobalInput.AreKeysLeft()) { GlobalInput.GetKey(); FlipScreen(); }
             while (!done)
             {
                 font.DrawTextBox(0, 0, GlobalProps.Width, GlobalProps.Height, 0, message);
                 FlipScreen();
 
-                while (GlobalInput.AreKeysLeft())
-                    done = GlobalInput.GetKey() >= 0;
+                //while (GlobalInput.AreKeysLeft())
+                    //done = GlobalInput.GetKey() >= 0;
             }
         }
     }

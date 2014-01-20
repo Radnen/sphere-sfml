@@ -281,22 +281,30 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="sfmlnet-audio-2">
+    <Reference Include="nunit.framework, Version=2.6.2.12296, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
+    <Reference Include="sfmlnet-audio-2, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\sfmlnet-audio-2.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-graphics-2">
+    <Reference Include="sfmlnet-graphics-2, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\sfmlnet-graphics-2.dll</HintPath>
     </Reference>
-    <Reference Include="sfmlnet-window-2">
+    <Reference Include="sfmlnet-window-2, Version=0.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\sfmlnet-window-2.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="nunit.framework" />
     <Reference Include="Jurassic">
       <HintPath>..\Jurassic.dll</HintPath>
     </Reference>
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Objects\BinHeapConstructor.cs" />
+    <Compile Include="Objects\MapEngineException.cs" />
+    <Compile Include="Objects\SpriteBatch.cs" />
+    <Compile Include="Objects\XMLDocConstructor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="GlobalProps.cs" />
     <Compile Include="Objects\GameFile.cs" />
@@ -349,6 +357,7 @@
     <Compile Include="AssetManager.cs" />
     <Compile Include="Objects\MapScripts.cs" />
     <Compile Include="Objects\TwoArray.cs" />
+    <Compile Include="Objects\Pathfinder.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

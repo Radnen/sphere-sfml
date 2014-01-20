@@ -1,7 +1,7 @@
 using System;
-using SFML.Graphics;
 using Jurassic;
 using Jurassic.Library;
+using SFML.Graphics;
 
 namespace Engine.Objects
 {
@@ -18,10 +18,13 @@ namespace Engine.Objects
             : base(parent)
         {
             PopulateFunctions();
+
             this["red"] = r;
             this["green"] = g;
             this["blue"] = b;
             this["alpha"] = a;
+
+            _color = new Color((byte)r, (byte)g, (byte)b, (byte)a);
         }
 
         public ColorInstance(ScriptEngine parent, Color color)
@@ -39,10 +42,10 @@ namespace Engine.Objects
         /// </summary>
         public Color GetColor()
         {
-            _color.R = (byte)Double.Parse(this["red"].ToString());
-            _color.G = (byte)Double.Parse(this["green"].ToString());
-            _color.B = (byte)Double.Parse(this["blue"].ToString());
-            _color.A = (byte)Double.Parse(this["alpha"].ToString());
+            _color.R = (byte)(Convert.ToInt32(this["red"]) % 256);
+            _color.G = (byte)(Convert.ToInt32(this["green"]) % 256);
+            _color.B = (byte)(Convert.ToInt32(this["blue"]) % 256);
+            _color.A = (byte)(Convert.ToInt32(this["alpha"]) % 256);
 
             return _color;
         }

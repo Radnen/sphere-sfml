@@ -13,6 +13,11 @@ namespace Engine.Objects
             : base(parent)
         {
             PopulateFunctions();
+            
+            var root = Path.GetDirectoryName(filename);
+            if (!Directory.Exists(root)) Directory.CreateDirectory(root);
+            if (!File.Exists(filename)) File.Create(filename).Close();
+
             if (writeable)
                 _data = File.OpenWrite(filename);
             else

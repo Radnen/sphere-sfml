@@ -2,6 +2,8 @@
 
 RequireSystemScript("time.js");
 
+var global = this;
+
 function TestImages()
 {
 	var done = false;
@@ -11,6 +13,7 @@ function TestImages()
 	blue.alpha = 175.25;
 	var green = CreateColor(0, 255, 0);
 	var image = LoadImage("blockman.png");
+
 	var ship = LoadSurface("ship.png");
 		
 	var x = GetScreenWidth()/2, y = GetScreenHeight()/2;
@@ -47,7 +50,8 @@ function TestImages()
 		ship.blit(x, y);
 		if (screen) screen.transformBlit(0, 0, 50, 0, 50, 50, 0, 50);
 		
-		var intersect = LineIntersects(start1, end1, start2, end2);
+		var intersect = false;
+		if (global.LineIntersects) intersect = LineIntersects(start1, end1, start2, end2);
 		Line(start1.x, start1.y, end1.x, end1.y, intersect ? red : green);
 		Line(start2.x, start2.y, end2.x, end2.y, intersect ? red : green);
 		

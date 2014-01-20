@@ -25,7 +25,7 @@ namespace Engine.Objects
         }
 
         public FontInstance(ScriptEngine parent)
-            : base (parent)
+            : base (parent.Object.InstancePrototype)
         {
             PopulateFunctions();
         }

@@ -17,11 +17,9 @@ namespace Engine
         {
             _isFunc = item is FunctionInstance;
             string source = null;
-            if (item is Jurassic.ConcatenatedString) // I think this is a jurassic parse error.
+            if (item is string || item is ConcatenatedString) // No idea why concatenated strings are treated any different...
                 source = item.ToString();
-            else if (item is string)
-                source = item.ToString();
-            else if (item is FunctionInstance)
+            else if (_isFunc)
                 _func = item as FunctionInstance;
             else
                 throw new InvalidCastException("Parameter not of type string or function: " + item.GetType());
@@ -29,7 +27,9 @@ namespace Engine
             if (!_isFunc)
             {
                 _compiled = new CompiledMethod(Program._engine, source);
+#if(DEBUG)
                 Console.WriteLine("Compiled Script: \"{0}\"", source);
+#endif
             }
         }
 
