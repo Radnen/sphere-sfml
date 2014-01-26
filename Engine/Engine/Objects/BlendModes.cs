@@ -7,14 +7,13 @@ namespace Engine.Objects
     /// </summary>
     public enum BlendModes
     {
-        Blend,
-        Replace,
-        RGBOnly,
-        AlphaOnly,
-        Add,
-        Subtract,
-        Multiply,
-        Average
+        Blend = 0,
+        Replace = 1,
+        RGBOnly = 2,
+        AlphaOnly = 3,
+        Add = 4,
+        Subtract = 5,
+        Multiply = 6,
+        Average = 7
     }
 }
-

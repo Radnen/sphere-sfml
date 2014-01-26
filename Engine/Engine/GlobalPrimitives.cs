@@ -30,32 +30,38 @@ namespace Engine
             return new Vector2f(Convert.ToSingle(obj["x"]), Convert.ToSingle(obj["y"]));
         }
 
-        public static void Rectangle(double x, double y, double width, double height, ColorInstance color)
+        public static void Rectangle(double x, double y, double width, double height, ObjectInstance color)
         {
-            Color sfml_color = color.GetColor();
+            Color sfml_color = Conversions.ToColor(color);
             _verts[0] = new Vertex(new Vector2f((float)x, (float)y), sfml_color);
             _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), sfml_color);
             _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), sfml_color);
             _verts[3] = new Vertex(new Vector2f((float)x, (float)(y + height)), sfml_color);
-            Target.Draw(_verts, PrimitiveType.Quads);
+            Program.Batch.AddVerts(_verts, 4);
         }
 
-        public static void ApplyColorMask(ColorInstance color)
+        public static void ApplyColorMask(ObjectInstance color)
         {
             Rectangle(0, 0, GlobalProps.Width, GlobalProps.Height, color);
         }
 
-        public static void GradientRectangle(double x, double y, double width, double height, ColorInstance color1, ColorInstance color2, ColorInstance color3, ColorInstance color4)
+        public static void GradientRectangle(double x, double y, double width, double height, ObjectInstance color1, ObjectInstance color2, ObjectInstance color3, ObjectInstance color4)
         {
-            _verts[0] = new Vertex(new Vector2f((float)x, (float)y), color1.GetColor());
-            _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), color2.GetColor());
-            _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), color3.GetColor());
-            _verts[3] = new Vertex(new Vector2f((float)x, (float)(y + height)), color4.GetColor());
-            Target.Draw(_verts, PrimitiveType.Quads);
+            Color c1 = Conversions.ToColor(color1);
+            Color c2 = Conversions.ToColor(color2);
+            Color c3 = Conversions.ToColor(color3);
+            Color c4 = Conversions.ToColor(color4);
+
+            _verts[0] = new Vertex(new Vector2f((float)x, (float)y), c1);
+            _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), c2);
+            _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), c3);
+            _verts[3] = new Vertex(new Vector2f((float)x, (float)(y + height)), c4);
+            Program.Batch.AddVerts(_verts, 4);
         }
 
         public static void OutlinedRectangle(double x, double y, double width, double height, ColorInstance color, [DefaultParameterValue(1.0)] double thickness = 1.0)
         {
+            Program.Batch.Flush();
             Color c = color.GetColor();
             _orect.Position = new Vector2f((float)x+1, (float)y+1);
             _orect.OutlineColor = c;
@@ -67,6 +73,7 @@ namespace Engine
         // is this even being used?
         public static void OutlinedRectangles(ArrayInstance items, ColorInstance color)
         {
+            Program.Batch.Flush();
             uint size = items.Length * 4;
             Color c = color.GetColor();
             Vertex[] verts = new Vertex[size];
@@ -85,17 +92,19 @@ namespace Engine
             Target.Draw(verts, PrimitiveType.LinesStrip);
         }
 
-        public static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ColorInstance color)
+        public static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ObjectInstance color)
         {
-            Color sfml_color = color.GetColor();
-            _verts[0] = new Vertex(new Vector2f((float)x1, (float)y1), sfml_color);
-            _verts[1] = new Vertex(new Vector2f((float)x2, (float)y2), sfml_color);
-            _verts[2] = new Vertex(new Vector2f((float)x3, (float)y3), sfml_color);
+            Program.Batch.Flush();
+            Color c = Conversions.ToColor(color);
+            _verts[0] = new Vertex(new Vector2f((float)x1, (float)y1), c);
+            _verts[1] = new Vertex(new Vector2f((float)x2, (float)y2), c);
+            _verts[2] = new Vertex(new Vector2f((float)x3, (float)y3), c);
             Target.Draw(_verts, 0, 3, PrimitiveType.Triangles);
         }
 
         public static void GradientTriangle(ObjectInstance A, ObjectInstance B, ObjectInstance C, ColorInstance color1, ColorInstance color2, ColorInstance color3)
         {
+            Program.Batch.Flush();
             _verts[0] = new Vertex(GetVector(A), color1.GetColor());
             _verts[1] = new Vertex(GetVector(B), color2.GetColor());
             _verts[2] = new Vertex(GetVector(C), color3.GetColor());
@@ -106,6 +115,7 @@ namespace Engine
         {
             if (points == null || color == null)
                 throw new NullReferenceException();
+            Program.Batch.Flush();
 
             Color sfml_color = color.GetColor();
 
@@ -123,12 +133,14 @@ namespace Engine
 
         public static void Point(double x, double y, ColorInstance color)
         {
+            Program.Batch.Flush();
             _verts[0] = new Vertex(new Vector2f((float)x, (float)y), color.GetColor());
             Target.Draw(_verts, 0, 1, PrimitiveType.Points);
         }
 
         public static void Line(double x1, double y1, double x2, double y2, ColorInstance color)
         {
+            Program.Batch.Flush();
             Color sfml_color = color.GetColor();
             _verts[0] = new Vertex(new Vector2f((float)x1, (float)y1), sfml_color);
             _verts[1] = new Vertex(new Vector2f((float)x2, (float)y2), sfml_color);
@@ -137,6 +149,7 @@ namespace Engine
 
         public static void LineSeries(ArrayInstance points, ColorInstance color)
         {
+            Program.Batch.Flush();
             if (points == null || color == null)
                 throw new NullReferenceException();
 
@@ -157,6 +170,7 @@ namespace Engine
 
         public static void PointSeries(ArrayInstance points, ColorInstance color)
         {
+            Program.Batch.Flush();
             if (points == null || color == null)
                 throw new NullReferenceException();
 
@@ -177,6 +191,7 @@ namespace Engine
 
         public static void GradientLine(double x1, double y1, double x2, double y2, ColorInstance color1, ColorInstance color2)
         {
+            Program.Batch.Flush();
             _verts[0] = new Vertex(new Vector2f((float)x1, (float)y1), color1.GetColor());
             _verts[1] = new Vertex(new Vector2f((float)x2, (float)y2), color2.GetColor());
             Target.Draw(_verts, PrimitiveType.Lines);
@@ -184,6 +199,7 @@ namespace Engine
 
         public static void FilledCircle(double x, double y, double radius, ColorInstance color)
         {
+            Program.Batch.Flush();
             _circle.Radius = (float)radius;
             _circle.FillColor = color.GetColor();
             _circle.Position = new Vector2f((float)x, (float)y);
@@ -193,6 +209,7 @@ namespace Engine
 
         public static void OutlinedCircle(double x, double y, double radius, ColorInstance color)
         {
+            Program.Batch.Flush();
             _ocircle.Radius = (float)radius;
             _ocircle.OutlineColor = color.GetColor();
             _ocircle.Position = new Vector2f((float)x, (float)y);

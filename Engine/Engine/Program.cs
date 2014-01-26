@@ -14,7 +14,7 @@ namespace Engine
     {
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
-        public static SpriteBatch _batch = new SpriteBatch();
+        public static SpriteBatch Batch;
         public static IntRect _clipper = new IntRect(0, 0, 0, 0);
 
         private static int _internal_fps = 0;
@@ -164,6 +164,7 @@ namespace Engine
                 width = 640;
                 height = 480;
             }
+
             _window = new RenderWindow(new VideoMode((uint)width, (uint)height), GlobalProps.GameName, style);
 
             if (Scaled)
@@ -180,6 +181,8 @@ namespace Engine
             Program._window.SetMouseCursorVisible(false);
 
             GlobalPrimitives.Target = _window;
+            Batch = new SpriteBatch(_window);
+
             FindIcon();
             return true;
         }
@@ -198,8 +201,6 @@ namespace Engine
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
-            engine.EnableDebugging = DEBUG;
-
             // The glorious Sphere game API :)
             engine.SetGlobalFunction("Abort", new Action<string>(Abort));
             engine.SetGlobalFunction("GetVersion", new Func<double>(GetVersion));
@@ -209,10 +210,10 @@ namespace Engine
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
             engine.SetGlobalFunction("Exit", new Action(Exit));
-            engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
+            //engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
             engine.SetGlobalFunction("LoadSound", new Func<string, SoundInstance>(LoadSound));
-            engine.SetGlobalFunction("LoadSurface", new Func<string, SurfaceInstance>(LoadSurface));
+            engine.SetGlobalFunction("LoadSurface", new Func<string, ObjectInstance>(LoadSurface));
             engine.SetGlobalFunction("LoadWindowStyle", new Func<string, WindowStyleInstance>(LoadWindowStyle));
             engine.SetGlobalFunction("LoadSpriteset", new Func<string, SpritesetInstance>(LoadSpriteset));
             engine.SetGlobalFunction("CreateSpriteset", new Func<int, int, int, int, int, SpritesetInstance>(CreateSpriteset));
@@ -236,7 +237,7 @@ namespace Engine
             engine.SetGlobalFunction("Polygon", new Action<ArrayInstance, ColorInstance, bool>(GlobalPrimitives.Polygon));
             engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GlobalPrimitives.GradientLine));
             engine.SetGlobalFunction("ApplyColorMask", new Action<ColorInstance>(GlobalPrimitives.ApplyColorMask));
-            engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, SurfaceInstance>(CreateSurface)); 
+            engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, ObjectInstance>(CreateSurface)); 
             engine.SetGlobalFunction("GrabImage", new Func<int, int, int, int, ImageInstance>(GrabImage));
             engine.SetGlobalFunction("GrabSurface", new Func<int, int, int, int, SurfaceInstance>(GrabSurface));
             engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
@@ -289,6 +290,9 @@ namespace Engine
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
             engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
+            engine.SetGlobalValue("Color", new ColorConstructor(engine));
+            engine.Execute("function CreateColor(r, g, b, a) { if (a === undefined) a = 255; return { red: r, green: g, blue: b, alpha: a }; }");
+
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
@@ -488,7 +492,8 @@ namespace Engine
         static int _fps = 0;
         public static void FlipScreen()
         {
-            _batch.Render();
+            Batch.Flush();
+
             _window.DispatchEvents();
             _window.Display();
             _window.Clear();
@@ -630,9 +635,9 @@ namespace Engine
             return new FontInstance(_engine, ParseSpherePath(filename, "fonts"));
         }
 
-        static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
+        static SurfaceInstance CreateSurface(int w, int h, ObjectInstance color)
         {
-            return new SurfaceInstance(_engine, w, h, color.GetColor());
+            return new SurfaceInstance(_engine, w, h, Conversions.ToColor(color));
         }
 
         static FileInstance OpenFile(string filename)
@@ -719,19 +724,26 @@ namespace Engine
 
         static ArrayInstance GetGameList()
         {
-            string[] files = Directory.GetDirectories(GlobalProps.EnginePath + "/games");
-            ObjectInstance[] names = new ObjectInstance[files.Length]; 
-            for (var i = 0; i < files.Length; ++i) {
+            string directory = GlobalProps.EnginePath + "/games";
+            ArrayInstance array = _engine.Array.New();
+            if (!Directory.Exists(directory)) return array;
+
+            string[] files = Directory.GetDirectories(directory);
+            for (uint i = 0; i < files.Length; ++i) {
                 GameFile file = new GameFile();
-                file.ReadFile(files[i] + "/game.sgm");
+                if (!file.ReadFile(files[i] + "/game.sgm")) continue;
                 string name;
-                names[i] = CreateObject();
-                names[i]["name"] = (file.TryGetData("name", out name)) ? name : "";
-                names[i]["description"] = (file.TryGetData("description", out name)) ? name : "";
-                names[i]["author"] = (file.TryGetData("author", out name)) ? name : "";
-                names[i]["directory"] = Path.GetFileName(files[i]);
+
+                ObjectInstance obj = CreateObject();
+                obj["name"] = (file.TryGetData("name", out name)) ? name : "";
+                obj["description"] = (file.TryGetData("description", out name)) ? name : "";
+                obj["author"] = (file.TryGetData("author", out name)) ? name : "";
+                obj["directory"] = Path.GetFileName(files[i]);
+
+                ArrayInstance.Push(array, obj);
             }
-            return _engine.Array.New(names);
+
+            return array;
         }
 
         static string HashFromFile(string filename, [DefaultParameterValue(false)] bool sha = false)

@@ -11,14 +11,13 @@ namespace Engine.Objects
     public class FontInstance : ObjectInstance
     {
         private const int SIZE = 512; // atlas size
-        private static readonly Vector2f VECT_1 = new Vector2f(1, 1); 
 
         TextureAtlas _atlas = new TextureAtlas(SIZE);
-        Sprite _fontSprite;
         Image[] _glyphs;
         uint _height = 0;
         short _version = 0;
         bool _updated = false;
+        Color _color = Color.White;
 
         public Image GetGlyph(int num) {
             return _glyphs[num];
@@ -63,8 +62,6 @@ namespace Engine.Objects
 
                 _atlas.Update(_glyphs);
             }
-
-            _fontSprite = new Sprite(_atlas.Texture);
         }
 
         private void CheckUpdate() {
@@ -77,19 +74,21 @@ namespace Engine.Objects
         [JSFunction(Name = "drawText")]
         public void DrawText(double x, double y, string text)
         {
+            DrawText(Program.Batch, x, y, text);
+        }
+
+        public void DrawText(SpriteBatch batch, double x, double y, string text)
+        {
             CheckUpdate();
-            Vector2f start = new Vector2f((float)x, (float)y);
-            Vector2f offset = new Vector2f(0, 0);
+            IntRect dest = new IntRect((int)x, (int)y, 0, (int)_height);
 
             for (var i = 0; i < text.Length; ++i)
             {
-                int ch = (int)text[i];
-
-                _fontSprite.TextureRect = _atlas.Sources[ch];
-                _fontSprite.Scale = VECT_1;
-                _fontSprite.Position = start + offset;
-                offset.X += _atlas.Sources[ch].Width;
-                Program._window.Draw(_fontSprite);
+                IntRect src = _atlas.Sources[text[i]];
+                dest.Width = src.Width;
+                dest.Height = src.Height;
+                batch.Add(_atlas.Texture, src, dest, _color);
+                dest.Left += src.Width;
             }
         }
 
@@ -97,19 +96,15 @@ namespace Engine.Objects
         public void DrawZoomedText(double x, double y, double zoom, string text)
         {
             CheckUpdate();
-            Vector2f start = new Vector2f((float)x, (float)y);
-            Vector2f offset = new Vector2f(0, 0);
-            Vector2f scale = new Vector2f((float)zoom, (float)zoom);
+            IntRect dest = new IntRect((int)x, (int)y, 0, (int)(_height * zoom));
 
             for (var i = 0; i < text.Length; ++i)
             {
-                int ch = (int)text[i];
-
-                _fontSprite.TextureRect = _atlas.Sources[ch];
-                _fontSprite.Scale = scale;
-                _fontSprite.Position = start + offset;
-                offset.X += _atlas.Sources[ch].Width * scale.X;
-                Program._window.Draw(_fontSprite);
+                IntRect src = _atlas.Sources[text[i]];
+                dest.Width = (int)(src.Width * zoom);
+                dest.Height = src.Height;
+                Program.Batch.Add(_atlas.Texture, src, dest, _color);
+                dest.Left += (int)(src.Width * zoom);
             }
         }
 
@@ -120,7 +115,7 @@ namespace Engine.Objects
             ArrayInstance array = Wrap(text, (int)w);
             spacing += (int)_height;
             for (var i = 0; i < array.Length; ++i) {
-                DrawText(x, y + i * spacing, (string)array[i.ToString()]);
+                DrawText(x, y + i * spacing, (string)array[i]);
             }
         }
 
@@ -218,15 +213,15 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "setColorMask")]
-        public void SetColorMask(ColorInstance color)
+        public void SetColorMask(ObjectInstance color)
         {
-            _fontSprite.Color = color.GetColor();
+            _color = Conversions.ToColor(color);
         }
 
         [JSFunction(Name = "getColorMask")]
-        public ColorInstance GetColorMask()
+        public ObjectInstance GetColorMask()
         {
-            return new ColorInstance(Program._engine, _fontSprite.Color);
+            return Conversions.ToColorObject(_color);
         }
 
         [JSFunction(Name = "getHeight")]
@@ -246,7 +241,6 @@ namespace Engine.Objects
         {
             FontInstance font = new FontInstance(Engine);
             font._atlas = new TextureAtlas(_atlas.Size);
-            font._fontSprite = new Sprite(font._atlas.Texture);
             font._glyphs = new Image[_glyphs.Length];
             for (var i = 0; i < _glyphs.Length; ++i)
                 font._glyphs[i] = new Image(_glyphs[i]);

@@ -167,45 +167,6 @@ namespace Engine.Objects
         }
 
         /// <summary>
-        /// Draws this Entity onto a System.Drawing.Graphics object.
-        /// </summary>
-        /// <param name="g">The System.Drawing.Graphics object to use.</param>
-        /// <param name="tileWidth">The tile width for the map.</param>
-        /// <param name="tileHeight">The tile height for the map.</param>
-        /// <param name="offset">The x/y offset to draw at.</param>
-        /// <param name="zoom">The zoom factor of the map.</param>
-        public void Draw(int tileWidth, int tileHeight, ref Vector2f offset)
-        {
-            if (!Visible) return;
-            int x = (int)offset.X + (X / tileWidth) * tileWidth;
-            int y = (int)offset.Y + (Y / tileHeight) * tileHeight;
-            //g.DrawImage(_graphic, x, y, _graphic.Width * zoom, _graphic.Height * zoom);
-        }
-
-        /// <summary>
-        /// Used along with a list of others, it makes a unique name for this entity.
-        /// </summary>
-        /// <param name="others">A List of other types</param>
-        public void FigureOutName(List<Entity> others)
-        {
-            string baseName = Path.GetFileNameWithoutExtension(Spriteset);
-            string name = baseName + 1;
-
-            int num = 1;
-            for (int i = 0; i < others.Count; ++i)
-            {
-                if (others[i].Name == name)
-                {
-                    num++;
-                    name = baseName + num;
-                    i = 0;
-                }
-            }
-
-            Name = name;
-        }
-
-        /// <summary>
         /// Executes the trigger.
         /// </summary>
         public void ExecuteTrigger()
