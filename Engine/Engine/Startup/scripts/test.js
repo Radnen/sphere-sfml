@@ -20,7 +20,8 @@ var sys_font = GetSystemFont();
 
 function game()
 {
-	if (this.SetScaled) SetScaled(true);
+    if (this.SetScaled) SetScaled(true);
+    SetFrameRate(0);
 
 	var done = false;
 	var menu = new Menu();

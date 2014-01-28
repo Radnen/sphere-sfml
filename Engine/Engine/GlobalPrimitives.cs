@@ -30,9 +30,9 @@ namespace Engine
             return new Vector2f(Convert.ToSingle(obj["x"]), Convert.ToSingle(obj["y"]));
         }
 
-        public static void Rectangle(double x, double y, double width, double height, ObjectInstance color)
+        public static void Rectangle(double x, double y, double width, double height, ColorInstance color)
         {
-            Color sfml_color = Conversions.ToColor(color);
+            Color sfml_color = color.Color;
             _verts[0] = new Vertex(new Vector2f((float)x, (float)y), sfml_color);
             _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), sfml_color);
             _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), sfml_color);
@@ -40,22 +40,17 @@ namespace Engine
             Program.Batch.AddVerts(_verts, 4);
         }
 
-        public static void ApplyColorMask(ObjectInstance color)
+        public static void ApplyColorMask(ColorInstance color)
         {
             Rectangle(0, 0, GlobalProps.Width, GlobalProps.Height, color);
         }
 
-        public static void GradientRectangle(double x, double y, double width, double height, ObjectInstance color1, ObjectInstance color2, ObjectInstance color3, ObjectInstance color4)
+        public static void GradientRectangle(double x, double y, double width, double height, ColorInstance c1, ColorInstance c2, ColorInstance c3, ColorInstance c4)
         {
-            Color c1 = Conversions.ToColor(color1);
-            Color c2 = Conversions.ToColor(color2);
-            Color c3 = Conversions.ToColor(color3);
-            Color c4 = Conversions.ToColor(color4);
-
-            _verts[0] = new Vertex(new Vector2f((float)x, (float)y), c1);
-            _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), c2);
-            _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), c3);
-            _verts[3] = new Vertex(new Vector2f((float)x, (float)(y + height)), c4);
+            _verts[0] = new Vertex(new Vector2f((float)x, (float)y), c1.Color);
+            _verts[1] = new Vertex(new Vector2f((float)(x + width), (float)y), c2.Color);
+            _verts[2] = new Vertex(new Vector2f((float)(x + width), (float)(y + height)), c3.Color);
+            _verts[3] = new Vertex(new Vector2f((float)x, (float)(y + height)), c4.Color);
             Program.Batch.AddVerts(_verts, 4);
         }
 
@@ -92,10 +87,10 @@ namespace Engine
             Target.Draw(verts, PrimitiveType.LinesStrip);
         }
 
-        public static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ObjectInstance color)
+        public static void Triangle(double x1, double y1, double x2, double y2, double x3, double y3, ColorInstance color)
         {
             Program.Batch.Flush();
-            Color c = Conversions.ToColor(color);
+            Color c = color.Color;
             _verts[0] = new Vertex(new Vector2f((float)x1, (float)y1), c);
             _verts[1] = new Vertex(new Vector2f((float)x2, (float)y2), c);
             _verts[2] = new Vertex(new Vector2f((float)x3, (float)y3), c);

@@ -213,15 +213,15 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "setColorMask")]
-        public void SetColorMask(ObjectInstance color)
+        public void SetColorMask(ColorInstance color)
         {
-            _color = Conversions.ToColor(color);
+            _color = color.Color;
         }
 
         [JSFunction(Name = "getColorMask")]
         public ObjectInstance GetColorMask()
         {
-            return Conversions.ToColorObject(_color);
+            return new ColorInstance(Engine, _color);
         }
 
         [JSFunction(Name = "getHeight")]

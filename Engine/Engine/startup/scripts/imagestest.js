@@ -36,6 +36,7 @@ function TestManyPrims() {
         for (var y = 0; y < sh; y += h) {
             for (var x = 0; x < sw; x += w) {
                 GradientRectangle(x, y, w, h, color1, color1, color2, color2);
+                color1.red -= 2;
             }
         }
 

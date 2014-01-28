@@ -77,6 +77,7 @@ namespace Engine.Objects
         [JSFunction(Name = "blitSurface")]
         public void BlitSurface(HWSurfaceInstance surf, int x, int y)
         {
+            if (surf._changed) { surf.Update(); }
             _myBatch.Add(surf._cache, (float)x, (float)y);
             _changed = true;
         }
@@ -85,7 +86,7 @@ namespace Engine.Objects
         public void BlitMaskSurface(HWSurfaceInstance surf, int x, int y, ColorInstance mask)
         {
             if (surf._changed) { surf.Update(); }
-            _myBatch.Add(surf._tex.Texture, (float)x, (float)y);
+            _myBatch.Add(surf._cache, (float)x, (float)y);
             _changed = true;
         }
 
@@ -256,6 +257,12 @@ namespace Engine.Objects
 
         private Vertex[] _verts = new Vertex[4];
 
+        private void FillVert(int n, int x, int y, Color c)
+        {
+            _verts[n].Position = new Vector2f(x, y);
+            _verts[n].Color = c;
+        }
+
         private void FillVert(int n, int x, int y, ref Color c)
         {
             _verts[n].Position = new Vector2f(x, y);
@@ -263,10 +270,9 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "rectangle")]
-        public void Rectangle(int x, int y, int w, int h, ObjectInstance color)
+        public void Rectangle(int x, int y, int w, int h, ColorInstance color)
         {
-            Color col = Conversions.ToColor(color);
-            Vector2f pos = new Vector2f(x, y);
+            Color col = color.Color;
             FillVert(0, x, y, ref col);
             FillVert(1, x + w, y, ref col);
             FillVert(2, x + w, y + h, ref col);
@@ -276,16 +282,14 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "gradientRectangle")]
-        public void GradientRectangle(int x, int y, int w, int h, ColorInstance col1, ColorInstance col2, ColorInstance col3, ColorInstance col4)
+        public void GradientRectangle(int x, int y, int w, int h, ColorInstance c1, ColorInstance c2, ColorInstance c3, ColorInstance c4)
         {
-            Vertex[] _verts = new Vertex[4];
-            _verts[0] = new Vertex(new Vector2f(x, y), Conversions.ToColor(col1));
-            _verts[1] = new Vertex(new Vector2f(x + w, y), Conversions.ToColor(col2));
-            _verts[2] = new Vertex(new Vector2f(x + w, y + h), Conversions.ToColor(col3));
-            _verts[3] = new Vertex(new Vector2f(x, y + h), Conversions.ToColor(col4));
+            FillVert(0, x, y, c1.Color);
+            FillVert(1, x + w, y, c2.Color);
+            FillVert(2, x + w, y + h, c3.Color);
+            FillVert(3, x, y + h, c4.Color);
             _myBatch.AddVerts(_verts, 4);
             _changed = true;
-            //Update();
         }
 
         [JSFunction(Name = "outlinedRectangle")]

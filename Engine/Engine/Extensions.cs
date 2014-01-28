@@ -4,40 +4,6 @@ using Jurassic.Library;
 
 namespace Engine
 {
-    public static class Conversions
-    {
-        public static int ToColorInt(ObjectInstance instance)
-        {
-            int r = (int)instance["red"];
-            int g = (int)instance["green"];
-            int b = (int)instance["blue"];
-            int a = (int)instance["alpha"];
-
-            return (a << 24) | (b << 16) | (g << 8) | r;
-        }
-
-        public static Color ToColor(ObjectInstance instance)
-        {
-            byte r = Convert.ToByte(instance["red"]);
-            byte g = Convert.ToByte(instance["green"]);
-            byte b = Convert.ToByte(instance["blue"]);
-            byte a = Convert.ToByte(instance["alpha"]);
-
-            return new Color(r, g, b, a);
-        }
-
-        public static ObjectInstance ToColorObject(Color color)
-        {
-            ObjectInstance obj = Program.CreateObject();
-            obj["red"] = (int)color.R;
-            obj["green"] = (int)color.G;
-            obj["blue"] = (int)color.B;
-            obj["alpha"] = (int)color.A;
-
-            return obj;
-        }
-    }
-
     public static class Extensions
     {
         public static void Clear(this Image img, Color color)

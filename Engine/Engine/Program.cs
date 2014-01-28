@@ -210,7 +210,7 @@ namespace Engine
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
             engine.SetGlobalFunction("Exit", new Action(Exit));
-            //engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
+            engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
             engine.SetGlobalFunction("LoadSound", new Func<string, SoundInstance>(LoadSound));
             engine.SetGlobalFunction("LoadSurface", new Func<string, ObjectInstance>(LoadSurface));
@@ -290,8 +290,6 @@ namespace Engine
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
             engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
-            engine.SetGlobalValue("Color", new ColorConstructor(engine));
-            engine.Execute("function CreateColor(r, g, b, a) { if (a === undefined) a = 255; return { red: r, green: g, blue: b, alpha: a }; }");
 
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
@@ -455,7 +453,7 @@ namespace Engine
 
         public static double GetTime()
         {
-            return DateInstance.Now();
+            return Math.Floor(DateInstance.Now());
         }
 
         static ColorInstance CreateColor(int r, int g, int b, [DefaultParameterValue(255)] int a = 255)
@@ -465,6 +463,7 @@ namespace Engine
 
         static ImageInstance GrabImage(int x, int y, int w, int h)
         {
+            Batch.Flush();
             x *= (Scaled ? 2 : 1);
             y *= (Scaled ? 2 : 1);
             w *= (Scaled ? 2 : 1);
@@ -476,6 +475,7 @@ namespace Engine
 
         static SurfaceInstance GrabSurface(int x, int y, int w, int h)
         {
+            Batch.Flush();
             x *= (Scaled ? 2 : 1);
             y *= (Scaled ? 2 : 1);
             w *= (Scaled ? 2 : 1);
@@ -484,7 +484,7 @@ namespace Engine
             {
                 Image section = new Image((uint)w, (uint)h);
                 section.Copy(window, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(_engine, section.Pixels, (uint)w, (uint)h);
+                return new SurfaceInstance(_engine, section.Pixels, w, h);
             }
         }
 
@@ -635,9 +635,9 @@ namespace Engine
             return new FontInstance(_engine, ParseSpherePath(filename, "fonts"));
         }
 
-        static SurfaceInstance CreateSurface(int w, int h, ObjectInstance color)
+        static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
-            return new SurfaceInstance(_engine, w, h, Conversions.ToColor(color));
+            return new SurfaceInstance(_engine, w, h, color.Color);
         }
 
         static FileInstance OpenFile(string filename)

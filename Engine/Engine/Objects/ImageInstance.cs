@@ -144,7 +144,7 @@ namespace Engine.Objects
         {
             using (Image img = _image.CopyToImage())
             {
-                return new SurfaceInstance(Program._engine, img.Pixels, img.Size.X, img.Size.Y);
+                return new SurfaceInstance(Program._engine, img.Pixels, (int)img.Size.X, (int)img.Size.Y);
             }
         }
 

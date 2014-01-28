@@ -53,6 +53,12 @@ namespace Engine.Objects
             }
         }
 
+        ~SoundInstance()
+        {
+            if (_music != null) { _music.Dispose(); _music = null; }
+            if (_sound != null) { _sound.Dispose(); _sound = null; }
+        }
+
         [JSFunction(Name = "play")]
         public void Play([DefaultParameterValue(false)] bool repeat = false)
         {

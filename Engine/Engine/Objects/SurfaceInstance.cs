@@ -12,20 +12,18 @@ namespace Engine.Objects
         private bool _changed;
         private BlendModes _mode;
         private byte[] _pixels;
-        private uint _width, _height;
-        private int scan;
+        private int _width, _height;
 
         public SurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
             : base(parent.Object.InstancePrototype)
         {
             if (width <= 0)
                 throw new ArgumentOutOfRangeException("width", "Width must be > 0.");
-            _width = (uint)width;
-            scan = width << 2;
+            _width = width;
 
             if (height <= 0)
                 throw new ArgumentOutOfRangeException("height", "Height must be > 0.");
-            _height = (uint)height;
+            _height = height;
 
             _pixels = new byte[width * height << 2];
             for (int i = 0; i < _pixels.Length; i += 4)
@@ -45,13 +43,13 @@ namespace Engine.Objects
             using (Image img = new Image(filename))
             {
                 _pixels = img.Pixels;
-                _width = img.Size.X;
-                _height = img.Size.Y;
+                _width = (int)img.Size.X;
+                _height = (int)img.Size.Y;
             }
             Init();
         }
 
-        public SurfaceInstance(ScriptEngine parent, byte[] pixels, uint width, uint height)
+        public SurfaceInstance(ScriptEngine parent, byte[] pixels, int width, int height)
             : base(parent.Object.InstancePrototype)
         {
             _width = width;
@@ -68,7 +66,8 @@ namespace Engine.Objects
 
         private void Init() {
             PopulateFunctions();
-            _tex = new Texture(_width, _height);
+            _tex = new Texture((uint)_width, (uint)_height);
+            _tex.Smooth = GlobalProps.SmoothTextures;
 
             Update();
             SetBlendMode((int)BlendModes.Blend);
@@ -129,23 +128,24 @@ namespace Engine.Objects
             _changed = true;
         }
 
-        private void DrawImage(byte* buf, int ox, int oy, Byte[] pixels, int width, int height)
+        private void DrawImage(byte* buf, int ox, int oy, byte[] pixels, int width, int height)
         {
-            for (int y = 0; y < height; ++y)
+            int left = Math.Max(0, ox);
+            int top = Math.Max(0, oy);
+            int right = Math.Min(_width, ox + width);
+            int bottom = Math.Min(_height, oy + height);
+            for (int y = top; y < bottom; ++y)
             {
-                int ny = oy + y;
-                for (int x = 0; x < width; ++x)
+                for (int x = left; x < right; ++x)
                 {
-                    int nx = ox + x;
-                    //if (nx < 0 || x >= _width || ny < 0 || ny >= _height) continue;
-                    int s = (x + y * width) << 2;
+                    int s = (x - ox + (y - oy) * width) << 2;
                     int c = (pixels[s + 3] << 24) + (pixels[s + 2] << 16) + (pixels[s + 1] << 8) + pixels[s]; // abgr
-                    SetPixelFast(buf, nx, ny, c);
+                    SetPixelFast(buf, x, y, c);
                 }
             }
         }
         
-        private void DrawImage(int ox, int oy, Byte[] pixels, int width, int height)
+        private void DrawImage(int ox, int oy, byte[] pixels, int width, int height)
         {
             fixed (byte* pix = _pixels)
             {
@@ -156,10 +156,9 @@ namespace Engine.Objects
         [JSFunction(Name = "setPixel")]
         public void SetPixel(int x, int y, ColorInstance color)
         {
-            Color col = color.GetColor();
             fixed (byte* buf = _pixels)
             {
-                SetPixel(buf, x, y, ref col);
+                SetPixelFast(buf, x, y, color.GetInt());
             }
             _changed = true;
         }
@@ -170,33 +169,33 @@ namespace Engine.Objects
             c1->R = (byte)(w * (c2.R - c1->R) + c1->R);
             c1->G = (byte)(w * (c2.G - c1->G) + c1->G);
             c1->B = (byte)(w * (c2.B - c1->B) + c1->B);
-            c1->A = (byte)(w * (c2.A - c1->A) + c1->A);
+            c1->A = Math.Max(c1->A, c2.A);
         }
 
-        public static int FastBlend(int c1, int c2, float ratio)
+        public static int FastBlend(int c1, int c2, float weight)
         {
-            /*int a1 = (c1 >> 24 & 0xff);
-            int r1 = ((c1 & 0xff0000) >> 16);
+            int a1 = (c1 >> 24 & 0xff);
+            int b1 = ((c1 & 0xff0000) >> 16);
             int g1 = ((c1 & 0xff00) >> 8);
-            int b1 = (c1 & 0xff);
+            int r1 = (c1 & 0xff);
 
             int a2 = (c2 >> 24 & 0xff);
-            int r2 = ((c2 & 0xff0000) >> 16);
+            int b2 = ((c2 & 0xff0000) >> 16);
             int g2 = ((c2 & 0xff00) >> 8);
-            int b2 = (c2 & 0xff);
+            int r2 = (c2 & 0xff);
 
-            int a = (int)(a1 + (a2 - a1) * ratio);
-            int b = (int)(b1 + (b2 - b1) * ratio);
-            int g = (int)(g1 + (g2 - g1) * ratio);
-            int r = (int)(r1 + (r2 - r1) * ratio);
+            int a = Math.Max(a1, a2);
+            int b = (int)(weight * (b2 - b1) + b1);
+            int g = (int)(weight * (g2 - g1) + g1);
+            int r = (int)(weight * (r2 - r1) + r1);
 
-            return a << 24 | b << 16 | g << 8 | r;*/
-            return (int)(c1 + (c1 - c2) * ratio);
+            return a << 24 | b << 16 | g << 8 | r;
         }
 
         public void SetPixelFast(byte* buffer, int x, int y, int c)
         {
-            int* p = (int*)buffer + x + y * _width;
+            int idx = x + y * (int)_width;
+            int* p = (int*)buffer + idx;
 
             switch (_mode)
             {
@@ -211,8 +210,10 @@ namespace Engine.Objects
 
         public void SetPixel(byte* buffer, int x, int y, ref Color c)
         {
+            int idx = y * (int)_width + x;
+            if (idx < 0 || idx >= _pixels.Length) { Console.WriteLine(idx); return; }
             //if (x < 0 || y < 0 || x > _width || y > _height) return;
-            Color* color = (Color*)(buffer + ((y * _width + x) << 2));
+            Color* color = (Color*)(buffer + (idx << 2));
             switch (_mode)
             {
                 case BlendModes.Blend:
@@ -224,31 +225,8 @@ namespace Engine.Objects
             }
         }
 
-        public void SetPixel(int x, int y, ref Color dest)
-        {
-            //if (x < 0 || y < 0 || x > _width || y > _height) return;
-            int scan0 = (x + y * (int)_width) << 2;
-            switch (_mode)
-            {
-                case BlendModes.Replace:
-                    _pixels[scan0 + 0] = dest.R;
-                    _pixels[scan0 + 1] = dest.G;
-                    _pixels[scan0 + 2] = dest.B;
-                    _pixels[scan0 + 3] = dest.A;
-                    break;
-                case BlendModes.Blend:
-                    Color source = GetColorAt(x, y);
-                    float w0 = (float)dest.A / 255, w1 = 1 - w0;
-                    _pixels[scan0 + 0] = (byte)(source.R * w1 + dest.R * w0);
-                    _pixels[scan0 + 1] = (byte)(source.G * w1 + dest.G * w0);
-                    _pixels[scan0 + 2] = (byte)(source.B * w1 + dest.B * w0);
-                    _pixels[scan0 + 3] = (byte)(source.A * w1 + dest.A * w0);
-                    break;
-            }
-        }
-
         public Color GetColorAt(int x, int y) {
-            int s = (x << 2) + y * scan;
+            int s = (x + y * _width) << 2;
             return new Color(_pixels[s + 0], _pixels[s + 1], _pixels[s + 2], _pixels[s + 3]);
         }
 
@@ -260,7 +238,7 @@ namespace Engine.Objects
             out_c.A = (byte)(source.A * (float)dest.A / 255);
         }
 
-        private static void WeightedBlend(ref Color source, ref Color dest, double w, ref Color out_c)
+        private static void WeightedBlend(ref Color source, ref Color dest, double w, out Color out_c)
         {
             double w1 = 1.0 - w;
             out_c.R = (byte)(source.R * w + dest.R * w1);
@@ -374,7 +352,7 @@ namespace Engine.Objects
         {
             Byte[] newbytes = new byte[width * height * 4];
             Array.Copy(_pixels, newbytes, Math.Min(newbytes.Length, _pixels.Length));
-            return new SurfaceInstance(Engine, newbytes, (uint)width, (uint)height);
+            return new SurfaceInstance(Engine, newbytes, width, height);
         }
 
         [JSFunction(Name = "rescale")]
@@ -398,7 +376,7 @@ namespace Engine.Objects
                 }
             }
 
-            return new SurfaceInstance(Engine, copy, (uint)width, (uint)height);
+            return new SurfaceInstance(Engine, copy, width, height);
         }
 
         [JSFunction(Name = "getPixel")]
@@ -458,11 +436,14 @@ namespace Engine.Objects
         [JSFunction(Name = "pointSeries")]
         public void PointSeries(ArrayInstance array, ColorInstance color)
         {
-            Color c = color.GetColor();
-            for (var i = 0; i < array.Length; ++i)
+            int c = color.GetInt();
+            fixed (byte* buf = _pixels)
             {
-                Vector2f vect = GlobalPrimitives.GetVector(array[i] as ObjectInstance);
-                SetPixel((int)vect.X, (int)vect.Y, ref c);
+                for (var i = 0; i < array.Length; ++i)
+                {
+                    Vector2f vect = GlobalPrimitives.GetVector(array[i] as ObjectInstance);
+                    SetPixelFast(buf, (int)vect.X, (int)vect.Y, c);
+                }
             }
             _changed = true;
         }
@@ -473,22 +454,22 @@ namespace Engine.Objects
         [JSFunction(Name = "line")]
         public void Line(int x1, int y1, int x2, int y2, ColorInstance color)
         {
-            Color col = color.GetColor();
+            int col = color.GetInt();
             fixed (byte* buf = _pixels)
             {
-                Line(buf, x1, y1, x2, y2, ref col);
+                Line(buf, x1, y1, x2, y2, col);
             }
             _changed = true;
         }
 
-        public void Line(byte* buf, int x1, int y1, int x2, int y2, ref Color color)
+        public void Line(byte* buf, int x1, int y1, int x2, int y2, int c)
         {
             int dx = Math.Abs(x2 - x1);
             int dy = Math.Abs(y2 - y1);
             int sx = (x1 < x2) ? 1 : -1;
             int sy = (y1 < y2) ? 1 : -1;
             int err = dx - dy, e2;
-            SetPixel(buf, x1, y1, ref color);
+            SetPixelFast(buf, x1, y1, c);
 
             while (x1 != x2 || y1 != y2)
             {
@@ -503,21 +484,21 @@ namespace Engine.Objects
                     err += dx;
                     y1 += sy;
                 }
-                SetPixel(buf, x1, y1, ref color);
+                SetPixelFast(buf, x1, y1, c);
             }
         }
 
         [JSFunction(Name = "lineSeries")]
         public void LineSeries(ArrayInstance points, ColorInstance color)
         {
-            Color c = color.GetColor();
+            int c = color.GetInt();
             fixed (byte* buf = _pixels)
             {
                 for (var i = 1; i < points.Length; i += 2)
                 {
                     Vector2f start = GlobalPrimitives.GetVector(points[i - 1] as ObjectInstance);
                     Vector2f end = GlobalPrimitives.GetVector(points[i] as ObjectInstance);
-                    Line(buf, (int)start.X, (int)start.Y, (int)end.X, (int)end.Y, ref c);
+                    Line(buf, (int)start.X, (int)start.Y, (int)end.X, (int)end.Y, c);
                 }
             }
             _changed = true;
@@ -528,22 +509,26 @@ namespace Engine.Objects
         {
             fixed (byte* buf = _pixels)
             {
-                GradientLine(buf, x1, y1, x2, y2, col1.GetColor(), col2.GetColor());
+                GradientLine(buf, x1, y1, x2, y2, col1.GetInt(), col2.GetInt());
             }
             _changed = true;
         }
 
-        public void GradientLine(byte* buf, int x1, int y1, int x2, int y2, Color col1, Color col2)
+        public void GradientLine(byte* buf, int x1, int y1, int x2, int y2, int c1, int c2)
         {
+            x1 = x1 < 0 ? 0 : x1;
+            x2 = x2 > _width ? _width : x2;
+            y1 = y1 < 0 ? 0 : y1;
+            y2 = y2 > _height ? _height : y2;
+
             int dx = Math.Abs(x2 - x1), nx;
             int dy = Math.Abs(y2 - y1), ny;
             int sx = (x1 < x2) ? 1 : -1;
             int sy = (y1 < y2) ? 1 : -1;
             int err = dx - dy, e2;
-            double max_d = (dx * dx + dy * dy);
-            Color final = new Color();
+            float max_d = (dx * dx + dy * dy);
 
-            SetPixel(buf, x1, y1, ref col2);
+            SetPixelFast(buf, x1, y1, c2);
 
             while (x1 != x2 || y1 != y2)
             {
@@ -560,17 +545,16 @@ namespace Engine.Objects
                 }
                 nx = x2 - x1;
                 ny = y2 - y1;
-                WeightedBlend(ref col2, ref col1, (nx * nx + ny * ny) / max_d, ref final);
-                SetPixel(buf, x1, y1, ref final);
+                SetPixelFast(buf, x1, y1, FastBlend(c1, c2, (nx * nx + ny * ny) / max_d));
             }
         }
 
         [JSFunction(Name = "rectangle")]
-        public void Rectangle(int ox, int oy, int w, int h, ObjectInstance color)
+        public void Rectangle(int ox, int oy, int w, int h, ColorInstance color)
         {
-            h = Math.Min(h + oy, (int)_height);
-            w = Math.Min(w + ox, (int)_width);
-            int c = Conversions.ToColorInt(color);
+            h = Math.Max(0, Math.Min(h + oy, (int)_height));
+            w = Math.Max(0, Math.Min(w + ox, (int)_width));
+            int c = color.GetInt();
             fixed (byte* buf = _pixels)
             {
                 for (int y = oy; y < h; ++y)
@@ -581,17 +565,20 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "gradientRectangle")]
-        public void GradientRectangle(int ox, int oy, int w, int h, ObjectInstance col1, ObjectInstance col2, ObjectInstance col3, ObjectInstance col4)
+        public void GradientRectangle(int ox, int oy, int w, int h, ColorInstance col1, ColorInstance col2, ColorInstance col3, ColorInstance col4)
         {
-            int c1 = Conversions.ToColorInt(col1), c2 = Conversions.ToColorInt(col2);
-            int c3 = Conversions.ToColorInt(col3), c4 = Conversions.ToColorInt(col4);
+            h = Math.Max(0, Math.Min(h + oy, (int)_height));
+            w = Math.Max(0, Math.Min(w + ox, (int)_width));
+            int c1 = col1.GetInt(), c2 = col2.GetInt();
+            int c3 = col3.GetInt(), c4 = col4.GetInt();
 
             fixed (byte* buf = _pixels)
             {
                 for (int y = 0; y < h; ++y)
                 {
-                    int w1 = FastBlend(c1, c4, (float)y / h);
-                    int w2 = FastBlend(c2, c3, (float)y / h);
+                    float weight = (float)y / h;
+                    int w1 = FastBlend(c1, c4, weight);
+                    int w2 = FastBlend(c2, c3, weight);
                     for (int x = 0; x < w; ++x)
                     {
                         int c = FastBlend(w1, w2, (float)x / w);
@@ -605,13 +592,13 @@ namespace Engine.Objects
         [JSFunction(Name = "outlinedRectangle")]
         public void OutlinedRectangle(int x, int y, int w, int h, ColorInstance color)
         {
-            Color c = color.GetColor();
+            int c = color.GetInt();
             fixed (byte* buf = _pixels)
             {
-                Line(buf, x, y, x + w, y, ref c);
-                Line(buf, x + w, y, x + w, y + h, ref c);
-                Line(buf, x + w, y + h, x, y + h, ref c);
-                Line(buf, x, y, x, y + h, ref c);
+                Line(buf, x, y, x + w, y, c);
+                Line(buf, x + w, y, x + w, y + h, c);
+                Line(buf, x + w, y + h, x, y + h, c);
+                Line(buf, x, y, x, y + h, c);
             }
             _changed = true;
         }
@@ -655,11 +642,12 @@ namespace Engine.Objects
                 }
                 else
                 {
+                    int ci = color.GetInt();
                     for (var y = 0; y < r; ++y)
                     {
                         int lw = (int)(r * Math.Cos(Math.Asin(1 - (float)y / r)));
-                        Line(buf, ox + r - lw, oy + y, ox + r + lw, oy + y, ref c);
-                        Line(buf, ox + r - lw, oy + h - y - 1, ox + r + lw, oy + h - y - 1, ref c);
+                        Line(buf, ox + r - lw, oy + y, ox + r + lw, oy + y, ci);
+                        Line(buf, ox + r - lw, oy + h - y - 1, ox + r + lw, oy + h - y - 1, ci);
                     }
                 }
             }
@@ -703,13 +691,14 @@ namespace Engine.Objects
                 {
                     var pi2 = Math.PI * 2;
                     var step = pi2 / (Math.Min(360, pi2 * r));
+                    int ci = color.GetInt();
                     for (double pt = 0.0, pt2 = step; pt < pi2; pt += step, pt2 += step)
                     {
                         int x1 = (int)(r + r * Math.Sin(pt));
                         int y1 = (int)(r + r * Math.Cos(pt));
                         int x2 = (int)(r + r * Math.Sin(pt2));
                         int y2 = (int)(r + r * Math.Cos(pt2));
-                        Line(buf, ox + x1, oy + y1, ox + x2, oy + y2, ref c);
+                        Line(buf, ox + x1, oy + y1, ox + x2, oy + y2, ci);
                     }
                 }
             }
@@ -753,7 +742,7 @@ namespace Engine.Objects
                     bytes[scan0 + 3] = c.A;
                 }
             }
-            return new SurfaceInstance(Engine, bytes, (uint)w, (uint)h);
+            return new SurfaceInstance(Engine, bytes, w, h);
         }
 
         [JSFunction(Name = "toString")]
