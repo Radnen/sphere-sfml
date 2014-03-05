@@ -19,7 +19,6 @@ namespace Engine
 
         private static int _internal_fps = 0;
         public static bool Scaled { get; set; }
-        private static readonly bool DEBUG = false;
 
         static GameFile _game = new GameFile();
         static string _name = "";
@@ -159,7 +158,7 @@ namespace Engine
                 return false;
             }
 
-            if (style == Styles.Fullscreen && width < 640 && height < 480)
+            if (style == Styles.Fullscreen && (width < 640 || height < 480))
             {
                 width = 640;
                 height = 480;
@@ -209,6 +208,7 @@ namespace Engine
             engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
+            engine.SetGlobalFunction("GarbageCollect", new Action(GarbageCollect));
             engine.SetGlobalFunction("Exit", new Action(Exit));
             engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
@@ -228,7 +228,7 @@ namespace Engine
             engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Rectangle));
             engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedRectangle));
             engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientRectangle));
-            engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.OutlinedCircle));
+            engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedCircle));
             engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.FilledCircle));
             engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Line));
             engine.SetGlobalFunction("LineSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.LineSeries));
@@ -294,6 +294,7 @@ namespace Engine
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
+            ParticleEngine.BindToEngine(engine);
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -541,6 +542,11 @@ namespace Engine
         static string GetVersionString()
         {
             return "v1.55";
+        }
+
+        static void GarbageCollect()
+        {
+            GC.Collect();
         }
 
         static void FindIcon()

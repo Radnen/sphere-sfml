@@ -142,7 +142,7 @@ namespace Engine.Objects
         public void AddTileC(int i, float x, float y)
         {
             IntRect source = _atlas.Sources[i];
-            IntRect dest = new IntRect((int)x, (int)y, source.Width, source.Height);
+            FloatRect dest = new FloatRect(x, y, source.Width, source.Height);
             Program.Batch.Add(_atlas.Texture, source, dest, _color);
         }
 

@@ -325,6 +325,7 @@
     <Compile Include="Objects\HWSurfaceInstance.cs" />
     <Compile Include="Objects\BinHeapConstructor.cs" />
     <Compile Include="Objects\MapEngineException.cs" />
+    <Compile Include="Objects\ParticleEngine.cs" />
     <Compile Include="Objects\SpriteBatch.cs" />
     <Compile Include="Objects\XMLDocConstructor.cs" />
     <Compile Include="Program.cs" />

@@ -80,7 +80,7 @@ namespace Engine.Objects
         public void DrawText(SpriteBatch batch, double x, double y, string text)
         {
             CheckUpdate();
-            IntRect dest = new IntRect((int)x, (int)y, 0, (int)_height);
+            FloatRect dest = new FloatRect((float)x, (float)y, 0, (float)_height);
 
             for (var i = 0; i < text.Length; ++i)
             {
@@ -96,12 +96,12 @@ namespace Engine.Objects
         public void DrawZoomedText(double x, double y, double zoom, string text)
         {
             CheckUpdate();
-            IntRect dest = new IntRect((int)x, (int)y, 0, (int)(_height * zoom));
+            FloatRect dest = new FloatRect((float)x, (float)y, 0, (float)(_height * zoom));
 
             for (var i = 0; i < text.Length; ++i)
             {
                 IntRect src = _atlas.Sources[text[i]];
-                dest.Width = (int)(src.Width * zoom);
+                dest.Width = (float)(src.Width * zoom);
                 dest.Height = src.Height;
                 Program.Batch.Add(_atlas.Texture, src, dest, _color);
                 dest.Left += (int)(src.Width * zoom);

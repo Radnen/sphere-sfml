@@ -45,6 +45,22 @@ namespace Engine.Objects
         }
 
         /// <summary>
+        /// Add a pre-transformed texture to the batcher.
+        /// </summary>
+        public void Add(Texture tex, Vertex[] transform)
+        {
+            if (_tex != tex) Flush(tex);
+
+            _array[_idx + 0] = transform[0];
+            _array[_idx + 1] = transform[1];
+            _array[_idx + 2] = transform[2];
+            _array[_idx + 3] = transform[3];
+            _idx += 4;
+
+            if (_idx == _array.Length) Flush();
+        }
+
+        /// <summary>
         /// Adds the texture to the batcher, drawn at the (x, y) location with the specified color.
         /// </summary>
         public void Add(Texture tex, float x, float y, Color color)
@@ -73,12 +89,12 @@ namespace Engine.Objects
         /// <summary>
         /// Adds a clipped or stretched version of the texture to the batcher, with the specified color.
         /// </summary>
-        public void Add(Texture tex, IntRect source, IntRect dest, Color color)
+        public void Add(Texture tex, IntRect source, FloatRect dest, Color color)
         {
             if (tex != _tex) Flush(tex);
 
-            int x = dest.Left + dest.Width;
-            int y = dest.Top + dest.Height;
+            float x = dest.Left + dest.Width;
+            float y = dest.Top + dest.Height;
             int x2 = source.Left + source.Width;
             int y2 = source.Top + source.Height;
 

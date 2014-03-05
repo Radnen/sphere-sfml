@@ -75,27 +75,27 @@ namespace Engine.Objects
         public void BlitMask(double x, double y, ColorInstance color)
         {
             if (!Visible(x, y)) return;
-            Program.Batch.Add(_image, (float)x, (float)y, color.GetColor());
+            Program.Batch.Add(_image, (float)x, (float)y, color.Color);
         }
 
         [JSFunction(Name = "zoomBlit")]
         public void ZoomBlit(double x, double y, double z) {
             if (!Visible(x, y)) return;
 
-            int wz = (int)(_source.Width * z);
-            int hz = (int)(_source.Height * z);
+            float wz = (float)(_source.Width * z);
+            float hz = (float)(_source.Height * z);
 
-            Program.Batch.Add(_image, _source, new IntRect((int)x, (int)y, wz, hz), Color.White);
+            Program.Batch.Add(_image, _source, new FloatRect((float)x, (float)y, wz, hz), Color.White);
         }
 
         [JSFunction(Name = "zoomBlitMask")]
         public void ZoomBlitMask(double x, double y, double z, ColorInstance color) {
             if (!Visible(x, y)) return;
 
-            int wz = (int)(_source.Width * z);
-            int hz = (int)(_source.Height * z);
+            float wz = (float)(_source.Width * z);
+            float hz = (float)(_source.Height * z);
 
-            Program.Batch.Add(_image, _source, new IntRect((int)x, (int)y, wz, hz), color.GetColor());
+            Program.Batch.Add(_image, _source, new FloatRect((float)x, (float)y, wz, hz), color.GetColor());
         }
 
         [JSFunction(Name = "rotateBlit")]
@@ -107,36 +107,71 @@ namespace Engine.Objects
         [JSFunction(Name = "rotateBlitMask")]
         public void RotateBlitMask(double x, double y, double r, ColorInstance color) {
             if (!Visible(x, y)) return;
-            Program.Batch.Add(_image, (float)x, (float)y, color.GetColor(), r);
+            Program.Batch.Add(_image, (float)x, (float)y, color.Color, r);
         }
 
         [JSFunction(Name = "transformBlit")]
         public void TransformBlit(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
         {
-            Program.Batch.Flush();
+            float w = (float)_image.Size.X, h = (float)_image.Size.Y;
             Vertex[] array = new Vertex[4];
 
             array[0] = new Vertex(new Vector2f((float)x1, (float)y1), new Vector2f(0, 0));
-            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), new Vector2f((float)_image.Size.X, 0));
-            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
-            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), new Vector2f(0, (float)_image.Size.Y));
+            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), new Vector2f(w, 0));
+            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), new Vector2f(w, h));
+            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), new Vector2f(0, h));
 
-            Program._window.Draw(array, PrimitiveType.Quads, _state);
+            Program.Batch.Add(_image, array);
         }
 
         [JSFunction(Name = "transformBlitMask")]
         public void TransformBlitMask(ObjectInstance ul, ObjectInstance ur, ObjectInstance lr, ObjectInstance ll, ColorInstance color)
         {
-            Program.Batch.Flush();
+            float w = (float)_image.Size.X, h = (float)_image.Size.Y;
             Vertex[] array = new Vertex[4];
             Color c = color.GetColor();
 
             array[0] = new Vertex(GlobalPrimitives.GetVector(ul), c, new Vector2f(0, 0));
-            array[1] = new Vertex(GlobalPrimitives.GetVector(ur), c, new Vector2f((float)_image.Size.X, 0));
-            array[2] = new Vertex(GlobalPrimitives.GetVector(lr), c, new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
-            array[3] = new Vertex(GlobalPrimitives.GetVector(ll), c, new Vector2f(0, (float)_image.Size.Y));
+            array[1] = new Vertex(GlobalPrimitives.GetVector(ur), c, new Vector2f(w, 0));
+            array[2] = new Vertex(GlobalPrimitives.GetVector(lr), c, new Vector2f(w, h));
+            array[3] = new Vertex(GlobalPrimitives.GetVector(ll), c, new Vector2f(0, h));
 
-            Program._window.Draw(array, PrimitiveType.Quads, _state);
+            Program.Batch.Add(_image, array);
+        }
+
+        [JSFunction(Name = "wrapBlit")]
+        public void WrapBlit(int x1, int y1, int x2, int y2, [DefaultParameterValue(-1)] int width = -1, [DefaultParameterValue(-1)] int height = -1)
+        {
+            float w = width < 0 ? (float)_image.Size.X : width;
+            float h = height < 0 ? (float)_image.Size.Y : height;
+
+            Vertex[] array = new Vertex[4];
+            _image.Repeated = true;
+
+            array[0] = new Vertex(new Vector2f(x1, y1), new Vector2f(x2, y2));
+            array[1] = new Vertex(new Vector2f(x1 + w, y1), new Vector2f(x2 + w, y2));
+            array[2] = new Vertex(new Vector2f(x1 + w, y1 + h), new Vector2f(x2 + w, y2 + h));
+            array[3] = new Vertex(new Vector2f(x1, y1 + h), new Vector2f(x2, y2 + h));
+
+            Program.Batch.Add(_image, array);
+        }
+
+        [JSFunction(Name = "wrapBlitMask")]
+        public void WrapBlitMask(int x1, int y1, int x2, int y2, ColorInstance col, [DefaultParameterValue(-1)] int width = -1, [DefaultParameterValue(-1)] int height = -1)
+        {
+            Color c = col.Color;
+            float w = width < 0 ? (float)_image.Size.X : width;
+            float h = height < 0 ? (float)_image.Size.Y : height;
+
+            Vertex[] array = new Vertex[4];
+            _image.Repeated = true;
+
+            array[0] = new Vertex(new Vector2f(x1, y1), c, new Vector2f(x2, y2));
+            array[1] = new Vertex(new Vector2f(x1 + w, y1), c, new Vector2f(x2 + w, y2));
+            array[2] = new Vertex(new Vector2f(x1 + w, y1 + h), c, new Vector2f(x2 + w, y2 + h));
+            array[3] = new Vertex(new Vector2f(x1, y1 + h), c, new Vector2f(x2, y2 + h));
+
+            Program.Batch.Add(_image, array);
         }
 
         [JSFunction(Name = "createSurface")]
