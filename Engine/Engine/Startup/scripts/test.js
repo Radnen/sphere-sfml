@@ -1,6 +1,7 @@
 // Testing suite:
 
 RequireScript("imagetest.js");
+RequireScript("imagestest.js");
 RequireScript("fonttest.js");
 RequireScript("windowtest.js");
 RequireScript("mousetest.js");
@@ -19,17 +20,23 @@ var sys_font = GetSystemFont();
 
 function game()
 {
-	if (this.SetScaled) SetScaled(true);
+    if (this.SetScaled) SetScaled(true);
+    SetFrameRate(0);
 
 	var done = false;
 	var menu = new Menu();
 		
 	menu.addOption("Images", TestImages);
+	menu.addOption("Many Images", TestManyImages);
+	menu.addOption("Many Primitives", TestManyPrims);
 	menu.addOption("Fonts", TestFonts);
 	menu.addOption("Windows", TestWindows);
+	menu.addOption("Big Window", TestBigWindow);
 	menu.addOption("Spritesets", TestSpritesets);
 	menu.addOption("Mouse/Input", TestMouse);
 	menu.addOption("Surfaces", TestSurfaces);
+	menu.addOption("Surface Fill Rate", TestSurfaceFillRate);
+	menu.addOption("Color Creation", TestColorCreationSpeed);
 	menu.addOption("Music/Sounds", TestMusic);
 	menu.addOption("Savefiles", TestSaving);
 	menu.addOption("Test Map Anims", function() {
@@ -128,8 +135,10 @@ function Update2()
 
 function Menu()
 {
-	this.items = [];
-	this.index = 0;
+	this.items   = [];
+	this.index   = 0;
+	this.top     = 0;
+	this.visible = 0;
 }
 
 Menu.prototype.addOption = function(name, callback) {
@@ -139,20 +148,24 @@ Menu.prototype.addOption = function(name, callback) {
 Menu.prototype.draw = function(x, y, w, h) {
 	sys_window.drawWindow(x, y, w, h);
 	
-	for (var i = 0; i < this.items.length; ++i) {
-		sys_font.drawText(x + 16, y + i*16, this.items[i].name);
+	this.visible = h / 16;
+	for (var i = 0; i < this.visible; ++i) {
+	    if (i + this.top >= this.items.length) break;
+		sys_font.drawText(x + 16, y + i*16, this.items[i + this.top].name);
 	}
 	
-	sys_arrow.blit(x, y + this.index * 16);
+	sys_arrow.blit(x, y + (this.index - this.top) * 16);
 }
 
 Menu.prototype.update = function(key) {
 	switch(key) {
-		case KEY_UP:
-			this.index = Math.max(0, this.index - 1);
+	    case KEY_UP:
+	        if (this.index > 0) this.index--;
+	        if (this.index < this.top) this.top--;
 		break;
-		case KEY_DOWN:
-			this.index = Math.min(this.index + 1, this.items.length - 1);
+	    case KEY_DOWN:
+	        if (this.index < this.items.length - 1) this.index++;
+	        if (this.index >= this.top + this.visible) this.top++;
 		break;
 		case KEY_ENTER:
 			this.items[this.index].callback();

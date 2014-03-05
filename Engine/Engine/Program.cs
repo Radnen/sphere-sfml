@@ -14,12 +14,11 @@ namespace Engine
     {
         public static RenderWindow _window = null;
         public static ScriptEngine _engine = null;
-        public static SpriteBatch _batch = new SpriteBatch();
+        public static SpriteBatch Batch;
         public static IntRect _clipper = new IntRect(0, 0, 0, 0);
 
         private static int _internal_fps = 0;
         public static bool Scaled { get; set; }
-        private static readonly bool DEBUG = false;
 
         static GameFile _game = new GameFile();
         static string _name = "";
@@ -159,11 +158,12 @@ namespace Engine
                 return false;
             }
 
-            if (style == Styles.Fullscreen && width < 640 && height < 480)
+            if (style == Styles.Fullscreen && (width < 640 || height < 480))
             {
                 width = 640;
                 height = 480;
             }
+
             _window = new RenderWindow(new VideoMode((uint)width, (uint)height), GlobalProps.GameName, style);
 
             if (Scaled)
@@ -180,6 +180,8 @@ namespace Engine
             Program._window.SetMouseCursorVisible(false);
 
             GlobalPrimitives.Target = _window;
+            Batch = new SpriteBatch(_window);
+
             FindIcon();
             return true;
         }
@@ -198,8 +200,6 @@ namespace Engine
         public static ScriptEngine GetSphereEngine()
         {
             ScriptEngine engine = new ScriptEngine();
-            engine.EnableDebugging = DEBUG;
-
             // The glorious Sphere game API :)
             engine.SetGlobalFunction("Abort", new Action<string>(Abort));
             engine.SetGlobalFunction("GetVersion", new Func<double>(GetVersion));
@@ -208,11 +208,12 @@ namespace Engine
             engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
             engine.SetGlobalFunction("Print", new Action<string>(Print));
+            engine.SetGlobalFunction("GarbageCollect", new Action(GarbageCollect));
             engine.SetGlobalFunction("Exit", new Action(Exit));
             engine.SetGlobalFunction("CreateColor", new Func<int, int, int, int, ColorInstance>(CreateColor));
             engine.SetGlobalFunction("LoadImage", new Func<string, ImageInstance>(LoadImage));
             engine.SetGlobalFunction("LoadSound", new Func<string, SoundInstance>(LoadSound));
-            engine.SetGlobalFunction("LoadSurface", new Func<string, SurfaceInstance>(LoadSurface));
+            engine.SetGlobalFunction("LoadSurface", new Func<string, ObjectInstance>(LoadSurface));
             engine.SetGlobalFunction("LoadWindowStyle", new Func<string, WindowStyleInstance>(LoadWindowStyle));
             engine.SetGlobalFunction("LoadSpriteset", new Func<string, SpritesetInstance>(LoadSpriteset));
             engine.SetGlobalFunction("CreateSpriteset", new Func<int, int, int, int, int, SpritesetInstance>(CreateSpriteset));
@@ -227,7 +228,7 @@ namespace Engine
             engine.SetGlobalFunction("Rectangle", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Rectangle));
             engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedRectangle));
             engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientRectangle));
-            engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.OutlinedCircle));
+            engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedCircle));
             engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.FilledCircle));
             engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Line));
             engine.SetGlobalFunction("LineSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.LineSeries));
@@ -236,7 +237,7 @@ namespace Engine
             engine.SetGlobalFunction("Polygon", new Action<ArrayInstance, ColorInstance, bool>(GlobalPrimitives.Polygon));
             engine.SetGlobalFunction("GradientLine", new Action<double, double, double, double, ColorInstance, ColorInstance>(GlobalPrimitives.GradientLine));
             engine.SetGlobalFunction("ApplyColorMask", new Action<ColorInstance>(GlobalPrimitives.ApplyColorMask));
-            engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, SurfaceInstance>(CreateSurface)); 
+            engine.SetGlobalFunction("CreateSurface", new Func<int, int, ColorInstance, ObjectInstance>(CreateSurface)); 
             engine.SetGlobalFunction("GrabImage", new Func<int, int, int, int, ImageInstance>(GrabImage));
             engine.SetGlobalFunction("GrabSurface", new Func<int, int, int, int, SurfaceInstance>(GrabSurface));
             engine.SetGlobalFunction("SetFrameRate", new Action<int>(SetFrameRate));
@@ -289,9 +290,11 @@ namespace Engine
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
             engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
+
             GlobalScripts.BindToEngine(engine);
             PersonManager.BindToEngine(engine);
             MapEngineHandler.BindToEngine(engine);
+            ParticleEngine.BindToEngine(engine);
 
             // keys:
             Array a = Enum.GetValues(typeof(Keyboard.Key));
@@ -451,7 +454,7 @@ namespace Engine
 
         public static double GetTime()
         {
-            return DateInstance.Now();
+            return Math.Floor(DateInstance.Now());
         }
 
         static ColorInstance CreateColor(int r, int g, int b, [DefaultParameterValue(255)] int a = 255)
@@ -461,6 +464,7 @@ namespace Engine
 
         static ImageInstance GrabImage(int x, int y, int w, int h)
         {
+            Batch.Flush();
             x *= (Scaled ? 2 : 1);
             y *= (Scaled ? 2 : 1);
             w *= (Scaled ? 2 : 1);
@@ -472,6 +476,7 @@ namespace Engine
 
         static SurfaceInstance GrabSurface(int x, int y, int w, int h)
         {
+            Batch.Flush();
             x *= (Scaled ? 2 : 1);
             y *= (Scaled ? 2 : 1);
             w *= (Scaled ? 2 : 1);
@@ -480,7 +485,7 @@ namespace Engine
             {
                 Image section = new Image((uint)w, (uint)h);
                 section.Copy(window, 0, 0, new IntRect(x, y, w, h));
-                return new SurfaceInstance(_engine, section.Pixels, (uint)w, (uint)h);
+                return new SurfaceInstance(_engine, section.Pixels, w, h);
             }
         }
 
@@ -488,7 +493,8 @@ namespace Engine
         static int _fps = 0;
         public static void FlipScreen()
         {
-            _batch.Render();
+            Batch.Flush();
+
             _window.DispatchEvents();
             _window.Display();
             _window.Clear();
@@ -536,6 +542,11 @@ namespace Engine
         static string GetVersionString()
         {
             return "v1.55";
+        }
+
+        static void GarbageCollect()
+        {
+            GC.Collect();
         }
 
         static void FindIcon()
@@ -632,7 +643,7 @@ namespace Engine
 
         static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
-            return new SurfaceInstance(_engine, w, h, color.GetColor());
+            return new SurfaceInstance(_engine, w, h, color.Color);
         }
 
         static FileInstance OpenFile(string filename)
@@ -719,19 +730,26 @@ namespace Engine
 
         static ArrayInstance GetGameList()
         {
-            string[] files = Directory.GetDirectories(GlobalProps.EnginePath + "/games");
-            ObjectInstance[] names = new ObjectInstance[files.Length]; 
-            for (var i = 0; i < files.Length; ++i) {
+            string directory = GlobalProps.EnginePath + "/games";
+            ArrayInstance array = _engine.Array.New();
+            if (!Directory.Exists(directory)) return array;
+
+            string[] files = Directory.GetDirectories(directory);
+            for (uint i = 0; i < files.Length; ++i) {
                 GameFile file = new GameFile();
-                file.ReadFile(files[i] + "/game.sgm");
+                if (!file.ReadFile(files[i] + "/game.sgm")) continue;
                 string name;
-                names[i] = CreateObject();
-                names[i]["name"] = (file.TryGetData("name", out name)) ? name : "";
-                names[i]["description"] = (file.TryGetData("description", out name)) ? name : "";
-                names[i]["author"] = (file.TryGetData("author", out name)) ? name : "";
-                names[i]["directory"] = Path.GetFileName(files[i]);
+
+                ObjectInstance obj = CreateObject();
+                obj["name"] = (file.TryGetData("name", out name)) ? name : "";
+                obj["description"] = (file.TryGetData("description", out name)) ? name : "";
+                obj["author"] = (file.TryGetData("author", out name)) ? name : "";
+                obj["directory"] = Path.GetFileName(files[i]);
+
+                ArrayInstance.Push(array, obj);
             }
-            return _engine.Array.New(names);
+
+            return array;
         }
 
         static string HashFromFile(string filename, [DefaultParameterValue(false)] bool sha = false)

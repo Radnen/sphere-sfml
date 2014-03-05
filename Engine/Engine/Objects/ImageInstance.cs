@@ -8,13 +8,11 @@ namespace Engine.Objects
 {
     public class ImageInstance : ObjectInstance
     {
-        private static readonly Vector2f VECT_1 = new Vector2f(1, 1);
-        private static readonly Vector2f VECT_0 = new Vector2f(0, 0);
-
         private Texture _image;
-        private Sprite _sprite;
-        private RectangleShape _shape = new RectangleShape();
+        private IntRect _source = new IntRect(0, 0, 0, 0);
         private RenderStates _state = new RenderStates();
+
+        public Texture Texture { get { return _image; } }
 
         public ImageInstance(ScriptEngine parent, string filename)
             : base(parent.Object.InstancePrototype)
@@ -31,7 +29,6 @@ namespace Engine.Objects
         }
 
         private void Init() {
-            _sprite = new Sprite(_image);
             PopulateFunctions();
 
             _state.Texture = _image;
@@ -40,12 +37,14 @@ namespace Engine.Objects
 
             DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);
+            _source.Width = (int)_image.Size.X;
+            _source.Height = (int)_image.Size.Y;
         }
 
         private bool Visible(double x, double y)
         {
             return (x < GlobalProps.Width && y < GlobalProps.Height &&
-                x + _image.Size.X > 0 && y + _image.Size.Y > 0);
+                x + _source.Width > 0 && y + _source.Height > 0);
         }
 
         public Image GetImage()
@@ -69,126 +68,110 @@ namespace Engine.Objects
         public void Blit(double x, double y, [DefaultParameterValue(0)] int mode = 0)
         {
             if (!Visible(x, y)) return;
-
-            _sprite.Position = new Vector2f((float)x, (float)y);
-            _sprite.Color = Color.White;
-            _sprite.Scale = VECT_1;
-            _sprite.Rotation = 0;
-            _sprite.Origin = VECT_0;
-
-            BlendMode before = _state.BlendMode;
-            switch (mode)
-            {
-                case 0:
-                    _state.BlendMode = BlendMode.Alpha;
-                    break;
-                case 4:
-                    _state.BlendMode = BlendMode.Add;
-                    break;
-                case 6:
-                    _state.BlendMode = BlendMode.Multiply;
-                    break;
-            }
-
-            Program._window.Draw(_sprite, _state);
-            _state.BlendMode = before;
-
-            //Program._batch.Add(new Vector2f((float)x, (float)y), _sprite.Texture, Color.White, 0);
+            Program.Batch.Add(_image, (float)x, (float)y);
         }
 
         [JSFunction(Name = "blitMask")]
         public void BlitMask(double x, double y, ColorInstance color)
         {
             if (!Visible(x, y)) return;
-
-            _sprite.Position = new Vector2f((float)x, (float)y);
-            _sprite.Color = color.GetColor();
-            _sprite.Scale = VECT_1;
-            _sprite.Rotation = 0;
-            _sprite.Origin = VECT_0;
-            
-            Program._window.Draw(_sprite);
-            //Program._batch.Add(new Vector2f((float)x, (float)y), _sprite.Texture, color.GetColor(), 0);
+            Program.Batch.Add(_image, (float)x, (float)y, color.Color);
         }
 
         [JSFunction(Name = "zoomBlit")]
         public void ZoomBlit(double x, double y, double z) {
             if (!Visible(x, y)) return;
-            
-            _sprite.Position = new Vector2f((float)x, (float)y);
-            _sprite.Color = Color.White;
-            _sprite.Scale = new Vector2f((float)z, (float)z);
-            _sprite.Rotation = 0;
-            _sprite.Origin = VECT_0;
 
-            Program._window.Draw(_sprite);
+            float wz = (float)(_source.Width * z);
+            float hz = (float)(_source.Height * z);
+
+            Program.Batch.Add(_image, _source, new FloatRect((float)x, (float)y, wz, hz), Color.White);
         }
 
         [JSFunction(Name = "zoomBlitMask")]
         public void ZoomBlitMask(double x, double y, double z, ColorInstance color) {
             if (!Visible(x, y)) return;
-            
-            _sprite.Position = new Vector2f((float)x, (float)y);
-            _sprite.Color = color.GetColor();
-            _sprite.Scale = new Vector2f((float)z, (float)z);
-            _sprite.Rotation = 0;
-            _sprite.Origin = VECT_0;
 
-            Program._window.Draw(_sprite);
+            float wz = (float)(_source.Width * z);
+            float hz = (float)(_source.Height * z);
+
+            Program.Batch.Add(_image, _source, new FloatRect((float)x, (float)y, wz, hz), color.GetColor());
         }
 
         [JSFunction(Name = "rotateBlit")]
         public void RotateBlit(double x, double y, double r) {
             if (!Visible(x, y)) return;
-            
-            _sprite.Position = new Vector2f((float)(x + _image.Size.X / 2), (float)(y + _image.Size.Y / 2));
-            _sprite.Color = Color.White;
-            _sprite.Scale = VECT_1;
-            _sprite.Rotation = (float)(r / Math.PI) * 180.0f;
-            _sprite.Origin = new Vector2f((float)_image.Size.X / 2, (float)_image.Size.Y / 2);
-
-            Program._window.Draw(_sprite);
-            //Program._batch.Add(new Vector2f((float)x, (float)y), _sprite.Texture, Color.White, 0);
+            Program.Batch.Add(_image, (float)x, (float)y, Color.White, r);
         }
 
         [JSFunction(Name = "rotateBlitMask")]
         public void RotateBlitMask(double x, double y, double r, ColorInstance color) {
             if (!Visible(x, y)) return;
-            
-            _sprite.Position = new Vector2f((float)(x + _image.Size.X / 2), (float)(y + _image.Size.Y / 2));
-            _sprite.Color = color.GetColor();
-            _sprite.Scale = VECT_1;
-            _sprite.Rotation = (float)(r / Math.PI) * 180.0f;
-            _sprite.Origin = new Vector2f((float)_image.Size.X / 2, (float)_image.Size.Y / 2);
-
-            Program._window.Draw(_sprite);
+            Program.Batch.Add(_image, (float)x, (float)y, color.Color, r);
         }
 
         [JSFunction(Name = "transformBlit")]
         public void TransformBlit(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
         {
+            float w = (float)_image.Size.X, h = (float)_image.Size.Y;
             Vertex[] array = new Vertex[4];
 
             array[0] = new Vertex(new Vector2f((float)x1, (float)y1), new Vector2f(0, 0));
-            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), new Vector2f((float)_image.Size.X, 0));
-            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
-            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), new Vector2f(0, (float)_image.Size.Y));
+            array[1] = new Vertex(new Vector2f((float)x2, (float)y2), new Vector2f(w, 0));
+            array[2] = new Vertex(new Vector2f((float)x3, (float)y3), new Vector2f(w, h));
+            array[3] = new Vertex(new Vector2f((float)x4, (float)y4), new Vector2f(0, h));
 
-            Program._window.Draw(array, PrimitiveType.Quads, _state);
+            Program.Batch.Add(_image, array);
         }
 
         [JSFunction(Name = "transformBlitMask")]
         public void TransformBlitMask(ObjectInstance ul, ObjectInstance ur, ObjectInstance lr, ObjectInstance ll, ColorInstance color)
         {
+            float w = (float)_image.Size.X, h = (float)_image.Size.Y;
             Vertex[] array = new Vertex[4];
             Color c = color.GetColor();
 
             array[0] = new Vertex(GlobalPrimitives.GetVector(ul), c, new Vector2f(0, 0));
-            array[1] = new Vertex(GlobalPrimitives.GetVector(ur), c, new Vector2f((float)_image.Size.X, 0));
-            array[2] = new Vertex(GlobalPrimitives.GetVector(lr), c, new Vector2f((float)_image.Size.X, (float)_image.Size.Y));
-            array[3] = new Vertex(GlobalPrimitives.GetVector(ll), c, new Vector2f(0, (float)_image.Size.Y));
+            array[1] = new Vertex(GlobalPrimitives.GetVector(ur), c, new Vector2f(w, 0));
+            array[2] = new Vertex(GlobalPrimitives.GetVector(lr), c, new Vector2f(w, h));
+            array[3] = new Vertex(GlobalPrimitives.GetVector(ll), c, new Vector2f(0, h));
 
-            Program._window.Draw(array, PrimitiveType.Quads, _state);
+            Program.Batch.Add(_image, array);
+        }
+
+        [JSFunction(Name = "wrapBlit")]
+        public void WrapBlit(int x1, int y1, int x2, int y2, [DefaultParameterValue(-1)] int width = -1, [DefaultParameterValue(-1)] int height = -1)
+        {
+            float w = width < 0 ? (float)_image.Size.X : width;
+            float h = height < 0 ? (float)_image.Size.Y : height;
+
+            Vertex[] array = new Vertex[4];
+            _image.Repeated = true;
+
+            array[0] = new Vertex(new Vector2f(x1, y1), new Vector2f(x2, y2));
+            array[1] = new Vertex(new Vector2f(x1 + w, y1), new Vector2f(x2 + w, y2));
+            array[2] = new Vertex(new Vector2f(x1 + w, y1 + h), new Vector2f(x2 + w, y2 + h));
+            array[3] = new Vertex(new Vector2f(x1, y1 + h), new Vector2f(x2, y2 + h));
+
+            Program.Batch.Add(_image, array);
+        }
+
+        [JSFunction(Name = "wrapBlitMask")]
+        public void WrapBlitMask(int x1, int y1, int x2, int y2, ColorInstance col, [DefaultParameterValue(-1)] int width = -1, [DefaultParameterValue(-1)] int height = -1)
+        {
+            Color c = col.Color;
+            float w = width < 0 ? (float)_image.Size.X : width;
+            float h = height < 0 ? (float)_image.Size.Y : height;
+
+            Vertex[] array = new Vertex[4];
+            _image.Repeated = true;
+
+            array[0] = new Vertex(new Vector2f(x1, y1), c, new Vector2f(x2, y2));
+            array[1] = new Vertex(new Vector2f(x1 + w, y1), c, new Vector2f(x2 + w, y2));
+            array[2] = new Vertex(new Vector2f(x1 + w, y1 + h), c, new Vector2f(x2 + w, y2 + h));
+            array[3] = new Vertex(new Vector2f(x1, y1 + h), c, new Vector2f(x2, y2 + h));
+
+            Program.Batch.Add(_image, array);
         }
 
         [JSFunction(Name = "createSurface")]
@@ -196,7 +179,7 @@ namespace Engine.Objects
         {
             using (Image img = _image.CopyToImage())
             {
-                return new SurfaceInstance(Program._engine, img.Pixels, img.Size.X, img.Size.Y);
+                return new SurfaceInstance(Program._engine, img.Pixels, (int)img.Size.X, (int)img.Size.Y);
             }
         }
 

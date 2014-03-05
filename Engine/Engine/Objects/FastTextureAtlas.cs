@@ -21,7 +21,7 @@ namespace Engine.Objects
         }
 
         private Sprite _atlas;
-        private bool _modified = false; 
+        private bool _modified = false;
         private RenderStates _replace;
 
         public FastTextureAtlas(TextureAtlas atlas)

@@ -1,5 +1,6 @@
 using System;
 using SFML.Graphics;
+using Jurassic.Library;
 
 namespace Engine
 {
@@ -32,6 +33,11 @@ namespace Engine
                         img.SetPixel(x, y, B);
                 }
             }
+        }
+
+        public static int ToInt(this Color c)
+        {
+            return (c.A << 24) + (c.B << 16) + (c.G << 8) + c.R;
         }
     }
 }

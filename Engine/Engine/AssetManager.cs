@@ -34,7 +34,9 @@ namespace Engine
         {
             if (!_textures.ContainsKey(filename))
             {
-                _textures[filename] = new Texture(filename);
+                Texture baseTex = new Texture(filename);
+                baseTex.Smooth = GlobalProps.SmoothTextures;
+                _textures[filename] = baseTex;
             }
 
             return _textures[filename];

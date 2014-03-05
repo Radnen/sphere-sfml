@@ -32,18 +32,20 @@ namespace Engine.Objects
             }
         }
 
-        Texture[] _textures = new Texture[9];
-        Sprite[] _sprites = new Sprite[9];
+        Texture[] _textures = new Texture[5];
+        Sprite[] _sprites = new Sprite[5];
         short _version;
         byte _edgeWidth;
         byte _backgroundMode;
         RGBA[] _edgeColors = new RGBA[4];
         byte[] _edgeOffsets = new byte[4];
+        Color _color = Color.White;
+        TextureAtlas _atlas = new TextureAtlas(64); // find optimal value
 
         public WindowStyleInstance(ScriptEngine parent)
             : base(parent.Object.InstancePrototype)
         {
-            this["color"] = new ColorInstance(Program._engine);
+            this["color"] = new ColorInstance(Engine, Color.White);
             PopulateFunctions();
         }
 
@@ -74,15 +76,23 @@ namespace Engine.Objects
                 switch (_version)
                 {
                     case 2:
+                        Image[] images = new Image[4];
                         for (int i = 0; i < 9; ++i)
                         {
-                            short width = reader.ReadInt16();
-                            short height = reader.ReadInt16();
-                            _textures[i] = new Texture((uint)width, (uint)height);
-                            _textures[i].Update(reader.ReadBytes(width * height * 4));
-                            _sprites[i] = new Sprite(_textures[i]);
-                            _textures[i].Repeated = true;
+                            int width = reader.ReadInt16();
+                            int height = reader.ReadInt16();
+                            if (i < 7 && i % 2 == 0)
+                                images[i / 2] = new Image((uint)width, (uint)height, reader.ReadBytes(width * height * 4));
+                            else
+                            {
+                                int index = (i == 8 ? i : i - 1) / 2;
+                                _textures[index] = new Texture((uint)width, (uint)height);
+                                _textures[index].Update(reader.ReadBytes(width * height * 4));
+                                _sprites[index] = new Sprite(_textures[index]);
+                                _textures[index].Repeated = true;
+                            }
                         }
+                        _atlas.Update(images);
                         break;
                 }
             }
@@ -93,22 +103,47 @@ namespace Engine.Objects
         {
             float x = (float)dx, y = (float)dy;
             int width = (int)dwidth, height = (int)dheight;
-            _sprites[0].Position = new Vector2f(x - (float)_textures[0].Size.X, y - (float)_textures[0].Size.Y);
-            _sprites[1].Position = new Vector2f(x, y - (float)_textures[1].Size.Y);
-            _sprites[1].TextureRect = new IntRect(0, 0, width, (int)_textures[1].Size.Y);
-            _sprites[2].Position = new Vector2f(x + width, y - (float)_textures[2].Size.Y);
-            _sprites[3].Position = new Vector2f(x + width, y);
-            _sprites[3].TextureRect = new IntRect(0, 0, (int)_textures[3].Size.X, height);
-            _sprites[4].Position = new Vector2f(x + width, y + height);
-            _sprites[5].Position = new Vector2f(x, y + height);
-            _sprites[5].TextureRect = new IntRect(0, 0, width, (int)_textures[5].Size.Y);
-            _sprites[6].Position = new Vector2f(x - (float)_textures[6].Size.X, y + height);
-            _sprites[7].Position = new Vector2f(x - (float)_textures[7].Size.X, y);
-            _sprites[7].TextureRect = new IntRect(0, 0, (int)_textures[7].Size.X, height);
-            _sprites[8].Position = new Vector2f(x, y);
-            _sprites[8].TextureRect = new IntRect(0, 0, width, height);
 
-            foreach (Sprite s in _sprites) { Program._window.Draw(s); }
+            // sprite-batch the corners:
+            AddTileC(0, x - _atlas.Sources[0].Width, y - _atlas.Sources[0].Height);
+            AddTileC(1, x + width, y - _atlas.Sources[1].Height);
+            AddTileC(2, x + width, y + height);
+            AddTileC(3, x - _atlas.Sources[3].Width, y + height);
+            Program.Batch.Flush();
+
+            // then use u, v repeating on the rest (non-batched):
+            IntRect clip = new IntRect(0, 0, width, height);
+
+            _sprites[4].Position = new Vector2f(x, y);
+            _sprites[4].TextureRect = clip;
+
+            _sprites[0].Position = new Vector2f(x, y - (float)_textures[0].Size.Y);
+            clip.Height = (int)_textures[0].Size.Y;
+            _sprites[0].TextureRect = clip;
+            clip.Height = (int)_textures[2].Size.Y;
+            _sprites[2].Position = new Vector2f(x, y + height);
+            _sprites[2].TextureRect = clip;
+
+            clip.Height = height;
+            clip.Width = (int)_textures[1].Size.X;
+            _sprites[1].Position = new Vector2f(x + width, y);
+            _sprites[1].TextureRect = clip;
+            _sprites[3].Position = new Vector2f(x - (float)_textures[3].Size.X, y);
+            clip.Width = (int)_textures[3].Size.X;
+            _sprites[3].TextureRect = clip;
+
+            Program._window.Draw(_sprites[0]);
+            Program._window.Draw(_sprites[1]);
+            Program._window.Draw(_sprites[2]);
+            Program._window.Draw(_sprites[3]);
+            Program._window.Draw(_sprites[4]);
+        }
+
+        public void AddTileC(int i, float x, float y)
+        {
+            IntRect source = _atlas.Sources[i];
+            FloatRect dest = new FloatRect(x, y, source.Width, source.Height);
+            Program.Batch.Add(_atlas.Texture, source, dest, _color);
         }
 
         [JSFunction(Name = "getColorMask")]
@@ -121,9 +156,8 @@ namespace Engine.Objects
         public void SetColorMask(ColorInstance color)
         {
             this["color"] = color;
-            Color c = color.GetColor();
-            foreach (Sprite s in _sprites)
-                s.Color = c;
+            _color = color.GetColor();
+            foreach (Sprite s in _sprites) s.Color = _color;
         }
 
         [JSFunction(Name = "clone")]

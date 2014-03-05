@@ -2,12 +2,11 @@
 
 function TestWindows()
 {
-	var done = false;
-	var wind = LoadWindowStyle("main.rws");
-	
-	var blue = CreateColor(0, 0, 255);
-	var white = CreateColor(255, 255, 255);
-	var time = 0, i = 1, x = 0, y = 0;
+    var done = false,
+        wind = LoadWindowStyle("main.rws"),
+        blue = CreateColor(0, 0, 255),
+        white = CreateColor(255, 255, 255),
+        time = 0, i = 1, x = 0, y = 0;
 	
 	while (!done) {
 		wind.drawWindow(32, 32, 80, 80);
@@ -32,4 +31,23 @@ function TestWindows()
 			if (GetKey() == KEY_ENTER) done = true;
 		}
 	}
+}
+
+// Purpose: Tests the speed and efficiency of images.
+
+function TestBigWindow() {
+    var done = false,
+        wind = LoadWindowStyle("insane.rws"),
+        w = GetScreenWidth() - 32,
+        h = GetScreenHeight() - 32;
+
+    while (!done) {
+        wind.drawWindow(16, 16, w, h);
+
+        FlipScreen();
+
+        while (AreKeysLeft()) {
+            if (GetKey() == KEY_ENTER) done = true;
+        }
+    }
 }
