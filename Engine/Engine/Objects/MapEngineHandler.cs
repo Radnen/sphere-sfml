@@ -28,6 +28,7 @@ namespace Engine.Objects
         private static List<TileAnimHandler> _tileanims;
         private static FunctionScript _updatescript;
         private static FunctionScript _renderscript;
+        private static FunctionScript _delayscript;
         private static FunctionScript[] _renderers;
         private static FastTextureAtlas _fastatlas;
         private static List<Entity> _triggers;
@@ -38,7 +39,7 @@ namespace Engine.Objects
         private static string camera_ent = "";
         private static string input_ent = "";
         private static string _current = "";
-        private static int _mask_frames = 0, _frames = 0;
+        private static int _mask_frames = 0, _frames = 0, _delay_frames = 0;
         private static int _target_alpha = 0;
         private static ColorInstance _mask = null;
         private static Entity _last_trigger = null; // for one trigger at a time.
@@ -64,6 +65,7 @@ namespace Engine.Objects
             engine.SetGlobalFunction("GetCameraY", new Func<int>(GetCameraY));
             engine.SetGlobalFunction("SetUpdateScript", new Action<string>(SetUpdateScript));
             engine.SetGlobalFunction("SetRenderScript", new Action<string>(SetRenderScript));
+            engine.SetGlobalFunction("SetDelayScript", new Action<string, int>(SetDelayScript));
             engine.SetGlobalFunction("SetLayerRenderer", new Action<int, string>(SetLayerRenderer));
             engine.SetGlobalFunction("GetMapEngineFrameRate", new Func<int>(GetMapEngineFrameRate));
             engine.SetGlobalFunction("SetMapEngineFrameRate", new Action<int>(SetMapEngineFrameRate));
@@ -262,8 +264,7 @@ namespace Engine.Objects
 
         public static void DoTalk()
         {
-            if (!IsInputAttached())
-                return;
+            if (!IsInputAttached()) return;
             string person = PersonManager.GetClosest(input_ent);
             if (person != null)
                 PersonManager.CallPersonScript(person, (int)PersonScripts.Talk);
@@ -332,11 +333,13 @@ namespace Engine.Objects
             _triggers.Clear();
             foreach (Entity e in _map.Entities)
             {
-                if (e.Type == Entity.EntityType.Person) {
+                if (e.Type == Entity.EntityType.Person)
+                {
                     PersonManager.CreatePerson(e);
                     PersonManager.CallPersonScript(e.Name, (int)PersonScripts.Create);
                 }
-                else if (e.Type == Entity.EntityType.Trigger) {
+                else if (e.Type == Entity.EntityType.Trigger)
+                {
                     _triggers.Add(e);
                 }
             }
@@ -437,16 +440,13 @@ namespace Engine.Objects
                 int x = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.X) + 0.5f);
                 int y = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.Y) + 0.5f);
 
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Up))
-                    y = -1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Down))
-                    y = 1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Left))
-                    x = -1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Right))
-                    x = 1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Up)) y = -1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Down)) y = 1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Left)) x = -1;
+                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Right)) x = 1;
 
-                switch (x + y * 3) {
+                switch (x + y * 3)
+                {
                     case -4: // nw
                         PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
                         PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
@@ -509,6 +509,16 @@ namespace Engine.Objects
                     _last_trigger = trigger;
                 }
             }
+
+            if (_delay_frames > 0)
+            {
+                _delay_frames--;
+                if (_delay_frames == 0 && _delayscript != null)
+                {
+                    _delayscript.Execute();
+                    _delayscript = null;
+                }
+            }
         }
 
         private static Entity GetTriggerAt(double x, double y)
@@ -519,8 +529,7 @@ namespace Engine.Objects
             {
                 int tx = e.X / _map.Tileset.TileWidth;
                 int ty = e.Y / _map.Tileset.TileHeight;
-                if (tx == x && ty == y)
-                    return e;
+                if (tx == x && ty == y) return e;
             }
             return null;
         }
@@ -606,23 +615,20 @@ namespace Engine.Objects
                     //Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
                 }
                 DrawPersons(i);
-                if (_renderers[i] != null)
-                    _renderers[i].Execute();
+                if (_renderers[i] != null) _renderers[i].Execute();
             }
 
             Program._window.SetView(GetDefaultView());
 
             if (_mask != null && _frames != _mask_frames)
             {
-                _mask["alpha"] = (int)(((float)_frames / _mask_frames) * _target_alpha);
+                _mask.A = (int)(((float)_frames / _mask_frames) * _target_alpha);
                 GlobalPrimitives.ApplyColorMask(_mask);
                 _frames++;
-                if (_frames == _mask_frames)
-                    _mask["alpha"] = _target_alpha;
+                if (_frames == _mask_frames) _mask.A = _target_alpha;
             }
 
-            if (_renderscript != null)
-                _renderscript.Execute();
+            if (_renderscript != null) _renderscript.Execute();
         }
 
         public static bool CheckTileObstruction(ref Vector2f position, Person person)
@@ -736,6 +742,12 @@ namespace Engine.Objects
         private static int GetCameraY()
         {
             return (int)_camera.Y;
+        }
+
+        private static void SetDelayScript(object code, int frames)
+        {
+            _delay_frames = frames;
+            _delayscript = new FunctionScript(code);
         }
 
         private static void SetUpdateScript(object code)
