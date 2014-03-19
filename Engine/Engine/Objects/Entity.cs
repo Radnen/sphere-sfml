@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Jurassic;
+using Jurassic.Core;
 using SFML.Graphics;
 using SFML.Window;
 

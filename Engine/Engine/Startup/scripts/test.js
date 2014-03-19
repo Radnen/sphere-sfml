@@ -46,7 +46,7 @@ function game()
 		MapEngine("smalltest.rmp", 60);
 	});
 	menu.addOption("Test Village map", function() {
-	    SetDelayScript("Alert('Hi! From delay script.');", 60);
+	    SetDelayScript(60, "Alert('Hi! From delay script.');");
 		CreatePerson("player", "test.rss", false);
 		AttachInput("player");
 		SetPersonFrameRevert("player", 8);

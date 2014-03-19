@@ -39,7 +39,7 @@ namespace Engine.Objects
         private static string camera_ent = "";
         private static string input_ent = "";
         private static string _current = "";
-        private static int _mask_frames = 0, _frames = 0, _delay_frames = 0;
+        private static int _mask_frames = 0, _frames = 0, _delay_frames = -1;
         private static int _target_alpha = 0;
         private static ColorInstance _mask = null;
         private static Entity _last_trigger = null; // for one trigger at a time.
@@ -510,10 +510,10 @@ namespace Engine.Objects
                 }
             }
 
-            if (_delay_frames > 0)
+            if (_delay_frames >= 0)
             {
                 _delay_frames--;
-                if (_delay_frames == 0 && _delayscript != null)
+                if (_delay_frames == -1 && _delayscript != null)
                 {
                     _delayscript.Execute();
                     _delayscript = null;

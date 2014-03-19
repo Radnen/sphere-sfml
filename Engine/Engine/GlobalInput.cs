@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using SFML.Window;
 using Jurassic;
+using Jurassic.Core;
 
 namespace Engine
 {

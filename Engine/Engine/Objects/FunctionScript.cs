@@ -1,5 +1,5 @@
 using System;
-using Jurassic;
+using Jurassic.Core;
 using Jurassic.Library;
 
 namespace Engine
@@ -16,17 +16,10 @@ namespace Engine
         public FunctionScript(object item)
         {
             _isFunc = item is FunctionInstance;
-            string source = null;
-            if (item is string || item is ConcatenatedString) // No idea why concatenated strings are treated any different...
-                source = item.ToString();
-            else if (_isFunc)
+            if (_isFunc)
                 _func = item as FunctionInstance;
-            else
-                throw new InvalidCastException("Parameter not of type string or function: " + item.GetType());
-
-            if (!_isFunc)
-            {
-                _compiled = new CompiledMethod(Program._engine, source);
+            else {
+                _compiled = new CompiledMethod(Program._engine, item.ToString());
 #if(DEBUG)
                 Console.WriteLine("Compiled Script: \"{0}\"", source);
 #endif
@@ -35,10 +28,16 @@ namespace Engine
 
         public void Execute()
         {
-            if (_isFunc)
-                _func.Call(Program._engine.Global);
-            else
-                _compiled.Execute();
+            try
+            {
+                if (_isFunc)
+                    _func.Call(Program._engine.Global);
+                else
+                    _compiled.Execute();
+            }
+            catch (Exception e) {
+                //Console.WriteLine(e.Message + "\n" + _compiled == null + ", " + _isFunc);
+            }
         }
     }
 }
