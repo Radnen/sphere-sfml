@@ -65,7 +65,7 @@ namespace Engine.Objects
             engine.SetGlobalFunction("GetCameraY", new Func<int>(GetCameraY));
             engine.SetGlobalFunction("SetUpdateScript", new Action<string>(SetUpdateScript));
             engine.SetGlobalFunction("SetRenderScript", new Action<string>(SetRenderScript));
-            engine.SetGlobalFunction("SetDelayScript", new Action<string, int>(SetDelayScript));
+            engine.SetGlobalFunction("SetDelayScript", new Action<int, string>(SetDelayScript));
             engine.SetGlobalFunction("SetLayerRenderer", new Action<int, string>(SetLayerRenderer));
             engine.SetGlobalFunction("GetMapEngineFrameRate", new Func<int>(GetMapEngineFrameRate));
             engine.SetGlobalFunction("SetMapEngineFrameRate", new Action<int>(SetMapEngineFrameRate));
@@ -744,7 +744,7 @@ namespace Engine.Objects
             return (int)_camera.Y;
         }
 
-        private static void SetDelayScript(object code, int frames)
+        private static void SetDelayScript(int frames, object code)
         {
             _delay_frames = frames;
             _delayscript = new FunctionScript(code);
