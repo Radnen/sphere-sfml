@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Engine.Properties")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Sphere SFML Engine")]
+[assembly: AssemblyDescription("A Sphere based on SFML")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Spherical")]
 [assembly: AssemblyProduct("Engine.Properties")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Andrew Helenius 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.8.1.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
