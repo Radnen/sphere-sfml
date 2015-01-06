@@ -4,7 +4,8 @@ RequireScript("imagetest.js");
 RequireScript("imagestest.js");
 RequireScript("fonttest.js");
 RequireScript("windowtest.js");
-RequireScript("mousetest.js");
+RequireScript("input.js");
+RequireScript("network.js");
 RequireScript("soundtest.js");
 RequireScript("surfacetest.js");
 RequireScript("spritesettest.js");
@@ -33,7 +34,8 @@ function game()
 	menu.addOption("Windows", TestWindows);
 	menu.addOption("Big Window", TestBigWindow);
 	menu.addOption("Spritesets", TestSpritesets);
-	menu.addOption("Mouse/Input", TestMouse);
+	menu.addOption("Mouse/Input", TestInput);
+	menu.addOption("Networking", TestNetwork);
 	menu.addOption("Surfaces", TestSurfaces);
 	menu.addOption("Surface Fill Rate", TestSurfaceFillRate);
 	menu.addOption("Color Creation", TestColorCreationSpeed);
@@ -46,7 +48,7 @@ function game()
 		MapEngine("smalltest.rmp", 60);
 	});
 	menu.addOption("Test Village map", function() {
-	    SetDelayScript(60, "Alert('Hi! From delay script.');");
+	  //SetDelayScript(60, "Alert('Hi! From delay script.');");
 		CreatePerson("player", "test.rss", false);
 		AttachInput("player");
 		SetPersonFrameRevert("player", 8);
@@ -99,7 +101,7 @@ function TestJSON()
 
 function Render()
 {
-	sys_font.drawText(0, 0, GetPersonX("player") + "," + GetPersonY("player") + "  " + GetTalkDistance());
+    sys_font.drawText(0, 0, GetPersonX("player") + "," + GetPersonY("player") + "  " + GetTalkDistance());
 }
 
 function Render2()
@@ -114,7 +116,7 @@ function Update()
 	testperson.randomMove();
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
-			case KEY_ENTER: ExitMapEngine(); break;
+		    case KEY_ENTER: ExitMapEngine(); break;
 			case KEY_SPACE: testperson.start = true; break;
 		}
 	}

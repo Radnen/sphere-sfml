@@ -10,6 +10,7 @@ namespace Engine.Objects
         #region attributes
         private short _x1, _y1;
         private short _x2, _y2;
+        private string _function;
 
         /// <summary>
         /// Gets or sers the layer index of this Zone.
@@ -24,7 +25,20 @@ namespace Engine.Objects
         /// <summary>
         /// Gets or sets the Function used by this Zone.
         /// </summary>
-        public string Function { get; set; }
+        public string Function
+        {
+            get { return _function; }
+            set
+            {
+                _function = value;
+                Script = new FunctionScript(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the compiled source of this Zone.
+        /// </summary>
+        public FunctionScript Script { get; private set; }
 
         /// <summary>
         /// Gets or sets the visibility of this Zone.

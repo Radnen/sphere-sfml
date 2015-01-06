@@ -90,6 +90,18 @@ namespace Engine.Objects
             }
         }
 
+        public SpritesetInstance Spriteset
+        {
+            get { return _innerSS; }
+            set
+            {
+                _innerSS = value;
+                _base = _innerSS.GetBase();
+                _sprite = new Sprite(_innerSS.TextureAtlas.Texture);
+                Direction = Direction;
+            }
+        }
+
         public int Frame
         {
             get
@@ -227,7 +239,7 @@ namespace Engine.Objects
                 imm = c.immediate;
 
                 if (c.script != null) {
-                    PersonManager._current = Name;
+                    PersonManager.CurrentPerson = Name;
                     c.script.Execute();
                     continue;
                 }
@@ -289,8 +301,8 @@ namespace Engine.Objects
 
         public bool IsObstructedAt(Vector2f pos)
         {
-            return (!IgnorePersons && MapEngineHandler.CheckTileObstruction(ref pos, this)) ||
-                (!IgnoreTiles && PersonManager.CheckPersonObstructions(ref pos, this)) ||
+            return (!IgnoreTiles && MapEngineHandler.CheckTileObstruction(ref pos, this)) ||
+                (!IgnorePersons && PersonManager.CheckPersonObstructions(ref pos, this)) ||
                 (MapEngineHandler.CheckLineObstruction(ref pos, this));
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Diagnostics;
 using Jurassic;
 using Jurassic.Library;
@@ -12,10 +13,12 @@ namespace Engine.Objects
     {
         private static Map _map;
 
+        public static int CurrentZone { get; set; }
         public static Map Map { get { return _map; } }
+        public static bool FPSToggle = true;
 
         private static TextureAtlas _tileatlas;
-        private static bool _ended = true, _toggled, _talkheld;
+        private static bool _ended = true, _talkheld;
         private static int _fps = 0;
         private static double _delta = 0;
 
@@ -30,6 +33,7 @@ namespace Engine.Objects
         private static FunctionScript _renderscript;
         private static FunctionScript _delayscript;
         private static FunctionScript[] _renderers;
+        private static ColorInstance[] _layermasks;
         private static FastTextureAtlas _fastatlas;
         private static List<Entity> _triggers;
         //private static List<Zone> _zones;
@@ -53,6 +57,7 @@ namespace Engine.Objects
             _defscripts = new FunctionScript[6];
         }
 
+        #region Bind Scripts to Engine
         public static void BindToEngine(ScriptEngine engine)
         {
             engine.SetGlobalFunction("MapEngine", new Action<string, int>(MapEngine));
@@ -77,23 +82,28 @@ namespace Engine.Objects
             engine.SetGlobalFunction("GetCameraPerson", new Func<string>(GetCameraPerson));
             engine.SetGlobalFunction("IsInputAttached", new Func<bool>(IsInputAttached));
             engine.SetGlobalFunction("IsCameraAttached", new Func<bool>(IsCameraAttached));
-            engine.SetGlobalFunction("UpdateMapEngine", new Action(UpdateMapEngine));
-            engine.SetGlobalFunction("RenderMap", new Action(RenderMap));
+            engine.SetGlobalFunction("UpdateMapEngine", new Action(UpdateMapEngineHandle));
+            engine.SetGlobalFunction("RenderMap", new Action(RenderMapHandle));
             engine.SetGlobalFunction("GetTileWidth", new Func<int>(GetTileWidth));
             engine.SetGlobalFunction("GetTileHeight", new Func<int>(GetTileHeight));
             engine.SetGlobalFunction("GetLayerWidth", new Func<int, int>(GetLayerWidth));
             engine.SetGlobalFunction("GetLayerHeight", new Func<int, int>(GetLayerHeight));
             engine.SetGlobalFunction("SetDefaultMapScript", new Action<int, object>(SetDefaultMapScript));
             engine.SetGlobalFunction("CallDefaultMapScript", new Action<int>(CallDefaultMapScript));
+            engine.SetGlobalFunction("CallMapScript", new Action<int>(CallMapScript));
             engine.SetGlobalFunction("GetCurrentMap", new Func<string>(GetCurrentMap));
             engine.SetGlobalFunction("GetTile", new Func<int, int, int, int>(GetTile));
             engine.SetGlobalFunction("SetTile", new Action<int, int, int, int>(SetTile));
+            engine.SetGlobalFunction("SetTileImage", new Action<int, ImageInstance>(SetTileImage));
+            engine.SetGlobalFunction("GetTileImage", new Func<int, ImageInstance>(GetTileImage));
+            engine.SetGlobalFunction("GetNextAnimatedTile", new Func<int, int>(GetNextAnimatedTile));
             engine.SetGlobalFunction("GetNumTiles", new Func<int>(GetNumTiles));
             engine.SetGlobalFunction("GetNumLayers", new Func<int>(GetNumLayers));
             engine.SetGlobalFunction("GetLayerName", new Func<int, string>(GetLayerName));
             engine.SetGlobalFunction("GetTileName", new Func<int, string>(GetTileName));
             engine.SetGlobalFunction("GetTileDelay", new Func<int, int>(GetTileDelay));
             engine.SetGlobalFunction("SetLayerVisible", new Action<int, bool>(SetLayerVisible));
+            engine.SetGlobalFunction("SetLayerReflective", new Action<int, bool>(SetLayerReflective));
             engine.SetGlobalFunction("MapToScreenX", new Func<int, int, int>(MapToScreenX));
             engine.SetGlobalFunction("MapToScreenY", new Func<int, int, int>(MapToScreenY));
             engine.SetGlobalFunction("ScreenToMapX", new Func<int, int, int>(ScreenToMapX));
@@ -101,6 +111,30 @@ namespace Engine.Objects
             engine.SetGlobalFunction("IsTriggerAt", new Func<double, double, int, bool>(IsTriggerAt));
             engine.SetGlobalFunction("ExecuteTrigger", new Action<double, double, int>(ExecuteTrigger));
             engine.SetGlobalFunction("SetColorMask", new Action<ColorInstance, int>(SetColorMask));
+            engine.SetGlobalFunction("AreZonesAt", new Func<int, int, int, bool>(AreZonesAt));
+            engine.SetGlobalFunction("ExecuteZones", new Action<int, int, int>(ExecuteZones));
+            engine.SetGlobalFunction("ExecuteZoneScript", new Action<int>(ExecuteZoneScript));
+            engine.SetGlobalFunction("GetZoneHeight", new Func<int, int>(GetZoneHeight));
+            engine.SetGlobalFunction("GetZoneWidth", new Func<int, int>(GetZoneWidth));
+            engine.SetGlobalFunction("GetZoneLayer", new Func<int, int>(GetZoneLayer));
+            engine.SetGlobalFunction("GetZoneX", new Func<int, int>(GetZoneX));
+            engine.SetGlobalFunction("GetZoneY", new Func<int, int>(GetZoneY));
+            engine.SetGlobalFunction("GetNumZones", new Func<int>(GetNumZones));
+            engine.SetGlobalFunction("IsLayerReflective", new Func<int, bool>(IsLayerReflective));
+            engine.SetGlobalFunction("IsLayerVisible", new Func<int, bool>(IsLayerVisible));
+            engine.SetGlobalFunction("ReplaceTilesOnLayer", new Action<int, int, int>(ReplaceTilesOnLayer));
+            engine.SetGlobalFunction("GetCurrentZone", new Func<int>(GetCurrentZone));
+        }
+        #endregion
+
+        private static void UpdateMapEngineHandle()
+        {
+            UpdateMapEngine(true);
+        }
+
+        private static void RenderMapHandle()
+        {
+            RenderMap(false);
         }
 
         private static void AttachInput(string name)
@@ -155,9 +189,10 @@ namespace Engine.Objects
 
         private static void SetMapEngineFrameRate(int rate)
         {
-            //Program._window.SetFramerateLimit((uint)rate);
-            _delta = 1000.0 / rate; // for use later on...
             _fps = rate;
+            Program._window.SetFramerateLimit((uint)rate);
+            //_delta = 1000.0 / rate; // for use later on...
+            //_fps = rate;
         }
 
         public static int GetLayerWidth(int layer)
@@ -180,13 +215,13 @@ namespace Engine.Objects
             return _map.Tileset.TileHeight;
         }
 
-        private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
+        private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 70)
         {
-            _ended = false;
             DateTime time = DateTime.Now;
             SetMapEngineFrameRate(fps);
+            FPSToggle = true;
 
-            _cameraView = new View(GetDefaultView());
+            _cameraView = DefaultView;
             _current = filename;
 
             // It seems Sphere keeps non-essential npc's created prior to MapEngine.
@@ -194,21 +229,11 @@ namespace Engine.Objects
 
             Console.WriteLine((DateTime.Now - time).TotalMilliseconds);
 
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
+            _ended = false;
             while (!_ended)
             {
-                time = DateTime.Now;
-                while ((DateTime.Now - time).TotalMilliseconds <= _delta)
-                {
-                }
-
-                if (_updatescript != null)
-                    _updatescript.Execute();
-
-                UpdateMapEngine();
-                RenderMap();
-
+                UpdateMapEngine(false);
+                RenderMap(false);
                 Program.FlipScreen();
 
                 var keyheld = GlobalInput.IsKeyPressed(GlobalInput.TalkKey);
@@ -226,15 +251,22 @@ namespace Engine.Objects
         }
 
         private static View _defaultView;
-        public static View GetDefaultView()
+
+        /// <summary>
+        /// Gets the view at origin, ie: not where the map camera is located.
+        /// </summary>
+        public static View DefaultView
         {
-            if (_defaultView == null)
+            get
             {
-                Vector2f size = new Vector2f(GlobalProps.Width, GlobalProps.Height);
-                Vector2f center = new Vector2f(GlobalProps.Width / 2, GlobalProps.Height / 2);
-                _defaultView = new View(center, size);
+                if (_defaultView == null)
+                {
+                    Vector2f size = new Vector2f(GlobalProps.Width, GlobalProps.Height);
+                    Vector2f center = new Vector2f(GlobalProps.Width / 2, GlobalProps.Height / 2);
+                    _defaultView = new View(center, size);
+                }
+                return new View(_defaultView);
             }
-            return _defaultView;
         }
 
         public static void SetColorMask(ColorInstance color, int frames)
@@ -255,11 +287,11 @@ namespace Engine.Objects
         /// </summary>
         public static void ToggleFPSThrottle()
         {
-            _toggled = !_toggled;
-            if (_toggled)
-                Program._window.SetFramerateLimit(0);
-            else
+            FPSToggle = !FPSToggle;
+            if (FPSToggle)
                 Program._window.SetFramerateLimit((uint)_fps);
+            else
+                Program._window.SetFramerateLimit(0);
         }
 
         public static void DoTalk()
@@ -294,7 +326,11 @@ namespace Engine.Objects
             SetCameraX(_map.StartX);
             SetCameraY(_map.StartY);
 
-            AddScripts();
+            _layermasks = new ColorInstance[_map.Layers.Count];
+            _renderers = new FunctionScript[_map.Layers.Count];
+
+            // Compile
+            CompileMapScripts();
 
             // do this before AddPersons() to reset essential NPC's to map defaults.
             Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
@@ -312,8 +348,6 @@ namespace Engine.Objects
             ParseAnimations();
             UpdateCutout();
 
-            _renderers = new FunctionScript[_map.Layers.Count];
-
             Tuple<List<Vertex[]>, RenderStates> tuple;
             tuple = _map.GetTileMap(_tileatlas);
 
@@ -322,7 +356,7 @@ namespace Engine.Objects
             _layerverts = tuple.Item1;
 
             CallDefaultMapScript((int)MapScripts.Enter);
-            CallLocalMapScript(MapScripts.Enter);
+            CallMapScript((int)MapScripts.Enter);
         }
 
         /// <summary>
@@ -346,9 +380,9 @@ namespace Engine.Objects
         }
 
         /// <summary>
-        /// Adds map scripts to this map engine instance.
+        /// Compiles the loaded default map scripts for this map.
         /// </summary>
-        private static void AddScripts()
+        private static void CompileMapScripts()
         {
             for (var i = 3; i < _map.Scripts.Count; ++i)
             {
@@ -428,63 +462,16 @@ namespace Engine.Objects
                 Array.Resize(ref _cutout, length);
         }
 
-        private static void UpdateMapEngine()
+        private static void UpdateMapEngine(bool self)
         {
+            if (_updatescript != null && !self) _updatescript.Execute();
+
             foreach (TileAnimHandler h in _tileanims)
                 h.Animate();
 
             _fastatlas.Refresh();
 
-            if (IsInputAttached() && PersonManager.IsCommandQueueEmpty(input_ent))
-            {
-                int x = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.X) + 0.5f);
-                int y = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.Y) + 0.5f);
-
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Up)) y = -1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Down)) y = 1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Left)) x = -1;
-                if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Right)) x = 1;
-
-                switch (x + y * 3)
-                {
-                    case -4: // nw
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
-                        break;
-                    case -3: // n
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
-                        break;
-                    case -2: // ne
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
-                        break;
-                    case -1: // w
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceWest, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, false);
-                        break;
-                    case 1:  // e
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceEast, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, false);
-                        break;
-                    case 2:  // sw
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
-                        break;
-                    case 3: // s
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
-                        break;
-                    case 4: // se
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
-                        PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
-                        break;
-                }
-            }
+            if (IsInputAttached()) UpdateInput();
 
             for (var i = 0; i < PersonManager.People.Count; ++i)
                 PersonManager.People[i].UpdateCommandQueue();
@@ -510,14 +497,67 @@ namespace Engine.Objects
                 }
             }
 
-            if (_delay_frames >= 0)
+            if (_delay_frames >= 0 && _delayscript != null)
             {
-                _delay_frames--;
-                if (_delay_frames == -1 && _delayscript != null)
+                if (_delay_frames == -1)
                 {
                     _delayscript.Execute();
                     _delayscript = null;
                 }
+                else _delay_frames--;
+            }
+        }
+
+        private static void UpdateInput()
+        {
+            if (!PersonManager.IsCommandQueueEmpty(input_ent)) return;
+
+            int x = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.X) + 0.5f);
+            int y = (int)(Joystick.GetAxisPosition(0, Joystick.Axis.Y) + 0.5f);
+
+            if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Up)) y = -1;
+            if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Down)) y = 1;
+            if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Left)) x = -1;
+            if (GlobalInput.IsKeyPressed((int)Keyboard.Key.Right)) x = 1;
+
+            switch (x + y * 3)
+            {
+                case -4: // nw
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                    break;
+                case -3: // n
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                    break;
+                case -2: // ne
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceNorth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveNorth, false);
+                    break;
+                case -1: // w
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceWest, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, false);
+                    break;
+                case 1:  // e
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceEast, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, false);
+                    break;
+                case 2:  // sw
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveWest, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                    break;
+                case 3: // s
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                    break;
+                case 4: // se
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.FaceSouth, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveEast, true);
+                    PersonManager.QueuePersonCommand(input_ent, (int)Commands.MoveSouth, false);
+                    break;
             }
         }
 
@@ -547,43 +587,12 @@ namespace Engine.Objects
                 trigger.ExecuteTrigger();
         }
 
-        private static void CutoutVerts(Vertex[] in_verts, int x, int y, int scan)
-        {
-            if (x < 0 || y < 0)
-                return;
-
-            scan <<= 2;
-            y /= _map.Tileset.TileHeight;
-            x /= _map.Tileset.TileWidth;
-
-            // initialize some math to make stripping easier.
-            Vertex[] local = _cutout;
-            int h = GlobalProps.Height / _map.Tileset.TileHeight + 1;
-            int length = (GlobalProps.Width / _map.Tileset.TileWidth + 1) << 2;
-            int offset = (x << 2) + y * scan;
-            int height = offset + h * scan;
-            int index = 0, i = 0;
-
-            // strip out slices of the view at a time.
-            for (i = offset; i + length < in_verts.Length && index < local.Length && i < height; i += scan)
-            {
-                Array.Copy(in_verts, i, local, index, length);
-                index += length;
-            }
-
-            // check to see if we haven't; else pad out the rest. (small maps are affected by this).
-            if (i < in_verts.Length && index < local.Length)
-                Array.Copy(in_verts, i, local, index, in_verts.Length - i);
-        }
-
         private static void DrawVerts(Vertex[] in_verts, int x, int y, uint scan)
         {
             if (x < 0 || y < 0)
                 return;
 
             scan <<= 2;
-            y /= _map.Tileset.TileHeight;
-            x /= _map.Tileset.TileWidth;
 
             uint height = (uint)(GlobalProps.Height / _map.Tileset.TileHeight + 1) * scan;
             uint length = (uint)((GlobalProps.Width / _map.Tileset.TileWidth + 1) << 2);
@@ -600,25 +609,33 @@ namespace Engine.Objects
                 Program._window.Draw(in_verts, offset + i, (uint)in_verts.Length - (offset + i), PrimitiveType.Quads, _layerstates);
         }
 
-        private static void RenderMap()
+        private static void RenderMap(bool self)
         {
             Program._window.SetView(_cameraView);
-
             Vector2f camera = GetClampedCamera();
+
             int length = _map.Layers.Count;
+            int x = (int)(camera.X) / _map.Tileset.TileWidth;
+            int y = (int)(camera.Y) / _map.Tileset.TileHeight;
+            
             for (var i = 0; i < length; ++i)
             {
                 if (_map.Layers[i].Visible)
                 {
-                    DrawVerts(_layerverts[i], (int)camera.X, (int)camera.Y, (uint)_map.Layers[i].Width);
-                    //CutoutVerts(_layerverts[i], (int)camera.X, (int)camera.Y, _map.Layers[i].Width);
-                    //Program._window.Draw(_cutout, PrimitiveType.Quads, _layerstates);
+                    //Program._window.Draw(_layerverts[i], PrimitiveType.Quads, _layerstates);
+                    DrawVerts(_layerverts[i], x, y, (uint)_map.Layers[i].Width);
                 }
                 DrawPersons(i);
-                if (_renderers[i] != null) _renderers[i].Execute();
+
+                if (_renderers[i] != null)
+                {
+                    Program._window.SetView(DefaultView);
+                    _renderers[i].Execute();
+                    Program._window.SetView(_cameraView);
+                }
             }
 
-            Program._window.SetView(GetDefaultView());
+            Program._window.SetView(DefaultView);
 
             if (_mask != null && _frames != _mask_frames)
             {
@@ -628,7 +645,7 @@ namespace Engine.Objects
                 if (_frames == _mask_frames) _mask.A = _target_alpha;
             }
 
-            if (_renderscript != null) _renderscript.Execute();
+            if (_renderscript != null && !self) _renderscript.Execute();
         }
 
         public static bool CheckTileObstruction(ref Vector2f position, Person person)
@@ -685,10 +702,10 @@ namespace Engine.Objects
                 _defscripts[type].Execute();
         }
 
-        private static void CallLocalMapScript(MapScripts type)
+        private static void CallMapScript(int which)
         {
-            if (_scripts[(int)type] != null)
-                _scripts[(int)type].Execute();
+            if (_scripts[which] != null)
+                _scripts[which].Execute();
         }
 
         /// <summary>
@@ -784,7 +801,8 @@ namespace Engine.Objects
 
         private static void SetLayerVisible(int layer, bool visible)
         {
-            _map.Layers[layer].Visible = visible;
+            if (layer >= 0 && layer < _map.Layers.Count)
+                _map.Layers[layer].Visible = visible;
         }
 
         private static int GetTile(int x, int y, int layer)
@@ -797,26 +815,60 @@ namespace Engine.Objects
             return tile;
         }
 
-        private static void SetTile(int x, int y, int layer, int tile)
+        private static void ReplaceTilesOnLayer(int layer, int from, int to)
         {
-            _map.Layers[layer].SetTile(x, y, (short)tile);
-
-            Tuple<List<Vertex[]>, RenderStates> tuple;
-            tuple = _map.GetTileMap(_tileatlas);
+            _map.Layers[layer].ReplaceTiles((short)from, (short)to);
+            var tuple = _map.GetTileMap(_tileatlas);
 
             _layerstates = tuple.Item2;
             _layerstates.Texture = _fastatlas.RenderTexture.Texture;
             _layerverts = tuple.Item1;
         }
 
+        private static void SetTile(int x, int y, int layer, int tile)
+        {
+            _map.Layers[layer].SetTile(x, y, (short)tile);
+            var tuple = _map.GetTileMap(_tileatlas);
+
+            _layerstates = tuple.Item2;
+            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
+            _layerverts = tuple.Item1;
+        }
+
+        private static ImageInstance GetTileImage(int tile)
+        {
+            if (tile < 0) return null;
+            Texture text = new Texture(_map.Tileset.Tiles[tile].Graphic);
+            return new ImageInstance(Program._engine, text, false);
+        }
+
+        private static void SetTileImage(int tile, ImageInstance image)
+        {
+            if (tile < 0) return;
+
+            using (var img = image.GetImage())
+            {
+                _tileatlas.SetImageAt((uint)tile, img);
+                _tileatlas.Refresh();
+            }
+            
+            _fastatlas.SetImageAt((uint)tile, (uint)tile);
+        }
+
         private static string GetTileName(int tile)
         {
-            return _map.Tileset.Tiles[tile].Name;
+            if (tile >= 0 && tile < _map.Tileset.Tiles.Count)
+                return _map.Tileset.Tiles[tile].Name;
+            else
+                return "";
         }
 
         private static int GetTileDelay(int tile)
         {
-            return _map.Tileset.Tiles[tile].Delay;
+            if (tile >= 0 && tile < _map.Tileset.Tiles.Count)
+                return _map.Tileset.Tiles[tile].Delay;
+            else
+                return -1;
         }
 
         private static int GetNumTiles()
@@ -826,16 +878,21 @@ namespace Engine.Objects
 
         private static string GetLayerName(int layer)
         {
-            return _map.Layers[layer].Name;
+            if (layer >= 0 && layer < _map.Layers.Count)
+                return _map.Layers[layer].Name;
+            else
+                return "";
         }
 
         private static int MapToScreenX(int layer, int x)
         {
+            if (x < (GlobalProps.Width / 2 - 1.5*_map.Tileset.TileWidth)) return x;
             return x - GetCameraX() + GlobalProps.Width / 2;
         }
 
         private static int MapToScreenY(int layer, int y)
         {
+            if (y < (GlobalProps.Height / 2 - 2*_map.Tileset.TileHeight)) return y;
             return y - GetCameraY() + GlobalProps.Height / 2;
         }
 
@@ -847,6 +904,104 @@ namespace Engine.Objects
         private static int ScreenToMapY(int layer, int y)
         {
             return y + GetCameraY() - GlobalProps.Height / 2;
+        }
+
+        private static bool AreZonesAt(int x, int y, int layer)
+        {
+            return _map.Zones.Any(n => n.Layer == layer && x >= n.X && y >= n.Y && x <= n.X + n.Width && y <= n.Y + n.Height);
+        }
+
+        private static void ExecuteZones(int x, int y, int layer)
+        {
+            var zone = _map.Zones.FirstOrDefault(n => n.Layer == layer && x >= n.X && y >= n.Y && x <= n.X + n.Width && y <= n.Y + n.Height);
+            if (zone != null)
+                zone.Script.Execute();
+        }
+
+        private static void ExecuteZoneScript(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                _map.Zones[zone].Script.Execute();
+        }
+
+        private static int GetCurrentZone()
+        {
+            return CurrentZone;
+        }
+
+        private static int GetNumZones()
+        {
+            return _map.Zones.Count();
+        }
+
+        private static int GetZoneWidth(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                return _map.Zones[zone].Width;
+            else
+                return -1;
+        }
+
+        private static int GetZoneHeight(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                return _map.Zones[zone].Height;
+            else
+                return -1;
+        }
+
+        private static int GetZoneLayer(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                return _map.Zones[zone].Layer;
+            else
+                return -1;
+        }
+
+        private static int GetZoneX(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                return _map.Zones[zone].X;
+            else
+                return -1;
+        }
+
+        private static int GetZoneY(int zone)
+        {
+            if (zone >= 0 && zone < _map.Zones.Count)
+                return _map.Zones[zone].Y;
+            else
+                return -1;
+        }
+
+        private static bool IsLayerVisible(int layer)
+        {
+            if (layer >= 0 && layer < _map.Layers.Count)
+                return _map.Layers[layer].Visible;
+            else
+                return false;
+        }
+
+        private static bool IsLayerReflective(int layer)
+        {
+            if (layer >= 0 && layer < _map.Layers.Count)
+                return _map.Layers[layer].Reflective;
+            else
+                return false;
+        }
+
+        private static void SetLayerReflective(int layer, bool value)
+        {
+            if (layer >= 0 && layer < _map.Layers.Count)
+                _map.Layers[layer].Reflective = value;
+        }
+
+        private static int GetNextAnimatedTile(int tile)
+        {
+            if (tile >= 0 && tile < _map.Tileset.Tiles.Count)
+                return _map.Tileset.Tiles[tile].NextAnim;
+            else
+                return -1;
         }
     }
 }

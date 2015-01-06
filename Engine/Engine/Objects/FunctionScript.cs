@@ -5,39 +5,45 @@ using Jurassic.Library;
 namespace Engine
 {
     /// <summary>
-    /// Is either a function or compiled source that can be executed.
+    /// Is either a function or some source code to be compiled that can be executed efficiently.
     /// </summary>
     public class FunctionScript
     {
-        private bool _isFunc = false;
-        private CompiledMethod _compiled;
-        private FunctionInstance _func;
+        #region Executable
+        private interface IExecutable { void Execute(); }
+
+        private class FuncExe : IExecutable
+        {
+            FunctionInstance _instance;
+            public FuncExe(FunctionInstance instance) { _instance = instance; }
+            public void Execute() { _instance.Call(Program._engine.Global); }
+        }
+
+        private class CompExe : IExecutable
+        {
+            CompiledMethod _method;
+            public CompExe(CompiledMethod method) { _method = method; }
+            public void Execute() { _method.Execute(); }
+        }
+        #endregion
+
+        private IExecutable _executable;
 
         public FunctionScript(object item)
         {
-            _isFunc = item is FunctionInstance;
-            if (_isFunc)
-                _func = item as FunctionInstance;
+            if (item is FunctionInstance)
+                _executable = new FuncExe(item as FunctionInstance);
             else {
-                _compiled = new CompiledMethod(Program._engine, item.ToString());
+                _executable = new CompExe(new CompiledMethod(Program._engine, item.ToString()));
 #if(DEBUG)
-                Console.WriteLine("Compiled Script: \"{0}\"", source);
+                Console.WriteLine("Compiled Script: \"{0}\"", item.ToString());
 #endif
             }
         }
 
         public void Execute()
         {
-            try
-            {
-                if (_isFunc)
-                    _func.Call(Program._engine.Global);
-                else
-                    _compiled.Execute();
-            }
-            catch (Exception e) {
-                //Console.WriteLine(e.Message + "\n" + _compiled == null + ", " + _isFunc);
-            }
+            _executable.Execute();
         }
     }
 }

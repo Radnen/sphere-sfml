@@ -237,11 +237,12 @@ namespace Engine.Objects
         /// </summary>
         /// <returns>The tile map.</returns>
         /// <param name="tileatlas">The tileatlas to get tex-coords from use.</param>
-        public Tuple<List<Vertex[]>, RenderStates> GetTileMap(TextureAtlas tileatlas)
+        public Tuple<List<Vertex[]>, RenderStates> GetTileMap(TextureAtlas atlas)
         {
             int tw = Tileset.TileWidth;
             int th = Tileset.TileHeight;
             List<Vertex[]> vertices = new List<Vertex[]>();
+
             foreach (Layer l in Layers)
             {
                 int size = l.Width * l.Height * 4;
@@ -255,7 +256,7 @@ namespace Engine.Objects
                     int tile = l.GetTile((int)loc1.X / tw, (int)loc1.Y / th);
                     if (tile >= 0)
                     {
-                        IntRect source = tileatlas.Sources[tile];
+                        IntRect source = atlas.Sources[tile];
                         int w = source.Left + source.Width;
                         int h = source.Top + source.Height;
                         lverts[i + 0] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
@@ -281,7 +282,7 @@ namespace Engine.Objects
                 vertices.Add(lverts);
             }
 
-            RenderStates states = new RenderStates(BlendMode.Alpha, Transform.Identity, tileatlas.Texture, null);
+            RenderStates states = new RenderStates(BlendMode.Alpha, Transform.Identity, atlas.Texture, null);
             return new Tuple<List<Vertex[]>, RenderStates>(vertices, states);
         }
 

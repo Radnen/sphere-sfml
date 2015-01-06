@@ -173,6 +173,20 @@ namespace Engine.Objects
         }
 
         /// <summary>
+        /// Replaces all the tile indices on this layer from 'from' to 'to'.
+        /// </summary>
+        /// <param name="from">The old index to replace.</param>
+        /// <param name="to">The new index to replace with.</param>
+        public void ReplaceTiles(short from, short to)
+        {
+            int len = _tiles.Array.Length;
+            for (var i = 0; i < len; ++i)
+            {
+                if (_tiles.Array[i] == from) _tiles.Array[i] = to;
+            }
+        }
+
+        /// <summary>
         /// Checks to see if the layer has correct tile indicies.
         /// Will set afflicted tiles to 0, if check fails.
         /// </summary>

@@ -7,10 +7,11 @@ namespace Engine.Objects
     public class TextureAtlas
     {
         private Image _canvas;
+        private bool _modified;
+
         public uint Size { get; private set; }
         public Texture Texture { get; private set; }
         public IntRect[] Sources { get; private set; }
-        private bool _modified = false; 
 
         public TextureAtlas(uint size)
         {
@@ -70,13 +71,16 @@ namespace Engine.Objects
         }
 
         /// <summary>
-        /// This will clip the image, replacing the atlas graohic.
+        /// This will clip the image, replacing the atlas graphic.
         /// In order to change the physical bounds, see <see cref="update(image[])"/>.
         /// </summary>
         public void SetImageAt(uint index, Image img)
         {
             IntRect dest = Sources[index];
-            _canvas.Copy(img, (uint)dest.Left, (uint)dest.Top);
+            int width = Math.Min(dest.Width, (int)img.Size.X);
+            int height = Math.Min(dest.Height, (int)img.Size.Y);
+            IntRect sourceRect = new IntRect(0, 0, width, height);
+            _canvas.Copy(img, (uint)dest.Left, (uint)dest.Top, sourceRect);
             _modified = true;
         }
 

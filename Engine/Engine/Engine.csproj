@@ -90,6 +90,9 @@
     <Content Include="startup\images\blockman.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="startup\scripts\network.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <Content Include="startup\scripts\imagestest.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -136,7 +139,7 @@
     <None Include="startup\scripts\windowtest.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="startup\scripts\mousetest.js">
+    <None Include="startup\scripts\input.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="system\scripts\animation.js">
@@ -321,6 +324,7 @@
     <Compile Include="Objects\BinHeapConstructor.cs" />
     <Compile Include="Objects\MapEngineException.cs" />
     <Compile Include="Objects\ParticleEngine.cs" />
+    <Compile Include="Objects\SocketInstance.cs" />
     <Compile Include="Objects\SpriteBatch.cs" />
     <Compile Include="Objects\XMLDocConstructor.cs" />
     <Compile Include="Program.cs" />

@@ -15,7 +15,6 @@ namespace Engine.Objects
         private Vector2f ul, ur, lr, ll;
         private Texture _tex;
         private PrimitiveType _last = PrimitiveType.Quads;
-        private float cos, sin;
 
         public SpriteBatch(RenderTarget target)
         {
@@ -134,29 +133,26 @@ namespace Engine.Objects
                 ll.Y = tex.Size.Y;
             }
 
-            cos = (float)Math.Cos(r);
-            sin = (float)Math.Sin(r);
-
+            float cos = (float)Math.Cos(r);
+            float sin = (float)Math.Sin(r);
             float w = tex.Size.X / 2;
             float h = tex.Size.Y / 2;
-            float wx = x + w;
-            float wy = y + h;
 
-            _array[_idx + 0] = new Vertex(new Vector2f(wx + RotateX(-w, -h), wy + RotateY(-w, -h)), color, ul);
-            _array[_idx + 1] = new Vertex(new Vector2f(wx + RotateX(w, -h), wy + RotateY(w, -h)), color, ur);
-            _array[_idx + 2] = new Vertex(new Vector2f(wx + RotateX(w, h), wy + RotateY(w, h)), color, lr);
-            _array[_idx + 3] = new Vertex(new Vector2f(wx + RotateX(-w, h), wy + RotateY(-w, h)), color, ll);
+            _array[_idx + 0] = new Vertex(new Vector2f(w + x + RotateX(-w, -h, cos, sin), h + y + RotateY(-w, -h, cos, sin)), color, ul);
+            _array[_idx + 1] = new Vertex(new Vector2f(w + x + RotateX(w, -h, cos, sin), h + y + RotateY(w, -h, cos, sin)), color, ur);
+            _array[_idx + 2] = new Vertex(new Vector2f(w + x + RotateX(w, h, cos, sin), h + y + RotateY(w, h, cos, sin)), color, lr);
+            _array[_idx + 3] = new Vertex(new Vector2f(w + x + RotateX(-w, h, cos, sin), h + y + RotateY(-w, h, cos, sin)), color, ll);
             _idx += 4;
 
             if (_idx == _array.Length) Flush();
         }
 
-        private float RotateX(float x, float y)
+        private static float RotateX(float x, float y, float cos, float sin)
         {
             return (x * cos) - (y * sin);
         }
 
-        private float RotateY(float x, float y)
+        private static float RotateY(float x, float y, float cos, float sin)
         {
             return (x * sin) + (y * cos);
         }
@@ -170,7 +166,7 @@ namespace Engine.Objects
             _idx = 0;
         }
 
-        public void Flush(PrimitiveType type)
+        private void Flush(PrimitiveType type)
         {
             _target.Draw(_array, 0, _idx, type, _states);
             _idx = 0;

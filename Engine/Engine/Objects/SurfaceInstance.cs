@@ -144,6 +144,24 @@ namespace Engine.Objects
                 }
             }
         }
+
+        private void DrawImageMask(byte* buf, int ox, int oy, byte[] pixels, int width, int height, int mask)
+        {
+            int left = Math.Max(0, ox);
+            int top = Math.Max(0, oy);
+            int right = Math.Min(_width, ox + width);
+            int bottom = Math.Min(_height, oy + height);
+            for (int y = top; y < bottom; ++y)
+            {
+                for (int x = left; x < right; ++x)
+                {
+                    int s = (x - ox + (y - oy) * width) << 2;
+                    int c = (pixels[s + 3] << 24) + (pixels[s + 2] << 16) + (pixels[s + 1] << 8) + pixels[s]; // abgr
+                    int d = FastBlend2(c, mask);
+                    SetPixelFast(buf, x, y, d);
+                }
+            }
+        }
         
         private void DrawImage(int ox, int oy, byte[] pixels, int width, int height)
         {
@@ -192,12 +210,34 @@ namespace Engine.Objects
             return a << 24 | b << 16 | g << 8 | r;
         }
 
+        public static int FastBlend2(int c1, int c2)
+        {
+            int a1 = (c1 >> 24 & 0xff);
+            int b1 = ((c1 & 0xff0000) >> 16);
+            int g1 = ((c1 & 0xff00) >> 8);
+            int r1 = (c1 & 0xff);
+
+            int a2 = (c2 >> 24 & 0xff);
+            int b2 = ((c2 & 0xff0000) >> 16);
+            int g2 = ((c2 & 0xff00) >> 8);
+            int r2 = (c2 & 0xff);
+
+            //int b = (int)(weight * (b2 - b1) + b1);
+            //int g = (int)(weight * (g2 - g1) + g1);
+            //int r = (int)(weight * (r2 - r1) + r1);
+            int r = (int)(r2 * (float)r1 / 255);
+            int g = (int)(g2 * (float)g1 / 255);
+            int b = (int)(b2 * (float)b1 / 255);
+            int a = (int)(a2 * (float)a1 / 255);
+
+            return a1 << 24 | b << 16 | g << 8 | r;
+        }
+
         public void SetPixelFast(byte* buffer, int x, int y, int c)
         {
-            int idx = x + y * (int)_width;
-            int* p = (int*)buffer + idx;
+            int* p = (int*)buffer + (x + y * (int)_width);
 
-            switch (_mode)
+            /*switch (_mode)
             {
                 case BlendModes.Blend:
                     *p = FastBlend(*p, c, (float)(c >> 24 & 0xff) / 255);
@@ -205,6 +245,14 @@ namespace Engine.Objects
                 case BlendModes.Replace:
                     *p = c;
                     break;
+            }*/
+            if (_mode == BlendModes.Blend)
+            {
+                *p = FastBlend(*p, c, (float)(c >> 24 & 0xff) / 255);
+            }
+            else
+            {
+                *p = c;
             }
         }
 
@@ -708,12 +756,13 @@ namespace Engine.Objects
         [JSFunction(Name = "drawText")]
         public void DrawText(FontInstance font, int x, int y, string text)
         {
+            int color = font.GetColorMask().GetInt();
             fixed (byte* buf = _pixels)
             {
                 for (var i = 0; i < text.Length; ++i)
                 {
                     Image img = font.GetGlyph(text[i]);
-                    DrawImage(buf, x, y, img.Pixels, (int)img.Size.X, (int)img.Size.Y);
+                    DrawImageMask(buf, x, y, img.Pixels, (int)img.Size.X, (int)img.Size.Y, color);
                     x += (int)img.Size.X;
                 }
             }

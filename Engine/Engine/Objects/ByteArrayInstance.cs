@@ -12,6 +12,7 @@ namespace Engine.Objects
             : base(parent)
         {
             PopulateFunctions();
+            this["length"] = source.Length;
             _bytes = new byte[source.Length];
             for (var i = 0; i < source.Length; ++i)
                 _bytes[i] = (byte)source[i];
@@ -21,6 +22,7 @@ namespace Engine.Objects
             : base(parent)
         {
             PopulateFunctions();
+            this["length"] = source.Length;
             _bytes = source;
         }
 
@@ -36,33 +38,25 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "concat")]
-        public void Concat(ByteArrayInstance array)
+        public ByteArrayInstance Concat(ByteArrayInstance array)
         {
+            int old = _bytes.Length, start = GetSize();
             byte[] other = array.GetBytes();
-            byte[] bytes = new byte[_bytes.Length + other.Length];
-            int index = 0;
-            for (var i = 0; i < _bytes.Length; ++i)
-            {
-                bytes[index] = _bytes[i];
-                index++;
-            }
-            for (var i = 0; i < other.Length; ++i)
-            {
-                bytes[index] = other[i];
-                index++;
-            }
-            _bytes = bytes;
+            byte[] bytes = new byte[other.Length + start];
+            Array.Copy(GetBytes(), 0, bytes, 0, start);
+            Array.Copy(other, 0, bytes, start, array.GetSize());
+            return new ByteArrayInstance(Engine, bytes);
         }
 
-        [JSFunction(Name = "splice")]
-        public ByteArrayInstance Splice(int from, int to)
+        [JSFunction(Name = "slice")]
+        public ByteArrayInstance Slice(int from, int to)
         {
+            if (from < 0) from = 0;
             if (to == -1 || to - from < 0)
                 to = _bytes.Length;
 
             byte[] bytes = new byte[to - from];
-            for (var i = to; i < from; ++i)
-                bytes[i] = _bytes[i];
+            Array.Copy(_bytes, from, bytes, 0, to - from);
 
             return new ByteArrayInstance(Engine, bytes);
         }

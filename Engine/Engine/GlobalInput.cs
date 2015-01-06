@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Engine.Objects;
 using SFML.Window;
 using Jurassic;
 using Jurassic.Core;
@@ -84,6 +85,11 @@ namespace Engine
             var style = (_fullscreen) ? Styles.Fullscreen : Styles.Default;
 
             Program.InitWindow(style);
+            if (MapEngineHandler.FPSToggle)
+            {
+                MapEngineHandler.ToggleFPSThrottle();
+                MapEngineHandler.ToggleFPSThrottle();
+            }
         }
 
         public static bool IsKeyPressed(int code)
@@ -97,7 +103,6 @@ namespace Engine
             if (code == (int)Keyboard.Key.RAlt)
                 return Keyboard.IsKeyPressed(Keyboard.Key.RAlt) ||
                     Keyboard.IsKeyPressed(Keyboard.Key.LAlt);
-
             return Keyboard.IsKeyPressed((Keyboard.Key)code);
         }
 

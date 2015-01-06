@@ -209,18 +209,17 @@ namespace Engine
         [Test()]
         public void TestByteArrayConcat()
         {
-            object size = Program._engine.Evaluate("var bytea = CreateByteArray(5);" +
-                "var byteb = CreateByteArray(5);" +
-                "bytea.concat(byteb); bytea.getSize();");
+            object size = Program._engine.Evaluate("var bytea = CreateByteArray(50);" +
+                "var byteb = CreateByteArray(50); var bytec = bytea.concat(byteb); bytec.length;");
             Assert.IsInstanceOf<int>(size);
-            Assert.AreEqual(size, 10);
+            Assert.AreEqual(size, 100);
         }
 
         [Test()]
         public void TestByteArraySplice()
         {
             object size = Program._engine.Evaluate("var bytea = CreateByteArray(5);" +
-                "var byteb = bytea.splice(1, 3); byteb.getSize();");
+                "var byteb = bytea.slice(1, 3); byteb.getSize();");
             Assert.IsInstanceOf<int>(size);
             Assert.AreEqual(size, 2);
         }

@@ -64,8 +64,13 @@ namespace Engine.Objects
             }
         }
 
-        private void CheckUpdate() {
-            if (_updated) {
+        /// <summary>
+        /// Tries to update the atlas if any graphical changes were made to this font.
+        /// </summary>
+        private void CheckUpdate()
+        {
+            if (_updated)
+            {
                 _atlas.Update(_glyphs);
                 _updated = false;
             }
@@ -219,7 +224,7 @@ namespace Engine.Objects
         }
 
         [JSFunction(Name = "getColorMask")]
-        public ObjectInstance GetColorMask()
+        public ColorInstance GetColorMask()
         {
             return new ColorInstance(Engine, _color);
         }

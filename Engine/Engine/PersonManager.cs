@@ -12,8 +12,9 @@ namespace Engine
         public static Dictionary<string, Person> PeopleTable { get; private set; }
         private static List<string> _personlist;
         public static List<Person> People { get; private set; }
+        public static string CurrentPerson = "";
+        public static string ObstPerson = "";
 
-        public static string _current = "";
         private static int _talk_dist = 8;
 
         static PersonManager()
@@ -60,10 +61,13 @@ namespace Engine
             engine.SetGlobalFunction("GetPersonLayer", new Func<string, int>(GetPersonLayer));
             engine.SetGlobalFunction("GetPersonBase", new Func<string, ObjectInstance>(GetPersonBase));
             engine.SetGlobalFunction("GetCurrentPerson", new Func<string>(GetCurrentPerson));
+            engine.SetGlobalFunction("GetObstructingPerson", new Func<string>(GetObstructingPerson));
             engine.SetGlobalFunction("ClearPersonCommands", new Action<string>(ClearPersonCommands));
             engine.SetGlobalFunction("GetPersonList", new Func<ArrayInstance>(GetPersonList));
             engine.SetGlobalFunction("GetPersonFrameRevert", new Func<string, int>(GetPersonFrameRevert));
             engine.SetGlobalFunction("SetPersonFrameRevert", new Action<string, int>(SetPersonFrameRevert));
+            engine.SetGlobalFunction("GetPersonSpriteset", new Func<string, SpritesetInstance>(GetPersonSpriteset));
+            engine.SetGlobalFunction("SetPersonSpriteset", new Action<string, SpritesetInstance>(SetPersonSpriteset));
             engine.SetGlobalFunction("GetPersonData", new Func<string, ObjectInstance>(GetPersonData));
             engine.SetGlobalFunction("SetPersonData", new Action<string, ObjectInstance>(SetPersonData));
             engine.SetGlobalFunction("SetPersonValue", new Action<string, string, object>(SetPersonValue));
@@ -80,6 +84,11 @@ namespace Engine
             engine.SetGlobalFunction("GetTalkDistance", new Func<int>(GetTalkDistance));
         }
 
+        private static string GetObstructingPerson()
+        {
+            return ObstPerson;
+        }
+
         private static void SetTalkDistance(int dist)
         {
             _talk_dist = dist;
@@ -94,6 +103,7 @@ namespace Engine
         {
             if (PeopleTable.ContainsKey(name))
                 return;
+
             SpritesetInstance sprite = AssetManager.GetSpriteset(ss);
             Person p = new Person(name, sprite, destroy);
             PeopleTable.Add(name, p);
@@ -167,6 +177,7 @@ namespace Engine
             {
                 if (name == p.Name)
                     continue;
+
                 float dx = p.Position.X - talk_x;
                 float dy = p.Position.Y - talk_y;
 
@@ -195,10 +206,12 @@ namespace Engine
         {
 			foreach (Person p in People)
             {
-				if (p.Layer == person.Layer &&
-					p.Name != person.Name &&
-					person.CheckObstructions(ref position, p))
+                if (p.Layer == person.Layer && p.Name != person.Name &&
+                    person.CheckObstructions(ref position, p))
+                {
+                    ObstPerson = p.Name;
                     return true;
+                }
             }
             return false;
         }
@@ -315,6 +328,16 @@ namespace Engine
             PeopleTable[name].Speed = new Vector2f((float)x, (float)y);
         }
 
+        public static void SetPersonSpriteset(string name, SpritesetInstance instance)
+        {
+            PeopleTable[name].Spriteset = instance;
+        }
+
+        public static SpritesetInstance GetPersonSpriteset(string name)
+        {
+            return PeopleTable[name].Spriteset;
+        }
+
         public static double GetPersonSpeedX(string name)
         {
             return PeopleTable[name].Speed.X;
@@ -382,7 +405,7 @@ namespace Engine
 
         public static string GetCurrentPerson()
         {
-            return _current;
+            return CurrentPerson;
         }
 
         public static void ClearPersonCommands(string name)
@@ -424,7 +447,7 @@ namespace Engine
 
         public static void CallPersonScript(string name, int type)
         {
-            _current = name;
+            CurrentPerson = name;
             PeopleTable[name].CallScript((PersonScripts)type);
         }
 

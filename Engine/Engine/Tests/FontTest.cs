@@ -61,6 +61,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("font.setColorMask;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object obj = Program._engine.Evaluate("font.getColorMask();");
+            Assert.IsInstanceOf<ColorInstance>(obj);
         }
 
         [Test()]
@@ -75,6 +78,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("font.getHeight;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            int height = (int)Program._engine.Evaluate("font.getHeight();");
+            Assert.AreEqual(13, height);
         }
 
         [Test()]
@@ -82,6 +88,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("font.getStringWidth;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            int width = (int)Program._engine.Evaluate("font.getStringWidth('A');");
+            Assert.AreEqual(10, width);
         }
 
         [Test()]
@@ -121,6 +130,9 @@ namespace Engine
         {
             object func = Program._engine.Evaluate("font.clone;");
             Assert.IsInstanceOf<FunctionInstance>(func);
+
+            object obj = Program._engine.Evaluate("font.clone();");
+            Assert.IsInstanceOf<FontInstance>(obj);
         }
 
         [Test()]

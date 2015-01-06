@@ -229,6 +229,7 @@ namespace Engine
             engine.SetGlobalFunction("OutlinedRectangle", new Action<double, double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedRectangle));
             engine.SetGlobalFunction("GradientRectangle", new Action<double, double, double, double, ColorInstance, ColorInstance, ColorInstance, ColorInstance>(GlobalPrimitives.GradientRectangle));
             engine.SetGlobalFunction("OutlinedCircle", new Action<double, double, double, ColorInstance, double>(GlobalPrimitives.OutlinedCircle));
+            engine.SetGlobalFunction("GradientCircle", new Action<double, double, double, ColorInstance, ColorInstance, bool>(GlobalPrimitives.GradientCircle));
             engine.SetGlobalFunction("FilledCircle", new Action<double, double, double, ColorInstance>(GlobalPrimitives.FilledCircle));
             engine.SetGlobalFunction("Line", new Action<double, double, double, double, ColorInstance>(GlobalPrimitives.Line));
             engine.SetGlobalFunction("LineSeries", new Action<ArrayInstance, ColorInstance>(GlobalPrimitives.LineSeries));
@@ -246,7 +247,7 @@ namespace Engine
             engine.SetGlobalFunction("BlendColors", new Func<ColorInstance, ColorInstance, ColorInstance>(BlendColors));
             engine.SetGlobalFunction("BlendColorsWeighted", new Func<ColorInstance, ColorInstance, double, ColorInstance>(BlendColorsWeighted));
             engine.SetGlobalFunction("IsKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
-            engine.SetGlobalFunction("IsAnyKeyPressed", new Func<int, bool>(GlobalInput.IsKeyPressed));
+            engine.SetGlobalFunction("IsAnyKeyPressed", new Func<bool>(GlobalInput.IsAnyKeyPressed));
             engine.SetGlobalFunction("IsMouseButtonPressed", new Func<int, bool>(GlobalInput.IsMouseButtonPressed));
             engine.SetGlobalFunction("GetMouseWheelEvent", new Func<int>(GlobalInput.GetMouseWheelEvent));
             engine.SetGlobalFunction("GetNumMouseWheelEvents", new Func<int>(GlobalInput.GetNumMouseWheelEvents));
@@ -287,6 +288,10 @@ namespace Engine
             engine.SetGlobalFunction("GetGameList", new Func<ArrayInstance>(GetGameList));
             engine.SetGlobalFunction("SetClippingRectangle", new Action<int, int, int, int>(SetClippingRectangle));
             engine.SetGlobalFunction("GetClippingRectangle", new Func<ObjectInstance>(GetClippingRectangle));
+            engine.SetGlobalFunction("ListenOnPort", new Func<int, object>(ListenOnPort));
+            engine.SetGlobalFunction("OpenAddress", new Func<string, int, object>(OpenAddress));
+            engine.SetGlobalFunction("GetLocalAddress", new Func<string>(GetLocalAddress));
+            engine.SetGlobalFunction("GetLocalName", new Func<string>(GetLocalName));
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
             engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
@@ -359,6 +364,8 @@ namespace Engine
                 return;
 
             _window = new RenderWindow(new VideoMode(320, 240), "Test Window", Styles.Default);
+            _window.Clear(Color.Black);
+            _window.Display();
             _engine = GetSphereEngine();
         }
 
@@ -380,6 +387,11 @@ namespace Engine
             }
 
             Program.InitWindow(Styles.Default);
+            if (MapEngineHandler.FPSToggle)
+            {
+                MapEngineHandler.ToggleFPSThrottle();
+                MapEngineHandler.ToggleFPSThrottle();
+            }
         }
 
         public static void SetFrameRate(int fps)
@@ -455,6 +467,46 @@ namespace Engine
         public static double GetTime()
         {
             return Math.Floor(DateInstance.Now());
+        }
+
+        static object OpenAddress(string address, int port)
+        {
+            SocketInstance instance = null;
+
+            try
+            {
+                instance = new SocketInstance(_engine, address, port);
+            }
+            catch (Exception) { /* Swallow Invalid Connection Attempts */ }
+
+            return instance;
+        }
+
+        static object ListenOnPort(int port)
+        {
+            SocketInstance instance = null;
+
+            
+
+            return instance;
+        }
+
+        static string GetLocalName()
+        {
+            return System.Net.Dns.GetHostName();
+        }
+
+        static string GetLocalAddress()
+        {
+            var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            foreach (System.Net.IPAddress ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            return "127.0.0.1";
         }
 
         static ColorInstance CreateColor(int r, int g, int b, [DefaultParameterValue(255)] int a = 255)
@@ -806,7 +858,7 @@ namespace Engine
         public static void ShowAbortScreen(string message)
         {
             FontInstance font = GetSystemFont();
-            _window.SetView(MapEngineHandler.GetDefaultView());
+            _window.SetView(MapEngineHandler.DefaultView);
             var done = false;
             while (GlobalInput.AreKeysLeft()) { GlobalInput.GetKey(); FlipScreen(); }
             while (!done)

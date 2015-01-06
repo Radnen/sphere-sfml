@@ -191,6 +191,16 @@ namespace Engine
             Target.Draw(_circle);
         }
 
+        public static void GradientCircle(double x, double y, double radius, ColorInstance inner, ColorInstance outer, [DefaultParameterValue(false)] bool antialias = false)
+        {
+            Program.Batch.Flush();
+            _circle.Radius = (float)radius;
+            _circle.FillColor = inner.Color;
+            _circle.Position = new Vector2f((float)x, (float)y);
+            _circle.Origin = new Vector2f((float)radius, (float)radius);
+            Target.Draw(_circle);
+        }
+
         public static void OutlinedCircle(double x, double y, double radius, ColorInstance color, [DefaultParameterValue(1.0)] double size = 1.0)
         {
             Program.Batch.Flush();

@@ -15,6 +15,7 @@ namespace Engine
         {
             Program.SetupTestEnvironment();
             Program._engine.Evaluate("var img = LoadImage(\"blockman.png\");");
+            Program.Batch = new SpriteBatch(Program._window);
         }
 
         [Test()]
@@ -30,8 +31,16 @@ namespace Engine
             object func = Program._engine.Evaluate("GrabImage;");
             Assert.IsInstanceOf<FunctionInstance>(func);
 
-            object image = Program._engine.Evaluate("GrabImage(0, 0, 10, 10);");
+            object image = Program._engine.Evaluate("GrabImage(0, 0, 10, 11);");
             Assert.IsInstanceOf<ImageInstance>(image);
+            if (image is ImageInstance)
+            {
+                using (var img = ((ImageInstance)image).GetImage())
+                {
+                    Assert.IsTrue(img.Size.X == 10);
+                    Assert.IsTrue(img.Size.Y == 11);
+                }
+            }
         }
 
         [Test()]
