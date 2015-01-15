@@ -82,8 +82,9 @@ function Alert(text) {
 }
 
 function TestRawSpeed() {
+    var string = "Hello World";
     var t = GetTime();
-    for (var i = 0; i < 10000000; ++i) { }
+    for (var i = 0; i < 10000; ++i) { CreateByteArrayFromString(string); }
     t = GetTime() - t;
     Alert(t);
 }
@@ -92,9 +93,7 @@ function TestJSON()
 {
 	var s = '{"ships":[{"vx":0,"vy":0,"xx":464.0000000000016,"yy":335.99999999999824,"maxvx":3.83022221559489,"maxvy":3.2139380484326963,"name":"","shipname":"Shuttle","target":null,"target_a":{"rad":0.3430239404207034,"deg":19.65382405805331},"a":{"rad":0.6981317007977318,"deg":40},"lastspeed":5,"maxspeed":5,"speed":0.5284430838679363,"acc":0.5,"last_a_msecs":150,"a_msecs":150,"r_msecs":20,"hp":{"value":25,"max":25},"escort":{"value":0,"max":1},"cap":{"value":15,"max":30},"shields":{"value":0,"max":0},"jumps":{"value":2,"max":2},"shielded":false,"shieldCol":"CreateColor(255,255,255)","shieldAlpha":{"max":0,"value":0,"duration":500},"isEnemy":false,"thrust":false,"equipment":[{"item":0,"amount":0,"time":418824932}],"types":[true],"secondary":-1,"sina":0.6427876096865393,"cosa":0.766044443118978,"image":"shuttle","bitmap":{},"w":48,"h":48,"id":-1,"canTurret":false,"canBeam":false,"jump":0,"jumpSys":{"x":2,"y":20},"targetSys":{"x":30,"y":30,"name":"Hades","neighbors":["Archon","Mede"]},"jumpTime":266307406,"rating":2,"last_a":{"rad":3.839724354387525,"deg":220},"last_set":true,"upkey":true,"hull":null,"thusters":null,"computer":null,"joy":true,"deathTimer":0,"nameType":0,"equips":{"left":{"item":0,"amount":0},"right":{"item":-2,"amount":0},"tech":{"item":-2,"amount":0},"secondary":{"item":-2,"amount":0},"shield":{"item":-2,"amount":0}},"wh_x":-4672.443966187526,"wh_y":-1314.331416492098}],"ship":{"vx":0,"vy":0,"xx":464.0000000000016,"yy":335.99999999999824,"maxvx":3.83022221559489,"maxvy":3.2139380484326963,"name":"","shipname":"Shuttle","target":null,"target_a":{"rad":0.3430239404207034,"deg":19.65382405805331},"a":{"rad":0.6981317007977318,"deg":40},"lastspeed":5,"maxspeed":5,"speed":0.5284430838679363,"acc":0.5,"last_a_msecs":150,"a_msecs":150,"r_msecs":20,"hp":{"value":25,"max":25},"escort":{"value":0,"max":1},"cap":{"value":15,"max":30},"shields":{"value":0,"max":0},"jumps":{"value":2,"max":2},"shielded":false,"shieldCol":"CreateColor(255,255,255)","shieldAlpha":{"max":0,"value":0,"duration":500},"isEnemy":false,"thrust":false,"equipment":[{"item":0,"amount":0,"time":418824932}],"types":[true],"secondary":-1,"sina":0.6427876096865393,"cosa":0.766044443118978,"image":"shuttle","bitmap":{},"w":48,"h":48,"id":-1,"canTurret":false,"canBeam":false,"jump":0,"jumpSys":{"x":2,"y":20},"targetSys":{"x":30,"y":30,"name":"Hades","neighbors":["Archon","Mede"]},"jumpTime":266307406,"rating":2,"last_a":{"rad":3.839724354387525,"deg":220},"last_set":true,"upkey":true,"hull":null,"thusters":null,"computer":null,"joy":true,"deathTimer":0,"nameType":0,"equips":{"left":{"item":0,"amount":0},"right":{"item":-2,"amount":0},"tech":{"item":-2,"amount":0},"secondary":{"item":-2,"amount":0},"shield":{"item":-2,"amount":0}},"wh_x":-4672.443966187526,"wh_y":-1314.331416492098},"curship":0,"days":0,"credits":631,"name":"Jenna Hayes","sex":true,"pic":"Ashley","inventory":[],"quests":[],"travelTo":["Hades"]}'
 	var t = GetTime();
-	for (var i = 0; i < 10; ++i) {
-		JSON.parse(s);
-	}
+	for (var i = 0; i < 10; ++i) { JSON.parse(s); }
 	t = GetTime() - t;
 	Alert(t);
 }

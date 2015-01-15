@@ -5,30 +5,12 @@ using SFML.Graphics;
 
 namespace Engine.Objects
 {
-    public class ToStringInstance : FunctionInstance
-    {
-        string _type = "object";
-
-        public ToStringInstance(ScriptEngine engine, string type)
-            : base(engine)
-        {
-            _type = string.Format("[object {0}]", type);
-        }
-
-        public override object CallLateBound(object thisObject, params object[] argumentValues)
-        {
-            return _type;
-        }
-    }
-
     public class ColorInstance : ObjectInstance
     {
-        #region internal methods 
+        #region internal methods
         public class ColorGetter : FunctionInstance
         {
-
             int _type;
-
             public ColorGetter(ScriptEngine engine, int type)
                 : base(engine)
             {
@@ -104,6 +86,10 @@ namespace Engine.Objects
             DefineProperty("toString", _descriptors[4], false);
         }
 
+        /// <summary>
+        /// The idea here is to cache descriptors so that we have lightning fast performance.
+        /// </summary>
+        /// <param name="parent">The ScriptEngine that owns this ColorInstance.</param>
         private static void PopulateDescriptors(ScriptEngine parent)
         {
             if (_descriptors != null) return;
@@ -115,7 +101,7 @@ namespace Engine.Objects
                 var setter = new ColorSetter(parent, i);
                 _descriptors[i] = new PropertyDescriptor(getter, setter, PropertyAttributes.Sealed);
             }
-            _descriptors[4] = new PropertyDescriptor(new ToStringInstance(parent, "color"), PropertyAttributes.Sealed);
+            _descriptors[4] = new PropertyDescriptor(new ToStringFunc(parent, "color"), PropertyAttributes.Sealed);
         }
 
         public ColorInstance(ScriptEngine parent, Color color)
@@ -136,11 +122,17 @@ namespace Engine.Objects
             return _color;
         }
 
+        /// <summary>
+        /// Gets the color as a packed integer.
+        /// </summary>
         public int GetInt()
         {
             return (A << 24) | (B << 16) | (G << 8) | R;
         }
 
+        /// <summary>
+        /// Standard Sphere ToString()
+        /// </summary>
         public override string ToString()
         {
             return "[object color]";
