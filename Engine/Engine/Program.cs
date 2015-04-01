@@ -204,6 +204,7 @@ namespace Engine
             engine.SetGlobalFunction("Abort", new Action<string>(Abort));
             engine.SetGlobalFunction("GetVersion", new Func<double>(GetVersion));
             engine.SetGlobalFunction("GetVersionString", new Func<string>(GetVersionString));
+            engine.SetGlobalFunction("GetExtensions", new Func<ArrayInstance>(GetExtensions));
             engine.SetGlobalFunction("FlipScreen", new Action(FlipScreen));
             engine.SetGlobalFunction("GetScreenWidth", new Func<int>(GetScreenWidth));
             engine.SetGlobalFunction("GetScreenHeight", new Func<int>(GetScreenHeight));
@@ -588,12 +589,17 @@ namespace Engine
 
         static double GetVersion()
         {
-            return 1.55;
+            return 1.5;
         }
 
         static string GetVersionString()
         {
-            return "v1.55";
+            return "v1.5 (compatible; Sphere-SFML 0.90)";
+        }
+
+        static ArrayInstance GetExtensions()
+        {
+            return Program._engine.Array.New(new[] { "sphere-legacy", "sphere-sfml" });
         }
 
         static void GarbageCollect()
