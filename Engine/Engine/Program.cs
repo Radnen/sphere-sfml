@@ -599,7 +599,11 @@ namespace Engine
 
         static ArrayInstance GetExtensions()
         {
-            return Program._engine.Array.New(new[] { "sphere-legacy", "sphere-sfml" });
+            return Program._engine.Array.New(new[] {
+                "sphere-legacy",
+                "sphere-sfml",
+                "set-script-function"
+            });
         }
 
         static void GarbageCollect()
