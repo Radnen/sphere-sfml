@@ -600,7 +600,7 @@ namespace Engine
         static ArrayInstance GetExtensions()
         {
             return Program._engine.Array.New(new[] {
-                "sphere-legacy",
+                "sphere-legacy-api",
                 "sphere-sfml",
                 "set-script-function"
             });
