@@ -156,6 +156,8 @@ namespace Engine.Objects
             Width = width;
             Height = height;
             Name = "Untitled";
+            ParallaxX = 1.0f;
+            ParallaxY = 1.0f;
 
             _tiles = new TwoArray<short>(width, height);
         }

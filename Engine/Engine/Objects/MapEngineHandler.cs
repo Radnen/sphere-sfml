@@ -9,6 +9,29 @@ using SFML.Window;
 
 namespace Engine.Objects
 {
+    class DelayScript
+    {
+        private FunctionScript script;
+        private int framesLeft;
+
+        public DelayScript(object code, int frames)
+        {
+            this.script = new FunctionScript(code);
+            this.framesLeft = frames;
+        }
+
+        public bool HasExpired()
+        {
+            return this.framesLeft < 0;
+        }
+
+        public void Tick()
+        {
+            if (this.framesLeft >= 0 && --this.framesLeft < 0)
+                this.script.Execute();
+        }
+    }
+    
     public static class MapEngineHandler
     {
         private static Map _map;
@@ -31,7 +54,7 @@ namespace Engine.Objects
         private static List<TileAnimHandler> _tileanims;
         private static FunctionScript _updatescript;
         private static FunctionScript _renderscript;
-        private static FunctionScript _delayscript;
+        private static List<DelayScript> _delayscripts;
         private static FunctionScript[] _renderers;
         private static ColorInstance[] _layermasks;
         private static FastTextureAtlas _fastatlas;
@@ -43,7 +66,7 @@ namespace Engine.Objects
         private static string camera_ent = "";
         private static string input_ent = "";
         private static string _current = "";
-        private static int _mask_frames = 0, _frames = 0, _delay_frames = -1;
+        private static int _mask_frames = 0, _frames = 0;
         private static int _target_alpha = 0;
         private static ColorInstance _mask = null;
         private static Entity _last_trigger = null; // for one trigger at a time.
@@ -55,6 +78,7 @@ namespace Engine.Objects
             _triggers = new List<Entity>();
             _scripts = new FunctionScript[6];
             _defscripts = new FunctionScript[6];
+            _delayscripts = new List<DelayScript>();
         }
 
         #region Bind Scripts to Engine
@@ -497,15 +521,9 @@ namespace Engine.Objects
                 }
             }
 
-            if (_delay_frames >= 0 && _delayscript != null)
-            {
-                if (_delay_frames == -1)
-                {
-                    _delayscript.Execute();
-                    _delayscript = null;
-                }
-                else _delay_frames--;
-            }
+            foreach (var script in _delayscripts)
+                script.Tick();
+            _delayscripts.RemoveAll(script => script.HasExpired());
         }
 
         private static void UpdateInput()
@@ -763,8 +781,7 @@ namespace Engine.Objects
 
         private static void SetDelayScript(int frames, object code)
         {
-            _delay_frames = frames;
-            _delayscript = new FunctionScript(code);
+            _delayscripts.Add(new DelayScript(code, frames));
         }
 
         private static void SetUpdateScript(object code)
