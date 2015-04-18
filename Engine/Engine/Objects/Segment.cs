@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {

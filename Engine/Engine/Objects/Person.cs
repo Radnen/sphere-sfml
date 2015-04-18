@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -70,8 +70,8 @@ namespace Engine.Objects
 
         public void CallScript(PersonScripts script)
         {
-            if (Scripts[(int)script] != null)
-                Scripts[(int)script].Execute();
+            FunctionScript code = Scripts[(int)script];
+            if (code != null) code.Execute();
         }
 
         public void SetScript(PersonScripts script, object instance)
@@ -161,7 +161,7 @@ namespace Engine.Objects
 
         public bool CheckObstructions(ref Vector2f pos, Person other)
         {
-            if (IgnorePersons || other.Layer != Layer)
+            if (other.IgnorePersons || other.Layer != Layer)
                 return false;
 
             Line[] baselines1 = _innerSS.GetLineBase();
@@ -283,7 +283,7 @@ namespace Engine.Objects
 
                 _revert = 0;
                 _toNextDelay += (update ? 1 : 0);
-                if (_toNextDelay == _delay)
+                if (_toNextDelay >= _delay)
                 {
                     Frame = Frame + 1;
                     _toNextDelay = 0;

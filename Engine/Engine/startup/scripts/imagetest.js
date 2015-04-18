@@ -36,7 +36,7 @@ function TestImages()
 		
 		image.rotateBlitMask(5 * 48, 0, rad, blue);
 		
-		if (time + 10 < GetTime())
+		if (time + 16.667 < GetTime())
 		{
 			if (IsKeyPressed(KEY_UP)) y--;
 			if (IsKeyPressed(KEY_DOWN)) y++;

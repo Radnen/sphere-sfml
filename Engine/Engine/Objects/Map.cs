@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using SFML.Window;
+using SFML.System;
 using SFML.Graphics;
 
 namespace Engine.Objects

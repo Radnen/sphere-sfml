@@ -6,7 +6,17 @@ function TestSurfaces()
 	var black = CreateColor(0, 0, 0);
 	var white = CreateColor(255, 255, 255);
 	var green = CreateColor(0, 255, 0, 125);
-	var red   = CreateColor(255, 0, 0);
+	var red = CreateColor(255, 0, 0);
+
+	function TestComp() {
+	    var surf = CreateSurface(48, 48, white);
+	    var img = LoadSurface("blockman.png");
+
+	    var t = GetTime();
+	    for (var i = 0; i < 60000; ++i) { surf.blitSurface(img, 0, 0); }
+	    Print(GetTime() - t);
+	}
+	//TestComp();
 
 	SetClippingRectangle(0, 0, 1, 1);
 	var surf = CreateSurface(48, 48, white);
@@ -34,6 +44,11 @@ function TestSurfaces()
 	    //surf.gradientRectangle(0, 0, 48, 48, green, green, white, white);
 	    for (var i = 0; i < 6; i += 2) {
 	        surf.line(0, 0, 48, 48, red);
+	        surf.line(48, 0, 0, 48, red);
+	        surf.line(0, 47, 47, 47, red);
+	        surf.line(48, 1, 48, 47, red);
+	        surf.line(1, 1, 47, 0, red);
+	        surf.line(1, 1, 1, 47, red);
 	        surf2.line(0, 0, 48, 48, red);
 	        surf3.gradientRectangle(0, 0, 48, 48, green, green, white, white);
 	        surf3.line(0, 0, 48, 48, red);
@@ -44,10 +59,11 @@ function TestSurfaces()
 	        surf.drawText(sys_font, 0, 36, "Hello");
 	        surf4.rectangle(0, 0, 48, 48, green);
 	        surf4.line(0, 0, 48, 0, white);
-	        //surf.setPixel(8, 2, red);
-	        //surf.drawText(sys_font, 0, 0, "Hi");
+	        surf.setPixel(8, 2, red);
+	        surf.drawText(sys_font, 0, 0, "Hi");
 	        surf.blitSurface(surf2, -24, -24);
-	        surf.blit(0+i*48, 16);
+
+	        surf.blit(0 + i * 48, 16);
 	        surf2.blit(48+i*48, 16);
 	        surf3.blit(0+i*48, 64);
 	        surf4.blit(48+i*48, 64);
@@ -73,15 +89,17 @@ function TestSurfaceFillRate() {
         surf = CreateSurface(w, h, CreateColor(255, 255, 255)),
         green = CreateColor(0, 255, 0),
         done = false;
+
+    //surf.setBlendMode(REPLACE);
+        surf.rectangle(0, 0, w, h, green);
     
     while (!done) {
-        surf.rectangle(0, 0, w, h, green);
         surf.blit(0, 0);
         FlipScreen();
 
-        while (AreKeysLeft()) {
+        /*while (AreKeysLeft()) {
             if (GetKey() == KEY_ENTER) done = true;
-        }
+        }*/
     }
 }
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
+using SFML.System;
 using SFML.Window;
 
 namespace Engine.Objects
@@ -153,7 +154,7 @@ namespace Engine.Objects
 
         private static void UpdateMapEngineHandle()
         {
-            UpdateMapEngine(true);
+            UpdateMapEngine(false);
         }
 
         private static void RenderMapHandle()
@@ -239,9 +240,8 @@ namespace Engine.Objects
             return _map.Tileset.TileHeight;
         }
 
-        private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 70)
+        private static void MapEngine(string filename, [DefaultParameterValue(60)] int fps = 60)
         {
-            DateTime time = DateTime.Now;
             SetMapEngineFrameRate(fps);
             FPSToggle = true;
 
@@ -249,15 +249,15 @@ namespace Engine.Objects
             _current = filename;
 
             // It seems Sphere keeps non-essential npc's created prior to MapEngine.
+            DateTime time = DateTime.Now;
             LoadMap(Program.ParseSpherePath(filename, "maps"), false, true);
-
             Console.WriteLine((DateTime.Now - time).TotalMilliseconds);
 
             _ended = false;
             while (!_ended)
             {
-                UpdateMapEngine(false);
-                RenderMap(false);
+                UpdateMapEngine(true);
+                RenderMap(true);
                 Program.FlipScreen();
 
                 var keyheld = GlobalInput.IsKeyPressed(GlobalInput.TalkKey);
@@ -266,8 +266,7 @@ namespace Engine.Objects
                     DoTalk();
                     _talkheld = true;
                 }
-                if (!keyheld)
-                    _talkheld = false;
+                if (!keyheld) _talkheld = false;
             }
 
             PersonManager.RemoveNonEssential();
@@ -329,6 +328,9 @@ namespace Engine.Objects
         private static void ChangeMap(string filename)
         {
             _current = filename;
+            _delay_frames = -1;
+            _delayscript = null;
+            CallMapScript((int)MapScripts.Leave);
             LoadMap(Program.ParseSpherePath(filename, "maps"), true, false);
         }
 
@@ -488,7 +490,7 @@ namespace Engine.Objects
 
         private static void UpdateMapEngine(bool self)
         {
-            if (_updatescript != null && !self) _updatescript.Execute();
+            if (_updatescript != null && self) _updatescript.Execute();
 
             foreach (TileAnimHandler h in _tileanims)
                 h.Animate();
@@ -515,15 +517,39 @@ namespace Engine.Objects
                 Entity trigger = GetTriggerAt(px, py);
                 if (trigger != _last_trigger)
                 {
-                    if (trigger != null)
-                        trigger.ExecuteTrigger();
+                    if (trigger != null) trigger.ExecuteTrigger();
                     _last_trigger = trigger;
                 }
+                if (self) CheckMapEdgeScript(px, py);
             }
 
             foreach (var script in _delayscripts)
                 script.Tick();
             _delayscripts.RemoveAll(script => script.HasExpired());
+        }
+
+        private static void CheckMapEdgeScript(int x, int y)
+        {
+            if (x < 0)
+            {
+                CallDefaultMapScript((int)MapScripts.LeaveWest);
+                CallMapScript((int)MapScripts.LeaveWest);
+            }
+            else if (y < 0)
+            {
+                CallDefaultMapScript((int)MapScripts.LeaveNorth);
+                CallMapScript((int)MapScripts.LeaveNorth);
+            }
+            else if (x > _map.Width * _map.Tileset.TileWidth)
+            {
+                CallDefaultMapScript((int)MapScripts.LeaveEast);
+                CallMapScript((int)MapScripts.LeaveEast);
+            }
+            else if (y > _map.Height * _map.Tileset.TileHeight)
+            {
+                CallDefaultMapScript((int)MapScripts.LeaveSouth);
+                CallMapScript((int)MapScripts.LeaveSouth);
+            }
         }
 
         private static void UpdateInput()
@@ -663,7 +689,7 @@ namespace Engine.Objects
                 if (_frames == _mask_frames) _mask.A = _target_alpha;
             }
 
-            if (_renderscript != null && !self) _renderscript.Execute();
+            if (_renderscript != null && self) _renderscript.Execute();
         }
 
         public static bool CheckTileObstruction(ref Vector2f position, Person person)
@@ -714,16 +740,14 @@ namespace Engine.Objects
                 _defscripts[type] = new FunctionScript(code);
         }
 
-        private static void CallDefaultMapScript(int type)
+        private static void CallDefaultMapScript(int which)
         {
-            if (_defscripts[type] != null)
-                _defscripts[type].Execute();
+            if (_defscripts[which] != null) _defscripts[which].Execute();
         }
 
         private static void CallMapScript(int which)
         {
-            if (_scripts[which] != null)
-                _scripts[which].Execute();
+            if (_scripts[which] != null) _scripts[which].Execute();
         }
 
         /// <summary>

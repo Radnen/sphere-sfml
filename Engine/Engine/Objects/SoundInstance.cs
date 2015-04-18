@@ -182,9 +182,9 @@ namespace Engine.Objects
         public double GetPosition()
         {
             if (_soundType == SoundType.Sound)
-                return _sound.PlayingOffset.TotalMilliseconds;
+                return _sound.PlayingOffset.AsMilliseconds();
             else if (_soundType == SoundType.Music)
-                return _music.PlayingOffset.TotalMilliseconds;
+                return _music.PlayingOffset.AsMilliseconds();
             else
                 return 0;
         }
@@ -192,7 +192,7 @@ namespace Engine.Objects
         [JSFunction(Name = "setPosition")]
         public void SetPosition(double value)
         {
-            TimeSpan t = TimeSpan.FromMilliseconds(value);
+            SFML.System.Time t = SFML.System.Time.FromMilliseconds((int)value);
             if (_soundType == SoundType.Sound)
                 _sound.PlayingOffset = t;
             else if (_soundType == SoundType.Music)
@@ -203,10 +203,9 @@ namespace Engine.Objects
         public double GetLength()
         {
             if (_soundType == SoundType.Sound)
-                return (double)_sound.SoundBuffer.Duration;
-            else if (_soundType == SoundType.Music) {
-                return _music.Duration.TotalMilliseconds;
-            }
+                return (double)_sound.SoundBuffer.Duration.AsMilliseconds();
+            else if (_soundType == SoundType.Music)
+                return _music.Duration.AsMilliseconds();
             else
                 return -1;
         }

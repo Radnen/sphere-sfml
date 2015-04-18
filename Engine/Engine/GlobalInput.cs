@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Engine.Objects;
+using SFML.System;
 using SFML.Window;
 using Jurassic;
 using Jurassic.Core;
@@ -33,7 +34,7 @@ namespace Engine
                     _boundKeys[code].Item1.Execute();
 
             if (e.Code == Keyboard.Key.F10)
-                ToggleFullScreen();
+                Program.SetFullScreen(!Program.FullScreen);
             if (e.Code == Keyboard.Key.F1)
                 Engine.Objects.MapEngineHandler.ToggleFPSThrottle();
             if (e.Code == Keyboard.Key.F2)
@@ -71,25 +72,6 @@ namespace Engine
             wind.KeyPressed -= window_KeyPressed;
             wind.KeyReleased -= window_KeyReleased;
             wind.MouseWheelMoved -= window_MouseWheel;
-        }
-
-        public static void ToggleFullScreen()
-        {
-            var wind = Program._window;
-            if (wind != null) {
-                RemoveWindowHandlers(wind);
-                wind.Close();
-            }
-
-            _fullscreen = !_fullscreen;
-            var style = (_fullscreen) ? Styles.Fullscreen : Styles.Default;
-
-            Program.InitWindow(style);
-            if (MapEngineHandler.FPSToggle)
-            {
-                MapEngineHandler.ToggleFPSThrottle();
-                MapEngineHandler.ToggleFPSThrottle();
-            }
         }
 
         public static bool IsKeyPressed(int code)
@@ -168,24 +150,24 @@ namespace Engine
 
         public static int GetMouseX()
         {
-            return Program._window.InternalGetMousePosition().X;
+            return Mouse.GetPosition(Program._window).Y;
         }
 
         public static int GetMouseY()
         {
-            return Program._window.InternalGetMousePosition().Y;
+            return Mouse.GetPosition(Program._window).Y;
         }
 
         public static void SetMouseX(int new_x)
         {
             int y = GetMouseY();
-            Program._window.InternalSetMousePosition(new Vector2i(new_x, y));
+            Mouse.SetPosition(new Vector2i(new_x, y), Program._window);
         }
 
         public static void SetMouseY(int new_y)
         {
             int x = GetMouseX();
-            Program._window.InternalSetMousePosition(new Vector2i(x, new_y));
+            Mouse.SetPosition(new Vector2i(x, new_y), Program._window);
         }
 
         public static void SetTalkActivationKey(int key)
@@ -210,7 +192,7 @@ namespace Engine
 
         public static void SetMousePosition(int x, int y)
         {
-            Program._window.InternalSetMousePosition(new Vector2i(x, y));
+            Mouse.SetPosition(new Vector2i(x, y), Program._window);
         }
 
         public static void BindKey(int code, string js_down, string js_up)

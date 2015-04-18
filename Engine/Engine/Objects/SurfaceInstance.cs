@@ -2,7 +2,7 @@ using System;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -25,7 +25,7 @@ namespace Engine.Objects
                 throw new ArgumentOutOfRangeException("height", "Height must be > 0.");
             _height = height;
 
-            _pixels = new byte[width * height << 2];
+            _pixels = new byte[width * height * 4];
             for (int i = 0; i < _pixels.Length; i += 4)
             {
                 _pixels[i + 0] = bg_color.R;
@@ -70,7 +70,7 @@ namespace Engine.Objects
             _tex.Smooth = GlobalProps.SmoothTextures;
 
             Update();
-            SetBlendMode((int)BlendModes.Blend);
+            _mode = BlendModes.Blend;
 
             DefineProperty("width", new PropertyDescriptor((int)_width, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor((int)_height, PropertyAttributes.Sealed), true);
@@ -134,13 +134,16 @@ namespace Engine.Objects
             int top = Math.Max(0, oy);
             int right = Math.Min(_width, ox + width);
             int bottom = Math.Min(_height, oy + height);
-            for (int y = top; y < bottom; ++y)
+            fixed (byte* buf2 = pixels)
             {
-                for (int x = left; x < right; ++x)
+                for (int y = top; y < bottom; ++y)
                 {
-                    int s = (x - ox + (y - oy) * width) << 2;
-                    int c = (pixels[s + 3] << 24) + (pixels[s + 2] << 16) + (pixels[s + 1] << 8) + pixels[s]; // abgr
-                    SetPixelFast(buf, x, y, c);
+                    for (int x = left; x < right; ++x)
+                    {
+                        int s = (x - ox + (y - oy) * width);
+                        int c = *((int*)buf2 + s);
+                        SetPixelFast(buf, x, y, c);
+                    }
                 }
             }
         }
@@ -151,14 +154,17 @@ namespace Engine.Objects
             int top = Math.Max(0, oy);
             int right = Math.Min(_width, ox + width);
             int bottom = Math.Min(_height, oy + height);
-            for (int y = top; y < bottom; ++y)
+            fixed (byte* buf2 = pixels)
             {
-                for (int x = left; x < right; ++x)
+                for (int y = top; y < bottom; ++y)
                 {
-                    int s = (x - ox + (y - oy) * width) << 2;
-                    int c = (pixels[s + 3] << 24) + (pixels[s + 2] << 16) + (pixels[s + 1] << 8) + pixels[s]; // abgr
-                    int d = FastBlend2(c, mask);
-                    SetPixelFast(buf, x, y, d);
+                    for (int x = left; x < right; ++x)
+                    {
+                        int s = (x - ox + (y - oy) * width);
+                        int c = *((int*)buf2 + s);
+                        int d = FastBlend2(c, mask);
+                        SetPixelFast(buf, x, y, d);
+                    }
                 }
             }
         }
@@ -202,7 +208,7 @@ namespace Engine.Objects
             int g2 = ((c2 & 0xff00) >> 8);
             int r2 = (c2 & 0xff);
 
-            int a = Math.Max(a1, a2);
+            int a = a1 > a2 ? a1 : a2;
             int b = (int)(weight * (b2 - b1) + b1);
             int g = (int)(weight * (g2 - g1) + g1);
             int r = (int)(weight * (r2 - r1) + r1);
@@ -222,38 +228,52 @@ namespace Engine.Objects
             int g2 = ((c2 & 0xff00) >> 8);
             int r2 = (c2 & 0xff);
 
-            //int b = (int)(weight * (b2 - b1) + b1);
-            //int g = (int)(weight * (g2 - g1) + g1);
-            //int r = (int)(weight * (r2 - r1) + r1);
             int r = (int)(r2 * (float)r1 / 255);
             int g = (int)(g2 * (float)g1 / 255);
             int b = (int)(b2 * (float)b1 / 255);
-            int a = (int)(a2 * (float)a1 / 255);
+            //int a = (int)(a2 * (float)a1 / 255);
 
             return a1 << 24 | b << 16 | g << 8 | r;
         }
 
-        public void SetPixelFast(byte* buffer, int x, int y, int c)
+        public static void SetPixelFast(byte* buffer, int offset, int c2, BlendModes m)
         {
-            int* p = (int*)buffer + (x + y * (int)_width);
+            int* p = (int*)buffer + offset;
 
-            /*switch (_mode)
+            if (m == BlendModes.Blend)
             {
-                case BlendModes.Blend:
-                    *p = FastBlend(*p, c, (float)(c >> 24 & 0xff) / 255);
-                    break;
-                case BlendModes.Replace:
-                    *p = c;
-                    break;
-            }*/
-            if (_mode == BlendModes.Blend)
-            {
-                *p = FastBlend(*p, c, (float)(c >> 24 & 0xff) / 255);
+                int c1 = *p;
+                float w = (float)(c2 >> 24 & 0xff) / 255;
+
+                int a1 = (c1 >> 24 & 0xff);
+                int b1 = ((c1 & 0xff0000) >> 16);
+                int g1 = ((c1 & 0xff00) >> 8);
+                int r1 = (c1 & 0xff);
+
+                int a2 = (c2 >> 24 & 0xff);
+                int b2 = ((c2 & 0xff0000) >> 16);
+                int g2 = ((c2 & 0xff00) >> 8);
+                int r2 = (c2 & 0xff);
+
+                int a = a1 > a2 ? a1 : a2;
+                int b = (int)(w * (b2 - b1) + b1);
+                int g = (int)(w * (g2 - g1) + g1);
+                int r = (int)(w * (r2 - r1) + r1);
+
+                *p = a << 24 | b << 16 | g << 8 | r;
             }
             else
-            {
+                *p = c2;
+        }
+
+        public void SetPixelFast(byte* buffer, int x, int y, int c)
+        {
+            int* p = (int*)buffer + (x + y * _width);
+
+            if (_mode == BlendModes.Blend)
+                *p = FastBlend(*p, c, (float)(c >> 24 & 0xff) / 255);
+            else
                 *p = c;
-            }
         }
 
         public void SetPixel(byte* buffer, int x, int y, ref Color c)
@@ -430,7 +450,11 @@ namespace Engine.Objects
         [JSFunction(Name = "getPixel")]
         public ColorInstance GetPixel(int x, int y)
         {
-            return new ColorInstance(Program._engine, GetColorAt(x, y));
+            fixed (byte* buf = _pixels)
+            {
+                int* p = (int*)buf + (x + y * _width);
+                return new ColorInstance(Engine, *p);
+            }
         }
 
         [JSFunction(Name = "flipHorizontally")]
@@ -600,14 +624,16 @@ namespace Engine.Objects
         [JSFunction(Name = "rectangle")]
         public void Rectangle(int ox, int oy, int w, int h, ColorInstance color)
         {
-            h = Math.Max(0, Math.Min(h + oy, (int)_height));
-            w = Math.Max(0, Math.Min(w + ox, (int)_width));
+            h = Math.Max(0, Math.Min(h + oy, _height));
+            w = Math.Max(0, Math.Min(w + ox, _width));
             int c = color.GetInt();
+            int hh = h * _width;
+            int yy = oy * _width;
             fixed (byte* buf = _pixels)
             {
-                for (int y = oy; y < h; ++y)
+                for (; yy < hh; yy += _width)
                     for (int x = ox; x < w; ++x)
-                        SetPixelFast(buf, x, y, c);
+                        SetPixelFast(buf, x + yy, c, _mode);
             }
             _changed = true;
         }

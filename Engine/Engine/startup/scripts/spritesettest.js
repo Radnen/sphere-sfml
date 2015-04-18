@@ -29,26 +29,71 @@ function TestSpritesets()
 	img_bg = img_bg.createImage();
 	h += 16;
 
-	var yv = 0;
+	var yv = 0, SW = GetScreenWidth(), SH = GetScreenHeight();
     while (!done) {
         sys_font.drawText(0, 0, "images: " + imgs.length + ", loaded in: " + time + "ms");
-        Rectangle(GetScreenWidth() - 8, -(((yv/64)/dirs.length)*GetScreenHeight()), 8, 8, white);
+        Rectangle(SW - 8, -(((yv/64)/dirs.length)*SH), 8, 8, white);
 
         for (var d = 0; d < dirs.length; ++d) {
             var yy = yv + 32 + d * h;
-            if (yy + 48 > GetScreenHeight() || yy < 0) continue;
+            if (yy + 48 > SH || yy < 0) continue;
 
             sys_font.drawText(0, yy - 16, dirs[d].name);
-        	var frames = dirs[d].frames;
-        	for (var f = 0; f < frames.length; ++f) {
-        	    var x = f * w;
-        	    var image = imgs[frames[f].index];
-        	    
-        	    img_bg.blit(x, yy);
-        		image.blit(x, yy);
-        		base_img.blit(x + ox, yy + oy);
-        		sys_font.drawText(x, yy, frames[f].delay);
-        	}
+        }
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > SH || yy < 0) continue;
+
+            var frames = dirs[d].frames;
+            for (var f = 0; f < frames.length; ++f) {
+                var x = f * w;
+                sys_font.drawText(x, yy, frames[f].delay);
+            }
+        }
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > SH || yy < 0) continue;
+
+            var frames = dirs[d].frames;
+            for (var f = 0; f < frames.length; ++f) {
+                var x = f * w;
+                img_bg.blit(x, yy);
+            }
+        }
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > SH || yy < 0) continue;
+
+            var frames = dirs[d].frames;
+            for (var f = 0; f < frames.length; ++f) {
+                var x = f * w;
+                imgs[frames[f].index].blit(x, yy);
+            }
+        }
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > SH || yy < 0) continue;
+
+            var frames = dirs[d].frames;
+            for (var f = 0; f < frames.length; ++f) {
+                var x = f * w;
+                base_img.blit(x + ox, yy + oy);
+            }
+        }
+
+        for (var d = 0; d < dirs.length; ++d) {
+            var yy = yv + 32 + d * h;
+            if (yy + 48 > SH || yy < 0) continue;
+
+            var frames = dirs[d].frames;
+            for (var f = 0; f < frames.length; ++f) {
+                var x = f * w;
+                sys_font.drawText(x, yy, frames[f].delay);
+            }
         }
         
         FlipScreen();

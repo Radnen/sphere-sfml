@@ -7,7 +7,7 @@ using System.Text;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 
 namespace Engine.Objects

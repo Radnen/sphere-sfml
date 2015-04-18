@@ -1,5 +1,6 @@
 using System;
 using SFML.Graphics;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -38,7 +39,7 @@ namespace Engine.Objects
         {
             IntRect sourceRect = Sources[source];
             IntRect destRect = Sources[dest];
-            _atlas.Position = new SFML.Window.Vector2f(destRect.Left, destRect.Top);
+            _atlas.Position = new Vector2f(destRect.Left, destRect.Top);
             _atlas.TextureRect = sourceRect;
             RenderTexture.Draw(_atlas, _replace);
             _modified = true;
@@ -47,15 +48,15 @@ namespace Engine.Objects
         public void Line(int x1, int y1, int x2, int y2)
         {
             Vertex[] verts = new Vertex[2];
-            verts[0] = new Vertex(new SFML.Window.Vector2f(x1, y1), Color.Red);
-            verts[1] = new Vertex(new SFML.Window.Vector2f(x2, y2), Color.Red);
+            verts[0] = new Vertex(new Vector2f(x1, y1), Color.Red);
+            verts[1] = new Vertex(new Vector2f(x2, y2), Color.Red);
             RenderTexture.Draw(verts, PrimitiveType.Lines);
         }
 
         public void Line(uint dest, Line l)
         {
             IntRect source = Sources[dest];
-            Line off = l.Offset(new SFML.Window.Vector2f(source.Left + 1, source.Top));
+            Line off = l.Offset(new Vector2f(source.Left + 1, source.Top));
             Vertex[] verts = new Vertex[2];
             verts[0] = new Vertex(off.Start, Color.Magenta);
             verts[1] = new Vertex(off.End, Color.Magenta);

@@ -54,7 +54,8 @@ namespace Engine.Objects
             : base(parent)
         {
             _bytes = new byte[source.Length];
-            for (int i = 0; i < _bytes.Length; ++i) { _bytes[i] = (byte)source[i]; }
+            var chars = source.ToCharArray();
+            for (int i = 0; i < _bytes.Length; ++i) { _bytes[i] = (byte)chars[i]; }
             PopulateProperties();
         }
 

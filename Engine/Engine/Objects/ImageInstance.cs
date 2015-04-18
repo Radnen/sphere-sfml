@@ -2,7 +2,7 @@
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -10,7 +10,6 @@ namespace Engine.Objects
     {
         private Texture _image;
         private IntRect _source = new IntRect(0, 0, 0, 0);
-        private RenderStates _state = new RenderStates();
 
         public Texture Texture { get { return _image; } }
 
@@ -30,10 +29,6 @@ namespace Engine.Objects
 
         private void Init() {
             PopulateFunctions();
-
-            _state.Texture = _image;
-            _state.BlendMode = BlendMode.Alpha;
-            _state.Transform = Transform.Identity;
 
             DefineProperty("width", new PropertyDescriptor(_image.Size.X, PropertyAttributes.Sealed), true);
             DefineProperty("height", new PropertyDescriptor(_image.Size.Y, PropertyAttributes.Sealed), true);

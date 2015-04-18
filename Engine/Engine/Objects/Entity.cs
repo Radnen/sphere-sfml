@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Jurassic.Core;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {

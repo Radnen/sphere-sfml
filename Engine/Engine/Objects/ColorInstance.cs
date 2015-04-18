@@ -114,6 +114,11 @@ namespace Engine.Objects
         {
         }
 
+        public ColorInstance(ScriptEngine parent, int packed)
+            : this(parent, packed & 0xff, (packed & 0xff00) >> 8, (packed & 0xff0000) >> 16, packed >> 24 & 0xff)
+        {
+        }
+
         /// <summary>
         /// Gets the underlying SFML color.
         /// </summary>

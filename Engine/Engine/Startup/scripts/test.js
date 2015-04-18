@@ -15,7 +15,7 @@ if (!this.JSON) {
 	RequireScript("json2.js");
 }
 
-const sys_window = GetSystemWindowStyle();
+var sys_window = GetSystemWindowStyle();
 var sys_arrow = GetSystemArrow();
 var sys_font = GetSystemFont();
 
@@ -112,7 +112,12 @@ var testperson = new MapEntity("barnum");
 
 function Update()
 {
-	testperson.randomMove();
+    testperson.randomMove();
+
+    if (IsKeyPressed(KEY_Z)) {
+        QueuePersonCommand("player", COMMAND_ANIMATE, false);
+    }
+
 	while (AreKeysLeft()) {
 		switch (GetKey()) {
 		    case KEY_ENTER: ExitMapEngine(); break;

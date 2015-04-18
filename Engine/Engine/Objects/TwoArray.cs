@@ -119,8 +119,7 @@ namespace Engine
             for (int y = 0; y < h; ++y)
             {
                 int scan1 = y * w, scan2 = y * Width;
-                for (int x = 0; x < w; ++x)
-                    copy[x + scan1] = Array[x + scan2];
+                System.Array.Copy(_data, scan2, copy, scan1, Width);
             }
 
             Set(copy);
@@ -142,7 +141,7 @@ namespace Engine
         /// Clear the data to the specified value.
         /// </summary>
         /// <param name="set_to">The value to clear the elements to.</param>
-        public void Clear(T value)
+        public void Clear(T value = default(T))
         {
             for (int i = 0; i < _data.Length; ++i)
                 _data[i] = value;

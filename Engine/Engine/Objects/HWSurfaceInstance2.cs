@@ -2,68 +2,71 @@ using System;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.System;
+using SFML.Window;
 
 namespace Engine.Objects
 {
     public class HWSurfaceInstance : ObjectInstance
     {
-        private RenderTexture _tex;
-        private bool _changed = false;
+        private bool _changed = true;
         private BlendModes _mode;
-        private uint _width, _height;
-        private SpriteBatch _myBatch;
         private RenderStates _states;
-        private Texture _cache;
+        private FloatRect _source;
 
-        public HWSurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
+        private static Texture _atlastex;
+        private static Image _atlasimg;
+        private static RenderTexture _atlas;
+        private static SpriteBatch _batch;
+        private static float _ox = 0;
+        private static float _oy = 0;
+        private static uint _aw = 1024;
+        private static uint _ah = 1024;
+
+        static HWSurfaceInstance()
+        {
+            _atlas = new RenderTexture(_aw, _ah);
+            _atlastex = _atlas.Texture;
+            _batch = new SpriteBatch(_atlas);
+            _batch.SetBlendMode(BlendMode.None);
+        }
+
+        public HWSurfaceInstance(ScriptEngine parent, Texture texture)
             : base(parent.Object.InstancePrototype)
         {
-            Console.WriteLine("Create surf: {0}x{1} {2}", width, height, bg_color);
-            if (width <= 0)
-                throw new ArgumentOutOfRangeException("width", "Width must be > 0.");
-            _width = (uint)width;
-
-            if (height <= 0)
-                throw new ArgumentOutOfRangeException("height", "Height must be > 0.");
-            _height = (uint)height;
-
-            _tex = new RenderTexture(_width, _height);
-            _tex.Clear(bg_color);
-
+            _source = new FloatRect(_ox, _oy, texture.Size.X, texture.Size.Y);
+            _ox += _source.Width + 1;
+            if (_ox > _aw) { _ox = 0; _oy += _source.Height + 1; }
             Init();
         }
 
-        public HWSurfaceInstance(ScriptEngine parent, string filename)
-            : base(parent.Object.InstancePrototype)
+        public HWSurfaceInstance(ScriptEngine parent, int width, int height, Color bg_color)
+            : this(parent, new Texture((uint)width, (uint)height))
         {
-            using (Texture tex = new Texture(filename))
-            {
-                _width = tex.Size.X;
-                _height = tex.Size.Y;
-                _tex = new RenderTexture(_width, _height);
-                _myBatch = new SpriteBatch(_tex);
-                _myBatch.SetBlendMode(BlendMode.None);
-                _myBatch.Add(tex, 0, 0);
-                _myBatch.Flush();
-                Update();
-            }
-            Init();
+            _atlas.Clear(bg_color);
+            Update();
+        }
+
+        public HWSurfaceInstance(ScriptEngine parent, string filename)
+            : this(parent, new Texture(filename))
+        {
+        }
+
+        public HWSurfaceInstance(ScriptEngine parent, Image image)
+            : this(parent, new Texture(image))
+        {
         }
 
         private void Init() {
             PopulateFunctions();
-            if (_myBatch == null) _myBatch = new SpriteBatch(_tex);
             SetBlendMode((int)BlendModes.Blend);
-            DefineProperty("width", new PropertyDescriptor((int)_width, PropertyAttributes.Sealed), true);
-            DefineProperty("height", new PropertyDescriptor((int)_height, PropertyAttributes.Sealed), true);
+            DefineProperty("width", new PropertyDescriptor((int)_source.Width, PropertyAttributes.Sealed), true);
+            DefineProperty("height", new PropertyDescriptor((int)_source.Height, PropertyAttributes.Sealed), true);
         }
 
         public void Update()
         {
-            _myBatch.Flush();
-            _tex.Display();
-            _cache = _tex.Texture;
+            _batch.Flush();
+            _atlas.Display();
             _changed = false;
         }
 
@@ -71,29 +74,37 @@ namespace Engine.Objects
         public void Blit(double x, double y)
         {
             if (_changed) Update();
-            Program.Batch.Add(_cache, (float)x, (float)y);
+            FloatRect dest = new FloatRect((float)x, (float)y, _source.Width, _source.Height);
+            Program.Batch.Add(_atlastex, _source, dest, Color.White);
         }
 
         [JSFunction(Name = "blitSurface")]
         public void BlitSurface(HWSurfaceInstance surf, int x, int y)
         {
+            if (surf == null) return;
             if (surf._changed) { surf.Update(); }
-            _myBatch.Add(surf._cache, (float)x, (float)y);
+
+            _batch.Add(_atlastex, surf._source, _source, Color.White);
             _changed = true;
         }
 
         [JSFunction(Name = "blitMaskSurface")]
         public void BlitMaskSurface(HWSurfaceInstance surf, int x, int y, ColorInstance mask)
         {
+            if (surf == null) return;
             if (surf._changed) { surf.Update(); }
-            _myBatch.Add(surf._cache, (float)x, (float)y);
+
+            FloatRect dest = new FloatRect(x, y, _source.Width, _source.Height);
+            _batch.Add(_atlastex, surf._source, dest, mask.Color);
+            
             _changed = true;
         }
 
         [JSFunction(Name = "blitImage")]
         public void BlitImage(int x, int y, ImageInstance instance)
         {
-            _myBatch.Add(instance.Texture, (float)x, (float)y);
+            FloatRect dest = new FloatRect(x, y, _source.Width, _source.Height);
+            _batch.Add(instance.Texture, _source.Left + x, _source.Top + y, Color.White);
             _changed = true;
         }
 
@@ -102,7 +113,7 @@ namespace Engine.Objects
         public void SetPixel(int x, int y, ColorInstance color)
         {
             Vertex[] verts = new Vertex[1] { new Vertex(new Vector2f(x, y), color.GetColor()) };
-            _myBatch.AddVerts(verts, 1, PrimitiveType.Points);
+            _batch.AddVerts(verts, 1, PrimitiveType.Points);
             _changed = true;
         }
 
@@ -166,16 +177,25 @@ namespace Engine.Objects
         public ImageInstance CreateImage()
         {
             if (_changed) Update();
-            return new ImageInstance(Program._engine, _tex.Texture);
+            Image img = _atlastex.CopyToImage();
+            IntRect rect = new IntRect((int)_source.Left, (int)_source.Top, (int)_source.Width, (int)_source.Height);
+            Texture tex = new Texture(img, rect);
+            return new ImageInstance(Program._engine, tex, false);
         }
 
         [JSFunction(Name = "save")]
         public void Save(string filename)
         {
-            using (Image img = _tex.Texture.CopyToImage())
+            /*if (_changed)
+            {
+                Update();
+                _atlasimg = _atlastex.CopyToImage();
+            }
+
+            using (Image img = new Image(_atlasimg, ))
             {
                 img.SaveToFile(Program.ParseSpherePath(filename, "images"));
-            }
+            }*/
         }
 
         [JSFunction(Name = "clone")]
@@ -187,7 +207,7 @@ namespace Engine.Objects
                 return new HWSurfaceInstance(Engine, );
             }*/
 
-            return new HWSurfaceInstance(Engine, (int)_width, (int)_height, Color.White);
+            return new HWSurfaceInstance(Engine, (int)_source.Width, (int)_source.Height, Color.White);
         }
 
         [JSFunction(Name = "setBlendMode")]
@@ -209,8 +229,8 @@ namespace Engine.Objects
                     _states.BlendMode = BlendMode.Multiply;
                     break;
             }
-            _myBatch.Flush();
-            _myBatch.SetBlendMode(_states.BlendMode);
+            _batch.Flush();
+            _batch.SetBlendMode(_states.BlendMode);
         }
 
         [JSFunction(Name = "pointSeries")]
@@ -223,7 +243,7 @@ namespace Engine.Objects
                 Vector2f vect = GlobalPrimitives.GetVector(array[i] as ObjectInstance);
                 verts[i] = new Vertex(vect, c);
             }
-            _myBatch.AddVerts(verts, verts.Length, PrimitiveType.Points);
+            _batch.AddVerts(verts, verts.Length, PrimitiveType.Points);
             _changed = true;
         }
 
@@ -234,7 +254,7 @@ namespace Engine.Objects
             Vertex[] _verts = new Vertex[2];
             _verts[0] = new Vertex(new Vector2f(x1, y1), col);
             _verts[1] = new Vertex(new Vector2f(x2, y2), col);
-            _myBatch.AddVerts(_verts, 2, PrimitiveType.Lines);
+            _batch.AddVerts(_verts, 2, PrimitiveType.Lines);
             _changed = true;
 
         }
@@ -251,7 +271,7 @@ namespace Engine.Objects
             Vertex[] _verts = new Vertex[2];
             _verts[0] = new Vertex(new Vector2f(x1, y1), col1.GetColor());
             _verts[1] = new Vertex(new Vector2f(x2, y2), col2.GetColor());
-            _myBatch.AddVerts(_verts, 2, PrimitiveType.Lines);
+            _batch.AddVerts(_verts, 2, PrimitiveType.Lines);
             _changed = true;
         }
 
@@ -277,7 +297,7 @@ namespace Engine.Objects
             FillVert(1, x + w, y, ref col);
             FillVert(2, x + w, y + h, ref col);
             FillVert(3, x, y + h, ref col);
-            _myBatch.AddVerts(_verts, 4);
+            _batch.AddVerts(_verts, 4);
             _changed = true;
         }
 
@@ -288,7 +308,7 @@ namespace Engine.Objects
             FillVert(1, x + w, y, c2.Color);
             FillVert(2, x + w, y + h, c3.Color);
             FillVert(3, x, y + h, c4.Color);
-            _myBatch.AddVerts(_verts, 4);
+            _batch.AddVerts(_verts, 4);
             _changed = true;
         }
 
@@ -313,7 +333,7 @@ namespace Engine.Objects
         [JSFunction(Name = "drawText")]
         public void DrawText(FontInstance font, int x, int y, string text)
         {
-            font.DrawText(_myBatch, x, y, text);
+            font.DrawText(_batch, x, y, text);
             _changed = true;
         }
 

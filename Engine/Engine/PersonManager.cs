@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Engine.Objects;
 using Jurassic;
 using Jurassic.Library;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine
 {
@@ -43,7 +43,7 @@ namespace Engine
             engine.SetGlobalFunction("QueuePersonCommand", new Action<string, int, bool>(QueuePersonCommand));
             engine.SetGlobalFunction("QueuePersonScript", new Action<string, object, bool>(QueuePersonScript));
             engine.SetGlobalFunction("IsCommandQueueEmpty", new Func<string, bool>(IsCommandQueueEmpty));
-            engine.SetGlobalFunction("GetPersonMask", new Func<string, ColorInstance>(GetPersonMask));
+            engine.SetGlobalFunction("GetPersonMask", new Func<string, object>(GetPersonMask));
             engine.SetGlobalFunction("SetPersonMask", new Action<string, ColorInstance>(SetPersonMask));
             engine.SetGlobalFunction("SetPersonSpeedXY", new Action<string, double, double>(SetPersonSpeedXY));
             engine.SetGlobalFunction("SetPersonSpeed", new Action<string, double>(SetPersonSpeed));
@@ -59,16 +59,16 @@ namespace Engine
             engine.SetGlobalFunction("GetPersonOffsetY", new Func<string, double>(GetPersonOffsetY));
             engine.SetGlobalFunction("SetPersonLayer", new Action<string, int>(SetPersonLayer));
             engine.SetGlobalFunction("GetPersonLayer", new Func<string, int>(GetPersonLayer));
-            engine.SetGlobalFunction("GetPersonBase", new Func<string, ObjectInstance>(GetPersonBase));
+            engine.SetGlobalFunction("GetPersonBase", new Func<string, object>(GetPersonBase));
             engine.SetGlobalFunction("GetCurrentPerson", new Func<string>(GetCurrentPerson));
             engine.SetGlobalFunction("GetObstructingPerson", new Func<string>(GetObstructingPerson));
             engine.SetGlobalFunction("ClearPersonCommands", new Action<string>(ClearPersonCommands));
             engine.SetGlobalFunction("GetPersonList", new Func<ArrayInstance>(GetPersonList));
             engine.SetGlobalFunction("GetPersonFrameRevert", new Func<string, int>(GetPersonFrameRevert));
             engine.SetGlobalFunction("SetPersonFrameRevert", new Action<string, int>(SetPersonFrameRevert));
-            engine.SetGlobalFunction("GetPersonSpriteset", new Func<string, SpritesetInstance>(GetPersonSpriteset));
+            engine.SetGlobalFunction("GetPersonSpriteset", new Func<string, object>(GetPersonSpriteset));
             engine.SetGlobalFunction("SetPersonSpriteset", new Action<string, SpritesetInstance>(SetPersonSpriteset));
-            engine.SetGlobalFunction("GetPersonData", new Func<string, ObjectInstance>(GetPersonData));
+            engine.SetGlobalFunction("GetPersonData", new Func<string, object>(GetPersonData));
             engine.SetGlobalFunction("SetPersonData", new Action<string, ObjectInstance>(SetPersonData));
             engine.SetGlobalFunction("SetPersonValue", new Action<string, string, object>(SetPersonValue));
             engine.SetGlobalFunction("GetPersonValue", new Func<string, string, object>(GetPersonValue));
@@ -138,9 +138,10 @@ namespace Engine
 
         public static void DestroyPerson(string name)
         {
-            if (PeopleTable.ContainsKey(name))
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
             {
-                People.Remove(PeopleTable[name]);
+                People.Remove(value);
                 PeopleTable.Remove(name);
                 _personlist.Remove(name);
             }
@@ -218,84 +219,145 @@ namespace Engine
 
         public static void SetPersonX(string name, int x)
         {
-			x -= PeopleTable[name].BaseWidth / 2;
-			PeopleTable[name].Position = new Vector2f(x, PeopleTable[name].Position.Y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                x -= value.BaseWidth / 2;
+                value.Position = new Vector2f(x, value.Position.Y);
+            }
         }
 
         public static int GetPersonX(string name)
         {
-			return (int)PeopleTable[name].Position.X + PeopleTable[name].BaseWidth / 2;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return (int)(value.Position.X + value.BaseWidth / 2);
+            }
+            else return 0;
         }
 
         public static void SetPersonY(string name, int y)
         {
-			PeopleTable[name].Position = new Vector2f(PeopleTable[name].Position.X, y - PeopleTable[name].BaseHeight / 2);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Position = new Vector2f(value.Position.X, y - value.BaseHeight / 2);
+            }
         }
 
         public static int GetPersonY(string name)
         {
-			return (int)PeopleTable[name].Position.Y + PeopleTable[name].BaseHeight / 2;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return (int)(value.Position.Y + value.BaseHeight / 2);
+            }
+            else return 0;
         }
 
         public static void SetPersonXFloat(string name, double x)
         {
-			x -= PeopleTable[name].BaseWidth / 2;
-            PeopleTable[name].Position = new Vector2f((float)x, PeopleTable[name].Position.Y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                x -= value.BaseWidth / 2;
+                value.Position = new Vector2f((float)x, value.Position.Y);
+            }
         }
 
         public static double GetPersonXFloat(string name)
         {
-			return PeopleTable[name].Position.X + PeopleTable[name].BaseWidth / 2;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Position.X + value.BaseWidth / 2;
+            }
+            else return 0;
         }
 
         public static void SetPersonYFloat(string name, double y)
         {
-			y -= PeopleTable[name].BaseHeight / 2;
-            PeopleTable[name].Position = new Vector2f(PeopleTable[name].Position.Y, (float)y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                y -= value.BaseHeight / 2;
+                value.Position = new Vector2f(value.Position.Y, (float)y);
+            }
         }
 
         public static double GetPersonYFloat(string name)
         {
-			return PeopleTable[name].Position.Y + PeopleTable[name].BaseHeight / 2;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Position.Y + value.BaseHeight / 2;
+            }
+            else return 0;
         }
 
         public static void SetPersonXY(string name, int x, int y)
         {
-			x -= PeopleTable[name].BaseWidth / 2;
-			y -= PeopleTable[name].BaseHeight / 2;
-            PeopleTable[name].Position = new Vector2f(x, y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                x -= value.BaseWidth / 2;
+                y -= value.BaseHeight / 2;
+                value.Position = new Vector2f(x, y);
+            }
         }
 
         public static void SetPersonXYFloat(string name, double x, double y)
         {
-			x -= PeopleTable[name].BaseWidth / 2;
-			y -= PeopleTable[name].BaseHeight / 2;
-            PeopleTable[name].Position = new Vector2f((float)x, (float)y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                x -= value.BaseWidth / 2;
+                y -= value.BaseHeight / 2;
+                value.Position = new Vector2f((float)x, (float)y);
+            }
         }
 
         public static void SetPersonVisible(string name, bool visible)
         {
-            PeopleTable[name].Visible = visible;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Visible = visible;
+            }
         }
 
         public static bool IsPersonVisible(string name)
         {
-            return PeopleTable[name].Visible;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Visible;
+            }
+            else return false;
         }
 
         public static void QueuePersonCommand(string name, int command, bool immediate)
         {
-            PeopleTable[name].QueueCommand(command, immediate);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.QueueCommand(command, immediate);
+            }
         }
 
         public static void QueuePersonScript(string name, object script, bool immediate)
         {
-            PeopleTable[name].QueueScript(script, immediate);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.QueueScript(script, immediate);
+            }
         }
 
         public static bool IsCommandQueueEmpty(string name)
         {
-			return PeopleTable[name].IsQueueEmpty();
+            return PeopleTable[name].IsQueueEmpty();
         }
 
         public static ArrayInstance GetPersonList()
@@ -310,97 +372,183 @@ namespace Engine
 
         public static void SetPersonMask(string name, ColorInstance color)
         {
-            PeopleTable[name].Mask = color.GetColor();
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Mask = color.GetColor();
+            }
         }
 
-        public static ColorInstance GetPersonMask(string name)
+        public static object GetPersonMask(string name)
         {
-            return new ColorInstance(Program._engine, PeopleTable[name].Mask);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return new ColorInstance(Program._engine, value.Mask);
+            }
+            else return Undefined.Value;
         }
 
         public static void SetPersonSpeed(string name, double s)
         {
-            PeopleTable[name].Speed = new Vector2f((float)s, (float)s);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Speed = new Vector2f((float)s, (float)s);
+            }
         }
 
         public static void SetPersonSpeedXY(string name, double x, double y)
         {
-            PeopleTable[name].Speed = new Vector2f((float)x, (float)y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Speed = new Vector2f((float)x, (float)y);
+            }
         }
 
         public static void SetPersonSpriteset(string name, SpritesetInstance instance)
         {
-            PeopleTable[name].Spriteset = instance;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Spriteset = instance;
+            }
         }
 
-        public static SpritesetInstance GetPersonSpriteset(string name)
+        public static object GetPersonSpriteset(string name)
         {
-            return PeopleTable[name].Spriteset;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Spriteset;
+            }
+            return Undefined.Value;
         }
 
         public static double GetPersonSpeedX(string name)
         {
-            return PeopleTable[name].Speed.X;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Speed.X;
+            }
+            else return 0;
         }
 
         public static double GetPersonSpeedY(string name)
         {
-            return PeopleTable[name].Speed.Y;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Speed.Y;
+            }
+            else return 0;
         }
 
         public static void SetPersonFrame(string name, int v)
         {
-            PeopleTable[name].Frame = v;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Frame = v;
+            }
         }
 
         public static int GetPersonFrame(string name)
         {
-            return PeopleTable[name].Frame;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Frame;
+            }
+            else return 0;
         }
 
         public static string GetPersonDirection(string name)
         {
-            return PeopleTable[name].Direction;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Direction;
+            }
+            else return "";
         }
 
         public static void SetPersonDirection(string name, string d)
         {
-            PeopleTable[name].Direction = d;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Direction = d;
+            }
         }
 
         public static void SetPersonLayer(string name, int layer)
         {
-            PeopleTable[name].Layer = layer;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Layer = layer;
+            }
         }
 
         public static int GetPersonLayer(string name)
         {
-            return PeopleTable[name].Layer;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Layer;
+            }
+            else return 0;
         }
 
-        public static ObjectInstance GetPersonBase(string name)
+        public static object GetPersonBase(string name)
         {
-            return PeopleTable[name].Base;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Base;
+            }
+            else return Undefined.Value;
         }
 
         public static void SetPersonOffsetX(string name, double x)
         {
-            PeopleTable[name].Offset = new Vector2f((float)x, PeopleTable[name].Offset.Y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Offset = new Vector2f((float)x, value.Offset.Y);
+            }
         }
 
         public static void SetPersonOffsetY(string name, double y)
         {
-            PeopleTable[name].Offset = new Vector2f(PeopleTable[name].Offset.X, (float)y);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Offset = new Vector2f(value.Offset.X, (float)y);
+            }
         }
 
         public static double GetPersonOffsetX(string name)
         {
-            return PeopleTable[name].Offset.X;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Offset.X;
+            }
+            else return 0;
         }
 
         public static double GetPersonOffsetY(string name)
         {
-            return PeopleTable[name].Offset.Y;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Offset.Y;
+            }
+            else return 0;
         }
 
         public static string GetCurrentPerson()
@@ -410,77 +558,139 @@ namespace Engine
 
         public static void ClearPersonCommands(string name)
         {
-            PeopleTable[name].ClearComands();
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.ClearComands();
+            }
         }
 
         public static int GetPersonFrameRevert(string name)
         {
-            return PeopleTable[name].FrameRevert;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.FrameRevert;
+            }
+            else return 0;
         }
 
         public static void SetPersonFrameRevert(string name, int r)
         {
-            PeopleTable[name].FrameRevert = r;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.FrameRevert = r;
+            }
         }
 
-        public static ObjectInstance GetPersonData(string name)
+        public static object GetPersonData(string name)
         {
             // TODO: implement & update data props:
             // eithre here, or when you set the SS.
-            return PeopleTable[name].Data;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.Data;
+            }
+            else return Undefined.Value;
         }
 
         public static void SetPersonData(string name, ObjectInstance o)
         {
-            PeopleTable[name].Data = o;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Data = o;
+            }
         }
 
         public static void SetPersonValue(string name, string key, object o)
         {
-            PeopleTable[name].Data[key] = o;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.Data[key] = o;
+            }
         }
 
         public static object GetPersonValue(string name, string key)
         {
-            return PeopleTable[name].Data[key];
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return PeopleTable[name].Data[key];
+            }
+            else return Undefined.Value;
         }
 
         public static void CallPersonScript(string name, int type)
         {
-            CurrentPerson = name;
-            PeopleTable[name].CallScript((PersonScripts)type);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                CurrentPerson = name;
+                value.CallScript((PersonScripts)type);
+            }
         }
 
         public static void SetPersonScript(string name, int type, object script)
         {
-            PeopleTable[name].SetScript((PersonScripts)type, script);
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.SetScript((PersonScripts)type, script);
+            }
         }
 
-        public static void IgnorePersonObstructions(string name, bool value)
+        public static void IgnorePersonObstructions(string name, bool ignore)
         {
-            PeopleTable[name].IgnorePersons = value;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                value.IgnorePersons = ignore;
+            }
         }
 
         public static bool IsIgnoringPersonObstructions(string name)
         {
-            return PeopleTable[name].IgnorePersons;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return value.IgnorePersons;
+            }
+            else return false;
         }
 
-        public static void IgnoreTileObstructions(string name, bool value)
+        public static void IgnoreTileObstructions(string name, bool ignore)
         {
-            PeopleTable[name].IgnoreTiles = value;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                PeopleTable[name].IgnoreTiles = ignore;
+            }
         }
 
         public static bool IsIgnoringTileObstructions(string name)
         {
-            return PeopleTable[name].IgnoreTiles;
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                return PeopleTable[name].IgnoreTiles;
+            }
+            else return false;
         }
 
         public static bool IsPersonObstructed(string name, double x, double y)
         {
-			x -= PeopleTable[name].BaseWidth / 2;
-			y -= PeopleTable[name].BaseHeight / 2;
-			return PeopleTable[name].IsObstructedAt(new Vector2f((float)x, (float)y));
+            Person value;
+            if (PeopleTable.TryGetValue(name, out value))
+            {
+                x -= value.BaseWidth / 2;
+                y -= value.BaseHeight / 2;
+                return value.IsObstructedAt(new Vector2f((float)x, (float)y));
+            }
+            else return false;
         }
     }
 }

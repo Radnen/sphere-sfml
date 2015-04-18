@@ -10,7 +10,7 @@ namespace Engine
         public static string GameName = "game";
         public static int Width = 320;
         public static int Height = 240;
-        public static bool SmoothTextures = false;
+        public static bool SmoothTextures = true;
         public static bool ThrottleFrameRate = true;
 	}
 }

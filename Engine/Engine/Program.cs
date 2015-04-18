@@ -6,6 +6,7 @@ using Engine.Objects;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
+using SFML.System;
 using SFML.Window;
 
 namespace Engine
@@ -22,6 +23,7 @@ namespace Engine
 
         static GameFile _game = new GameFile();
         static string _name = "";
+        public static bool FullScreen { get; set; }
 
         static void Main(string[] args)
         {
@@ -31,9 +33,9 @@ namespace Engine
                 if (args[0] == "-compliance")
                 {
                     Console.WriteLine("Sphere Objects: 100%");
-                    Console.WriteLine("File IO: 80%");
-                    Console.WriteLine("Networking: 0%");
-                    Console.WriteLine("Map Engine: 60%");
+                    Console.WriteLine("File IO: 100%");
+                    Console.WriteLine("Networking: 100%");
+                    Console.WriteLine("Map Engine: 75%");
                     Console.WriteLine("Other: 90%");
                     return;
                 }
@@ -293,6 +295,8 @@ namespace Engine
             engine.SetGlobalFunction("OpenAddress", new Func<string, int, object>(OpenAddress));
             engine.SetGlobalFunction("GetLocalAddress", new Func<string>(GetLocalAddress));
             engine.SetGlobalFunction("GetLocalName", new Func<string>(GetLocalName));
+            engine.SetGlobalFunction("SettFullScreen", new Action<bool>(SetFullScreen));
+            engine.SetGlobalFunction("IsFullScreen", new Func<bool>(IsFullScreen));
             engine.SetGlobalFunction("LineIntersects", new Func<ObjectInstance, ObjectInstance, ObjectInstance, ObjectInstance, bool>(LineIntersects));
             engine.SetGlobalValue("BinaryHeap", new BinHeapConstructor(engine));
             engine.SetGlobalValue("XmlFile", new XMLDocConstructor(engine));
@@ -388,6 +392,30 @@ namespace Engine
             }
 
             Program.InitWindow(Styles.Default);
+            if (MapEngineHandler.FPSToggle)
+            {
+                MapEngineHandler.ToggleFPSThrottle();
+                MapEngineHandler.ToggleFPSThrottle();
+            }
+        }
+
+        public static bool IsFullScreen()
+        {
+            return FullScreen;
+        }
+
+        public static void SetFullScreen(bool value)
+        {
+            if (_window != null)
+            {
+                GlobalInput.RemoveWindowHandlers(_window);
+                _window.Close();
+            }
+
+            FullScreen = value;
+            var style = (FullScreen) ? Styles.Fullscreen : Styles.Default;
+
+            Program.InitWindow(style);
             if (MapEngineHandler.FPSToggle)
             {
                 MapEngineHandler.ToggleFPSThrottle();
@@ -518,12 +546,10 @@ namespace Engine
         static ImageInstance GrabImage(int x, int y, int w, int h)
         {
             Batch.Flush();
-            x *= (Scaled ? 2 : 1);
-            y *= (Scaled ? 2 : 1);
             w *= (Scaled ? 2 : 1);
             h *= (Scaled ? 2 : 1);
             Texture tex = new Texture((uint)w, (uint)h);
-            tex.Update(_window);
+            tex.Update(_window, (uint)x, (uint)y);
             return new ImageInstance(_engine, tex, false);
         }
 
@@ -678,9 +704,9 @@ namespace Engine
             return new SoundInstance(_engine, ParseSpherePath(filename, "sounds"));
         }
 
-        static SurfaceInstance LoadSurface(string filename)
+        static HWSurfaceInstance LoadSurface(string filename)
         {
-            return new SurfaceInstance(_engine, ParseSpherePath(filename, "images"));
+            return new HWSurfaceInstance(_engine, ParseSpherePath(filename, "images"));
         }
 
         static WindowStyleInstance LoadWindowStyle(string filename)
@@ -703,9 +729,9 @@ namespace Engine
             return new FontInstance(_engine, ParseSpherePath(filename, "fonts"));
         }
 
-        static SurfaceInstance CreateSurface(int w, int h, ColorInstance color)
+        static HWSurfaceInstance CreateSurface(int w, int h, ColorInstance color)
         {
-            return new SurfaceInstance(_engine, w, h, color.Color);
+            return new HWSurfaceInstance(_engine, w, h, color.Color);
         }
 
         static FileInstance OpenFile(string filename)
@@ -731,10 +757,9 @@ namespace Engine
         static string CreateStringFromByteArray(ByteArrayInstance array)
         {
             byte[] data = array.GetBytes();
-            System.Text.StringBuilder builder = new System.Text.StringBuilder(data.Length);
-            for (var i = 0; i < data.Length; ++i)
-                    builder.Append((char)data[i]);
-            return builder.ToString();
+            string result = "";
+            for (var i = 0; i < data.Length; ++i) result += (char)data[i];
+            return result;
         }
 
         static ArrayInstance GetFileList([DefaultParameterValue("")] string filepath = "")

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -107,6 +107,26 @@ namespace Engine.Objects
         }
 
         /// <summary>
+        /// Adds a clipped or stretched version of the texture to the batcher, with the specified color.
+        /// </summary>
+        public void Add(Texture tex, FloatRect source, FloatRect dest, Color color)
+        {
+            if (tex != _tex) Flush(tex);
+
+            float x = dest.Left + dest.Width;
+            float y = dest.Top + dest.Height;
+            float x2 = source.Left + source.Width;
+            float y2 = source.Top + source.Height;
+
+            _array[_idx + 0] = new Vertex(new Vector2f(dest.Left, dest.Top), color, new Vector2f(source.Left, source.Top));
+            _array[_idx + 1] = new Vertex(new Vector2f(x, dest.Top), color, new Vector2f(x2, source.Top));
+            _array[_idx + 2] = new Vertex(new Vector2f(x, y), color, new Vector2f(x2, y2));
+            _array[_idx + 3] = new Vertex(new Vector2f(dest.Left, y), color, new Vector2f(source.Left, y2));
+            _idx += 4;
+
+            if (_idx == _array.Length) Flush();
+        }
+        /// <summary>
         /// Adds verts to the batcher, must be a quad (for now).
         /// </summary>
         public void AddVerts(Vertex[] verts, int count, PrimitiveType type = PrimitiveType.Quads)
@@ -162,19 +182,22 @@ namespace Engine.Objects
         /// </summary>
         public void Flush()
         {
+            if (_idx == 0) return;
             _target.Draw(_array, 0, _idx, _last, _states);
             _idx = 0;
         }
 
         private void Flush(PrimitiveType type)
         {
+            if (_idx == 0) return;
             _target.Draw(_array, 0, _idx, type, _states);
             _idx = 0;
         }
 
         private void Flush(Texture replace)
         {
-            _target.Draw(_array, 0, _idx, _last, _states);
+            if (_idx > 0) { _target.Draw(_array, 0, _idx, _last, _states); }
+
             _idx = 0;
             _tex = replace;
             _states.Texture = replace;

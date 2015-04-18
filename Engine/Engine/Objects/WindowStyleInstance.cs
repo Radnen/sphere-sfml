@@ -3,7 +3,7 @@ using System.IO;
 using Jurassic;
 using Jurassic.Library;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
 
 namespace Engine.Objects
 {
@@ -109,7 +109,6 @@ namespace Engine.Objects
             AddTileC(1, x + width, y - _atlas.Sources[1].Height);
             AddTileC(2, x + width, y + height);
             AddTileC(3, x - _atlas.Sources[3].Width, y + height);
-            Program.Batch.Flush();
 
             // then use u, v repeating on the rest (non-batched):
             IntRect clip = new IntRect(0, 0, width, height);
