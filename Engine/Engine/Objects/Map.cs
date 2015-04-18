@@ -88,6 +88,15 @@ namespace Engine.Objects
         }
 
         /// <summary>
+        /// Creates a new map from file.
+        /// </summary>
+        public Map(string filename)
+            : this()
+        {
+            Load(filename);
+        }
+
+        /// <summary>
         /// Creates a new map with values.
         /// </summary>
         /// <param name="width">The width in tiles.</param>
@@ -123,7 +132,8 @@ namespace Engine.Objects
         /// <returns>True if the load was a success.</returns>
         public bool Load(string filename)
         {
-            if (!File.Exists(filename)) return false;
+            if (!File.Exists(filename))
+                Program.Abort(string.Format("File {0} not found.", filename));
 
             using (BinaryReader reader = new BinaryReader(File.OpenRead(filename)))
             {
@@ -151,7 +161,10 @@ namespace Engine.Objects
 
                 // read layers:
                 while (numLayers-- > 0)
+                {
                     Layers.Add(Layer.FromBinary(reader));
+                    _vertex_layers.Add(new Vertex[]{ });
+                }
 
                 // read entities:
                 while (numEntities-- > 0)
@@ -232,6 +245,9 @@ namespace Engine.Objects
             return true;
         }
 
+        private List<Vertex[]> _vertex_layers = new List<Vertex[]>();
+        private RenderStates _states = new RenderStates(BlendMode.Alpha, Transform.Identity, null, null);
+
         /// <summary>
         /// Compiles the map into a texture-coordinated vertex array & render states.
         /// </summary>
@@ -239,51 +255,58 @@ namespace Engine.Objects
         /// <param name="tileatlas">The tileatlas to get tex-coords from use.</param>
         public Tuple<List<Vertex[]>, RenderStates> GetTileMap(TextureAtlas atlas)
         {
+            _states.Texture = atlas.Texture;
+
+            for (int i = 0; i < Layers.Count; ++i)
+                UpdateVertexLayer(i, atlas);
+
+            return new Tuple<List<Vertex[]>, RenderStates>(_vertex_layers, _states);
+        }
+
+        // TODO: create method to rewrite a single tile rather than the whole layer.
+
+        public void UpdateVertexLayer(int layer, TextureAtlas atlas)
+        {
+            Layer l = Layers[layer];
             int tw = Tileset.TileWidth;
             int th = Tileset.TileHeight;
-            List<Vertex[]> vertices = new List<Vertex[]>();
 
-            foreach (Layer l in Layers)
+            int size = l.Width * l.Height * 4;
+            Vertex[] lverts = new Vertex[size];
+            Vector2f loc1 = new Vector2f(0, 0);
+            Vector2f loc2 = new Vector2f(tw, 0);
+            Vector2f loc3 = new Vector2f(tw, th);
+            Vector2f loc4 = new Vector2f(0, th);
+            for (var i = 0; i < lverts.Length; i += 4)
             {
-                int size = l.Width * l.Height * 4;
-                Vertex[] lverts = new Vertex[size];
-                Vector2f loc1 = new Vector2f(0, 0);
-                Vector2f loc2 = new Vector2f(tw, 0);
-                Vector2f loc3 = new Vector2f(tw, th);
-                Vector2f loc4 = new Vector2f(0, th);
-                for (var i = 0; i < lverts.Length; i += 4)
+                int tile = l.GetTile((int)loc1.X / tw, (int)loc1.Y / th);
+                if (tile >= 0)
                 {
-                    int tile = l.GetTile((int)loc1.X / tw, (int)loc1.Y / th);
-                    if (tile >= 0)
-                    {
-                        IntRect source = atlas.Sources[tile];
-                        int w = source.Left + source.Width;
-                        int h = source.Top + source.Height;
-                        lverts[i + 0] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
-                        lverts[i + 1] = new Vertex(loc2, new Vector2f(w, source.Top));
-                        lverts[i + 2] = new Vertex(loc3, new Vector2f(w, h));
-                        lverts[i + 3] = new Vertex(loc4, new Vector2f(source.Left, h));
-                    }
-
-                    loc1.X += tw;
-                    loc2.X += tw;
-                    loc3.X += tw;
-                    loc4.X += tw;
-                    if (loc1.X == l.Width * tw)
-                    {
-                        loc1.Y += th;
-                        loc2.Y += th;
-                        loc3.Y += th;
-                        loc4.Y += th;
-                        loc1.X = loc4.X = 0;
-                        loc2.X = loc3.X = tw;
-                    }
+                    IntRect source = atlas.Sources[tile];
+                    int w = source.Left + source.Width;
+                    int h = source.Top + source.Height;
+                    lverts[i + 0] = new Vertex(loc1, new Vector2f(source.Left, source.Top));
+                    lverts[i + 1] = new Vertex(loc2, new Vector2f(w, source.Top));
+                    lverts[i + 2] = new Vertex(loc3, new Vector2f(w, h));
+                    lverts[i + 3] = new Vertex(loc4, new Vector2f(source.Left, h));
                 }
-                vertices.Add(lverts);
+
+                loc1.X += tw;
+                loc2.X += tw;
+                loc3.X += tw;
+                loc4.X += tw;
+                if (loc1.X == l.Width * tw)
+                {
+                    loc1.Y += th;
+                    loc2.Y += th;
+                    loc3.Y += th;
+                    loc4.Y += th;
+                    loc1.X = loc4.X = 0;
+                    loc2.X = loc3.X = tw;
+                }
             }
 
-            RenderStates states = new RenderStates(BlendMode.Alpha, Transform.Identity, atlas.Texture, null);
-            return new Tuple<List<Vertex[]>, RenderStates>(vertices, states);
+            _vertex_layers[layer] = lverts;
         }
 
         /// <summary>

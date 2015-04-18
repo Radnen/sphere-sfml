@@ -5,13 +5,14 @@ using Jurassic.Library;
 namespace Engine
 {
     /// <summary>
-    /// Is either a function or some source code to be compiled that can be executed efficiently.
+    /// Is either a JS function or a source code string to be compiled and executed efficiently.
     /// </summary>
     public class FunctionScript
     {
         #region Executable
         private interface IExecutable { void Execute(); }
 
+        // handler for a JS function instance.
         private class FuncExe : IExecutable
         {
             FunctionInstance _instance;
@@ -19,6 +20,7 @@ namespace Engine
             public void Execute() { _instance.Call(Program._engine.Global); }
         }
 
+        // handler for a source code string instance.
         private class CompExe : IExecutable
         {
             CompiledMethod _method;

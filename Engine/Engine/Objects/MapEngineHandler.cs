@@ -12,24 +12,24 @@ namespace Engine.Objects
 {
     class DelayScript
     {
-        private FunctionScript script;
-        private int framesLeft;
+        private FunctionScript _script;
+        private int _frames_left;
 
         public DelayScript(object code, int frames)
         {
-            this.script = new FunctionScript(code);
-            this.framesLeft = frames;
+            _script = new FunctionScript(code);
+            _frames_left = frames;
         }
 
         public bool HasExpired()
         {
-            return this.framesLeft < 0;
+            return _frames_left < 0;
         }
 
         public void Tick()
         {
-            if (this.framesLeft >= 0 && --this.framesLeft < 0)
-                this.script.Execute();
+            if (_frames_left >= 0 && --_frames_left < 0)
+                _script.Execute();
         }
     }
     
@@ -44,7 +44,6 @@ namespace Engine.Objects
         private static TextureAtlas _tileatlas;
         private static bool _ended = true, _talkheld;
         private static int _fps = 0;
-        private static double _delta = 0;
 
         private static View _cameraView;
         private static Vector2f _camera;
@@ -60,7 +59,6 @@ namespace Engine.Objects
         private static ColorInstance[] _layermasks;
         private static FastTextureAtlas _fastatlas;
         private static List<Entity> _triggers;
-        //private static List<Zone> _zones;
         private static FunctionScript[] _scripts;
         private static FunctionScript[] _defscripts;
 
@@ -328,8 +326,6 @@ namespace Engine.Objects
         private static void ChangeMap(string filename)
         {
             _current = filename;
-            _delay_frames = -1;
-            _delayscript = null;
             CallMapScript((int)MapScripts.Leave);
             LoadMap(Program.ParseSpherePath(filename, "maps"), true, false);
         }
@@ -344,10 +340,7 @@ namespace Engine.Objects
             if (removePeople)
                 PersonManager.RemoveNonEssential();
 
-            _map = new Map();
-
-            if (!_map.Load(filename))
-                throw new System.IO.FileNotFoundException("Could not locate map file.", filename);
+            _map = new Map(filename);
 
             SetCameraX(_map.StartX);
             SetCameraY(_map.StartY);
@@ -358,7 +351,7 @@ namespace Engine.Objects
             // Compile
             CompileMapScripts();
 
-            // do this before AddPersons() to reset essential NPC's to map defaults.
+            // add created people to the maps default start position:
             Vector2f start_pos = new Vector2f(_map.StartX, _map.StartY);
             foreach (Person p in PersonManager.People)
             {
@@ -367,7 +360,7 @@ namespace Engine.Objects
                 p.Layer = _map.StartLayer;
             }
 
-            // add non-essential NPC's to the map.
+            // create the map-specific NPC's:
             AddPersons();
 
             ConstructFastAtlas();
@@ -454,14 +447,16 @@ namespace Engine.Objects
                 if (!t.Animated)
                     continue;
 
+                // clear the handled cache so we can start another animation chain:
                 handled.Clear();
+
+                // create the new animation chain:
                 var animated = t.Animated;
                 var handler = new TileAnimHandler(_fastatlas);
                 var index = i;
 
-                // If we found a tile animation, go through it's 
-                // 'linked list' of next-tile animations.
-
+                // if we found a tile animation, go through it's 
+                // linked list of next-tile animations:
                 while (animated && !handled.Contains(index))
                 {
                     handled.Add(index);
@@ -469,6 +464,8 @@ namespace Engine.Objects
                     index = _map.Tileset.Tiles[index].NextAnim;
                     animated = _map.Tileset.Tiles[index].Animated;
                 }
+
+                // add the animation chain:
                 _tileanims.Add(handler);
             }
         }
@@ -861,8 +858,8 @@ namespace Engine.Objects
             _map.Layers[layer].ReplaceTiles((short)from, (short)to);
             var tuple = _map.GetTileMap(_tileatlas);
 
+            // TODO: update changed layer verts.
             _layerstates = tuple.Item2;
-            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
             _layerverts = tuple.Item1;
         }
 
@@ -871,8 +868,8 @@ namespace Engine.Objects
             _map.Layers[layer].SetTile(x, y, (short)tile);
             var tuple = _map.GetTileMap(_tileatlas);
 
+            // TODO: update changed layer vert.
             _layerstates = tuple.Item2;
-            _layerstates.Texture = _fastatlas.RenderTexture.Texture;
             _layerverts = tuple.Item1;
         }
 
